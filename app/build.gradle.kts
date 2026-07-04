@@ -17,7 +17,7 @@ android {
         versionCode = 1
         versionName = "1.0"
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = "com.elsfm.mobile.HiltTestRunner"
         vectorDrawables {
             useSupportLibrary = true
         }
@@ -51,6 +51,13 @@ android {
 }
 
 dependencies {
+    // Project modules
+    implementation(project(":core:model"))
+    implementation(project(":core:common"))
+    implementation(project(":core:network"))
+    implementation(project(":core:designsystem"))
+    implementation(project(":feature:auth"))
+
     // Core Android
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
