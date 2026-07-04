@@ -2,12 +2,18 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "02abac179f1fc90e7f36c97a88c9cf4e",
+    "identityHash": "624e75f3c3b49622b04d04e392a94815",
     "entities": [
       {
         "tableName": "cached_user",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `username` TEXT, `name` TEXT, `email` TEXT NOT NULL, `avatarUrl` TEXT, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`cacheKey` INTEGER NOT NULL, `id` INTEGER NOT NULL, `username` TEXT, `name` TEXT, `email` TEXT NOT NULL, `avatarUrl` TEXT, PRIMARY KEY(`cacheKey`))",
         "fields": [
+          {
+            "fieldPath": "cacheKey",
+            "columnName": "cacheKey",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
           {
             "fieldPath": "id",
             "columnName": "id",
@@ -42,7 +48,7 @@
         "primaryKey": {
           "autoGenerate": false,
           "columnNames": [
-            "id"
+            "cacheKey"
           ]
         },
         "indices": [],
@@ -52,7 +58,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '02abac179f1fc90e7f36c97a88c9cf4e')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '624e75f3c3b49622b04d04e392a94815')"
     ]
   }
 }

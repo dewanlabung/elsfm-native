@@ -5,7 +5,8 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "cached_user")
 data class UserEntity(
-    @PrimaryKey val id: Int,
+    @PrimaryKey val cacheKey: Int = 0,
+    val id: Int,
     val username: String?,
     val name: String?,
     val email: String,
