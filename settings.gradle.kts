@@ -13,5 +13,12 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "ELSFM"
+rootProject.name = "elsfm-native"
+
 include(":app")
+include(":core:model")
+include(":core:common")
+include(":core:network")
+include(":core:database")
+include(":core:designsystem")
+include(":feature:auth")
