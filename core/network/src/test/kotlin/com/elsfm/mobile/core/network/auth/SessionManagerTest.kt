@@ -6,8 +6,8 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 
-private class FakeTokenStore : TokenStore {
-    private var token: String? = null
+internal class FakeTokenStore(initial: String? = null) : TokenStore {
+    private var token: String? = initial
     override suspend fun save(token: String) { this.token = token }
     override suspend fun read(): String? = token
     override suspend fun clear() { token = null }
