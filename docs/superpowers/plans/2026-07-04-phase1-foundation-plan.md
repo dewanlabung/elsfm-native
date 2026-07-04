@@ -1349,7 +1349,7 @@ git commit -m "feat(core-network): wire Hilt NetworkModule with AuthPlugin-backe
 - Test: `core/database/src/androidTest/kotlin/com/elsfm/mobile/core/database/UserDaoTest.kt`
 
 **Interfaces:**
-- Produces: `@Entity data class UserEntity(id: Int, username: String?, name: String?, email: String, avatarUrl: String?)`, `interface UserDao { suspend fun upsert(user: UserEntity); suspend fun get(): UserEntity?; suspend fun clear() }`, `abstract class AppDatabase : RoomDatabase() { abstract fun userDao(): UserDao }`. Consumed by `feature:auth` (Task 11).
+- Produces: `@Entity data class UserEntity(cacheKey: Int = 0, id: Int, username: String?, name: String?, email: String, avatarUrl: String?)` (`cacheKey` is a fixed singleton primary key, always `0` — see Step 3 for why), `interface UserDao { suspend fun upsert(user: UserEntity); suspend fun get(): UserEntity?; suspend fun clear() }`, `abstract class AppDatabase : RoomDatabase() { abstract fun userDao(): UserDao }`. Consumed by `feature:auth` (Task 11).
 
 - [ ] **Step 1: Write the failing test**
 
@@ -1476,13 +1476,16 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "cached_user")
 data class UserEntity(
-    @PrimaryKey val id: Int,
+    @PrimaryKey val cacheKey: Int = 0,
+    val id: Int,
     val username: String?,
     val name: String?,
     val email: String,
     val avatarUrl: String?,
 )
 ```
+
+`cacheKey` is always `0` — a fixed singleton key, not the real user's id. This table only ever caches one profile at a time; using the user's own `id` as the primary key would let `@Insert(onConflict = REPLACE)` leave two rows behind if a different user is cached without an explicit `clear()` in between (REPLACE only collapses rows sharing the same key). Pinning the primary key to a constant makes every `upsert()` collapse onto the same row regardless of which user it is, so the plain 3-method `UserDao` interface below stays correct without a transaction or extra helper method.
 
 `core/database/src/main/kotlin/com/elsfm/mobile/core/database/UserDao.kt`:
 ```kotlin
