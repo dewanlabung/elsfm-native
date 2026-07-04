@@ -17,8 +17,8 @@ import javax.inject.Inject
 
 class AuthApi @Inject constructor(
     private val httpClient: HttpClient,
-) {
-    suspend fun login(email: String, password: String, tokenName: String): ApiResult<User> {
+) : AuthApiLike {
+    override suspend fun login(email: String, password: String, tokenName: String): ApiResult<User> {
         return try {
             val response = httpClient.post("api/v1/auth/login") {
                 contentType(ContentType.Application.Json)
