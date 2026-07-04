@@ -15,7 +15,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -24,7 +23,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.elsfm.mobile.core.model.User
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(
@@ -33,7 +31,6 @@ fun LoginScreen(
 ) {
     val context = LocalContext.current
     val passwordSaver = remember { PasswordSaver(context) }
-    val scope = rememberCoroutineScope()
     var lastCredentials by remember { mutableStateOf<Pair<String, String>?>(null) }
 
     val state by viewModel.state.collectAsState()
