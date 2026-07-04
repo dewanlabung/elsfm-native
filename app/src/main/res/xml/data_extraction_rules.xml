@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<data-extraction-rules>
+    <!--
+    Sample data extraction rules file; uncomment and customize as needed.
+    See https://developer.android.com/about/versions/12/backup-restore
+    for details.
+    -->
+    <domain-config>
+        <domain includeSubdomains="true">
+            <path-pattern>/.*</path-pattern>
+        </domain>
+        <!--
+         <exclude-domain includeSubdomains="true">example.com</exclude-domain>
+         <exclude-domain includeSubdomains="true">example2.com</exclude-domain>
+         <exclude-path-pattern>/page2</exclude-path-pattern>
+        -->
+    </domain-config>
+    <!--
+     <domain-config>
+         <domain includeSubdomains="true">example3.com</domain>
+         <exclude-domain includeSubdomains="true">example4.com</exclude-domain>
+         <exclude-path-pattern>/nobackup</exclude-path-pattern>
+     </domain-config>
+    -->
+</data-extraction-rules>

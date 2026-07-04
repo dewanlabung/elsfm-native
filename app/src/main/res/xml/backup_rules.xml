@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <!--
+   Sample backup rules file; uncomment and customize as needed.
+   See https://developer.android.com/guide/topics/data/autobackup
+   for details.
+   Note: This file is ignored for devices running API 31 +
+        See https://developer.android.com/about/versions/12/backup-restore
+   -->
+
+    <!-- Exclude specific shared preferences that contain GCM registration IDs -->
+    <exclude domain="sharedpref" path="com.google.android.gms.appid.xml" />
+</full-backup-content>
