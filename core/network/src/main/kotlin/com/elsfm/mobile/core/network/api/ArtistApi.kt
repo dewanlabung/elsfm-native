@@ -11,16 +11,22 @@ import kotlinx.serialization.Serializable
 import javax.inject.Inject
 
 @Serializable
-private data class TrackList(val data: List<Track>)
+private data class ArtistTracksPagination(val data: List<Track>)
+
+@Serializable
+private data class ArtistTracksResponse(val pagination: ArtistTracksPagination)
+
+@Serializable
+private data class ArtistResponse(val artist: Artist)
 
 open class ArtistApi @Inject constructor(
     private val httpClient: HttpClient,
 ) {
     open suspend fun getArtist(id: Int): ApiResult<Artist> {
         return try {
-            val response = httpClient.get("api/v1/artist/$id")
+            val response = httpClient.get("api/v1/artists/$id")
             if (response.status.isSuccess()) {
-                ApiResult.Success(response.body<Artist>())
+                ApiResult.Success(response.body<ArtistResponse>().artist)
             } else {
                 ApiResult.NetworkError(RuntimeException("Unexpected status: ${response.status}"))
             }
@@ -31,9 +37,9 @@ open class ArtistApi @Inject constructor(
 
     open suspend fun getArtistTracks(id: Int): ApiResult<List<Track>> {
         return try {
-            val response = httpClient.get("api/v1/artist/$id/tracks")
+            val response = httpClient.get("api/v1/artists/$id/tracks")
             if (response.status.isSuccess()) {
-                ApiResult.Success(response.body<TrackList>().data)
+                ApiResult.Success(response.body<ArtistTracksResponse>().pagination.data)
             } else {
                 ApiResult.NetworkError(RuntimeException("Unexpected status: ${response.status}"))
             }

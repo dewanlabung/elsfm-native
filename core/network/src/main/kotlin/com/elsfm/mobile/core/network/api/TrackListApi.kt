@@ -10,19 +10,19 @@ import kotlinx.serialization.Serializable
 import javax.inject.Inject
 
 @Serializable
-private data class PlaylistTracksData(val data: List<Track>)
+private data class PlaylistTracksPagination(val data: List<Track>)
 
 @Serializable
-private data class PlaylistResponse(val tracks: PlaylistTracksData)
+private data class PlaylistTracksResponse(val pagination: PlaylistTracksPagination)
 
 class TrackListApi @Inject constructor(
     private val httpClient: HttpClient,
 ) {
     suspend fun getPlaylistTracks(playlistId: Int): ApiResult<List<Track>> {
         return try {
-            val response = httpClient.get("api/v1/playlist/$playlistId")
+            val response = httpClient.get("api/v1/playlists/$playlistId/tracks")
             if (response.status.isSuccess()) {
-                ApiResult.Success(response.body<PlaylistResponse>().tracks.data)
+                ApiResult.Success(response.body<PlaylistTracksResponse>().pagination.data)
             } else {
                 ApiResult.NetworkError(RuntimeException("Unexpected status: ${response.status}"))
             }

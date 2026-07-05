@@ -3,6 +3,7 @@ package com.elsfm.mobile.feature.discovery
 import com.elsfm.mobile.core.common.DispatcherProvider
 import com.elsfm.mobile.core.network.api.ChannelApi
 import com.elsfm.mobile.core.network.api.TrackListApi
+import com.elsfm.mobile.core.network.elsfmJson
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
@@ -53,10 +54,17 @@ class DiscoveryViewModelTest {
             addHandler { _ ->
                 val body = """
                     {
-                      "data": [
-                        {"id": 1, "name": "Sunday School"},
-                        {"id": 2, "name": "Bhajans"}
-                      ]
+                      "channel": {
+                        "id": 5,
+                        "name": "Nepali Christian Songs",
+                        "model_type": "channel",
+                        "content": {
+                          "data": [
+                            {"id": 1, "name": "Sunday School", "model_type": "channel"},
+                            {"id": 2, "name": "Bhajans", "model_type": "channel"}
+                          ]
+                        }
+                      }
                     }
                 """.trimIndent()
                 respond(
@@ -67,7 +75,7 @@ class DiscoveryViewModelTest {
             }
         }
         val httpClient = HttpClient(mockEngine) {
-            install(ContentNegotiation) { json() }
+            install(ContentNegotiation) { json(elsfmJson()) }
         }
         return ChannelApi(httpClient)
     }
@@ -78,10 +86,10 @@ class DiscoveryViewModelTest {
             addHandler { _ ->
                 val body = """
                     {
-                      "tracks": {
+                      "pagination": {
                         "data": [
-                          {"id": 1, "name": "Track 1", "image": null, "duration": 180000, "src": "storage/t1.mp3", "artists": []},
-                          {"id": 2, "name": "Track 2", "image": null, "duration": 200000, "src": "storage/t2.mp3", "artists": []}
+                          {"id": 1, "name": "Track 1", "image": null, "duration": 180000, "plays": "12", "artists": []},
+                          {"id": 2, "name": "Track 2", "image": null, "duration": 200000, "plays": "34", "artists": []}
                         ]
                       }
                     }
@@ -94,7 +102,7 @@ class DiscoveryViewModelTest {
             }
         }
         val httpClient = HttpClient(mockEngine) {
-            install(ContentNegotiation) { json() }
+            install(ContentNegotiation) { json(elsfmJson()) }
         }
         return TrackListApi(httpClient)
     }

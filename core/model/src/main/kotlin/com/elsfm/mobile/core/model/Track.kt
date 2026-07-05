@@ -9,6 +9,7 @@ data class Track(
     val name: String,
     val image: String?,
     @SerialName("duration") val durationMs: Long,
-    val src: String,
+    val src: String? = null,
+    val plays: String? = null,
     val artists: List<Artist>,
 )

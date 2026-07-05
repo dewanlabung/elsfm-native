@@ -2,6 +2,7 @@ package com.elsfm.mobile.core.network.api
 
 import com.elsfm.mobile.core.model.SearchResult
 import com.elsfm.mobile.core.network.ApiResult
+import com.elsfm.mobile.core.network.elsfmJson
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
@@ -17,20 +18,46 @@ import org.junit.Test
 
 class SearchApiTest {
 
+    // Shape confirmed via: curl -H "Accept: application/json" "https://www.elsfm.com/api/v1/search?query=love"
     private val responseBody = """
         {
-          "data": [
-            {
-              "track": {
-                "id": 100,
-                "name": "Search Result Track",
-                "duration": 200000,
-                "src": "test.mp3",
-                "image": "test.jpg",
-                "artists": [{"id": 1, "name": "Artist"}]
-              }
+          "query": "love",
+          "results": {
+            "tracks": {
+              "data": [
+                {
+                  "id": 100,
+                  "name": "Search Result Track",
+                  "duration": 200000,
+                  "plays": "42",
+                  "image": "test.jpg",
+                  "artists": [{"id": 1, "name": "Artist"}]
+                }
+              ],
+              "current_page": 1
+            },
+            "artists": {
+              "data": [
+                {"id": 5, "name": "Result Artist", "plays": "10"}
+              ],
+              "current_page": 1
+            },
+            "albums": {
+              "data": [],
+              "current_page": 1
+            },
+            "playlists": {
+              "data": [
+                {"id": 9, "name": "Result Playlist"}
+              ],
+              "current_page": 1
+            },
+            "users": {
+              "data": [],
+              "current_page": 1
             }
-          ]
+          },
+          "loader": "searchPage"
         }
     """.trimIndent()
 
@@ -39,7 +66,7 @@ class SearchApiTest {
             respond(body, status, headersOf(HttpHeaders.ContentType, "application/json"))
         }
         return HttpClient(mockEngine) {
-            install(ContentNegotiation) { json() }
+            install(ContentNegotiation) { json(elsfmJson()) }
         }
     }
 
@@ -47,11 +74,14 @@ class SearchApiTest {
     fun `search returns mixed results`() = runTest {
         val api = SearchApi(clientReturning(HttpStatusCode.OK, responseBody))
 
-        val result = api.search("query")
+        val result = api.search("love")
 
         assertTrue(result is ApiResult.Success)
         val results = (result as ApiResult.Success).data
-        assertEquals(1, results.size)
+        assertEquals(3, results.size)
+        assertTrue(results[0] is SearchResult.TrackResult)
+        assertTrue(results[1] is SearchResult.ArtistResult)
+        assertTrue(results[2] is SearchResult.PlaylistResult)
     }
 
     @Test

@@ -4,6 +4,7 @@ import app.cash.turbine.test
 import com.elsfm.mobile.core.model.SearchResult
 import com.elsfm.mobile.core.network.ApiResult
 import com.elsfm.mobile.core.network.api.SearchApi
+import com.elsfm.mobile.core.network.elsfmJson
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
@@ -41,24 +42,31 @@ class SearchViewModelTest {
         val mockEngine = MockEngine { _ ->
             val body = """
                 {
-                  "data": [
-                    {
-                      "track": {
-                        "id": 100,
-                        "name": "Result Track",
-                        "duration": 200000,
-                        "src": "test.mp3",
-                        "image": "test.jpg",
-                        "artists": [{"id": 1, "name": "Artist"}]
-                      }
-                    }
-                  ]
+                  "query": "test",
+                  "results": {
+                    "tracks": {
+                      "data": [
+                        {
+                          "id": 100,
+                          "name": "Result Track",
+                          "duration": 200000,
+                          "plays": "5",
+                          "image": "test.jpg",
+                          "artists": [{"id": 1, "name": "Artist"}]
+                        }
+                      ]
+                    },
+                    "artists": {"data": []},
+                    "albums": {"data": []},
+                    "playlists": {"data": []},
+                    "users": {"data": []}
+                  }
                 }
             """.trimIndent()
             respond(body, HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
         }
         val httpClient = HttpClient(mockEngine) {
-            install(ContentNegotiation) { json() }
+            install(ContentNegotiation) { json(elsfmJson()) }
         }
         return SearchApi(httpClient)
     }

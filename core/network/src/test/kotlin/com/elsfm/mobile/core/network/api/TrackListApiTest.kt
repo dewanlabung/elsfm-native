@@ -19,16 +19,20 @@ class TrackListApiTest {
 
     private val responseBody = """
         {
-          "playlist": {"id": 8, "name": "All Sunday School Songs"},
-          "tracks": {
+          "pagination": {
             "data": [
               {
                 "id": 1192,
                 "name": "Phul Phulyo Bana Pakhama Ashu Jhajhalkyo",
                 "image": "storage/track_image_media/abc.jpeg",
+                "number": 6,
                 "duration": 174000,
-                "src": "storage/track_media/9cw1dTF9NOayHdT4HdyCydn1jgaVJh7Cm9xu4waT.mp3",
-                "artists": [{"id": 30, "name": "Sunday School Songs"}]
+                "plays": "1154",
+                "popularity": 0,
+                "owner_id": "1",
+                "created_at": "2024-02-03T19:02:12.000000Z",
+                "model_type": "track",
+                "artists": [{"id": 30, "name": "Sunday School Songs", "image_small": "storage/artist/x.jpg", "verified": true, "disabled": false, "model_type": "artist"}]
               }
             ]
           }

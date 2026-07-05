@@ -2,6 +2,7 @@ package com.elsfm.mobile.feature.library
 
 import app.cash.turbine.test
 import com.elsfm.mobile.core.network.api.ChannelApi
+import com.elsfm.mobile.core.network.elsfmJson
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
@@ -40,9 +41,16 @@ class LibraryViewModelTest {
         val mockEngine = MockEngine { _ ->
             val body = """
                 {
-                  "data": [
-                    {"id": 1, "name": "Sunday School"}
-                  ]
+                  "channel": {
+                    "id": 5,
+                    "name": "Nepali Christian Songs",
+                    "model_type": "channel",
+                    "content": {
+                      "data": [
+                        {"id": 1, "name": "Sunday School", "model_type": "channel"}
+                      ]
+                    }
+                  }
                 }
             """.trimIndent()
             respond(
@@ -52,7 +60,7 @@ class LibraryViewModelTest {
             )
         }
         val httpClient = HttpClient(mockEngine) {
-            install(ContentNegotiation) { json() }
+            install(ContentNegotiation) { json(elsfmJson()) }
         }
         return ChannelApi(httpClient)
     }

@@ -1,6 +1,7 @@
 package com.elsfm.mobile.core.network.api
 
 import com.elsfm.mobile.core.network.ApiResult
+import com.elsfm.mobile.core.network.elsfmJson
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
@@ -16,25 +17,36 @@ import org.junit.Test
 
 class ArtistApiTest {
 
+    // Shape confirmed via: curl -H "Accept: application/json" "https://www.elsfm.com/api/v1/artists/1"
     private val artistResponseBody = """
         {
-          "id": 1,
-          "name": "Test Artist"
+          "artist": {
+            "id": 1,
+            "name": "Test Artist",
+            "image_small": "storage/artist/x.jpg",
+            "verified": true,
+            "disabled": false,
+            "model_type": "artist",
+            "plays": "51961"
+          }
         }
     """.trimIndent()
 
+    // Shape confirmed via: curl -H "Accept: application/json" "https://www.elsfm.com/api/v1/artists/1/tracks"
     private val tracksResponseBody = """
         {
-          "data": [
-            {
-              "id": 100,
-              "name": "Track 1",
-              "duration": 200000,
-              "src": "test1.mp3",
-              "image": "test.jpg",
-              "artists": [{"id": 1, "name": "Test Artist"}]
-            }
-          ]
+          "pagination": {
+            "data": [
+              {
+                "id": 100,
+                "name": "Track 1",
+                "duration": 200000,
+                "plays": "42",
+                "image": "test.jpg",
+                "artists": [{"id": 1, "name": "Test Artist"}]
+              }
+            ]
+          }
         }
     """.trimIndent()
 
@@ -43,7 +55,7 @@ class ArtistApiTest {
             respond(body, status, headersOf(HttpHeaders.ContentType, "application/json"))
         }
         return HttpClient(mockEngine) {
-            install(ContentNegotiation) { json() }
+            install(ContentNegotiation) { json(elsfmJson()) }
         }
     }
 
