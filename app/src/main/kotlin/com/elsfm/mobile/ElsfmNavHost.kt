@@ -6,7 +6,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -27,10 +29,13 @@ import androidx.navigation.compose.rememberNavController
 import com.elsfm.mobile.core.network.auth.SessionEvent
 import com.elsfm.mobile.feature.artist.ArtistDetailScreen
 import com.elsfm.mobile.feature.auth.LoginScreen
+import com.elsfm.mobile.feature.discovery.DiscoveryScreen
+import com.elsfm.mobile.feature.downloads.DownloadsScreen
 import com.elsfm.mobile.feature.library.LibraryScreen
 import com.elsfm.mobile.feature.player.MiniPlayer
 import com.elsfm.mobile.feature.player.PlayerScreen
 import com.elsfm.mobile.feature.player.PlayerViewModel
+import com.elsfm.mobile.feature.profile.ProfileScreen
 import com.elsfm.mobile.feature.search.SearchScreen
 
 private const val ROUTE_LOGIN = "login"
@@ -39,6 +44,9 @@ private const val ROUTE_PLAYER = "player"
 private const val ROUTE_LIBRARY = "library"
 private const val ROUTE_SEARCH = "search"
 private const val ROUTE_ARTIST = "artist/{artistId}"
+private const val ROUTE_DISCOVERY = "discovery"
+private const val ROUTE_PROFILE = "profile"
+private const val ROUTE_DOWNLOADS = "downloads"
 
 private data class BottomTab(
     val route: String,
@@ -47,9 +55,11 @@ private data class BottomTab(
 )
 
 private val bottomTabs = listOf(
-    BottomTab(ROUTE_HOME, "Home", Icons.Filled.Home),
+    BottomTab(ROUTE_DISCOVERY, "Discovery", Icons.Filled.Home),
     BottomTab(ROUTE_LIBRARY, "Library", Icons.Filled.List),
     BottomTab(ROUTE_SEARCH, "Search", Icons.Filled.Search),
+    BottomTab(ROUTE_PROFILE, "Profile", Icons.Filled.Person),
+    BottomTab(ROUTE_DOWNLOADS, "Downloads", Icons.Filled.Star),
 )
 
 @Composable
@@ -154,6 +164,37 @@ fun ElsfmNavHost(
                             ArtistDetailScreen(
                                 artistId = artistId,
                                 onTrackClicked = { track, queue -> playerViewModel.play(track, queue) },
+                            )
+                        }
+                        composable(ROUTE_DISCOVERY) {
+                            val playerViewModel: PlayerViewModel = hiltViewModel()
+                            DiscoveryScreen(
+                                onTrackClicked = { track ->
+                                    playerViewModel.play(track, queue = emptyList())
+                                },
+                                onArtistClicked = { artistId ->
+                                    navController.navigate("artist/$artistId")
+                                },
+                            )
+                        }
+                        composable(ROUTE_PROFILE) {
+                            val playerViewModel: PlayerViewModel = hiltViewModel()
+                            ProfileScreen(
+                                onTrackClicked = { track ->
+                                    playerViewModel.play(track, queue = emptyList())
+                                },
+                                onLogout = {
+                                    startDestinationViewModel.logout()
+                                    navController.navigate(ROUTE_LOGIN) { popUpTo(0) }
+                                },
+                            )
+                        }
+                        composable(ROUTE_DOWNLOADS) {
+                            val playerViewModel: PlayerViewModel = hiltViewModel()
+                            DownloadsScreen(
+                                onTrackClicked = { track ->
+                                    playerViewModel.play(track, queue = emptyList())
+                                },
                             )
                         }
                     }

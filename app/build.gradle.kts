@@ -62,6 +62,9 @@ dependencies {
     implementation(project(":feature:library"))
     implementation(project(":feature:search"))
     implementation(project(":feature:artist"))
+    implementation(project(":feature:discovery"))
+    implementation(project(":feature:profile"))
+    implementation(project(":feature:downloads"))
 
     // Core Android
     implementation(libs.androidx.core.ktx)
