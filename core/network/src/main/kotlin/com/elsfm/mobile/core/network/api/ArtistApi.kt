@@ -13,10 +13,10 @@ import javax.inject.Inject
 @Serializable
 private data class TrackList(val data: List<Track>)
 
-class ArtistApi @Inject constructor(
+open class ArtistApi @Inject constructor(
     private val httpClient: HttpClient,
 ) {
-    suspend fun getArtist(id: Int): ApiResult<Artist> {
+    open suspend fun getArtist(id: Int): ApiResult<Artist> {
         return try {
             val response = httpClient.get("api/v1/artist/$id")
             if (response.status.isSuccess()) {
@@ -29,7 +29,7 @@ class ArtistApi @Inject constructor(
         }
     }
 
-    suspend fun getArtistTracks(id: Int): ApiResult<List<Track>> {
+    open suspend fun getArtistTracks(id: Int): ApiResult<List<Track>> {
         return try {
             val response = httpClient.get("api/v1/artist/$id/tracks")
             if (response.status.isSuccess()) {
