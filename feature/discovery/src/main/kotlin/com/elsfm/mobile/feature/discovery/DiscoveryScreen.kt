@@ -22,8 +22,7 @@ import com.elsfm.mobile.core.model.Track
 @Composable
 fun DiscoveryScreen(
     viewModel: DiscoveryViewModel = hiltViewModel(),
-    onTrackClicked: (Track) -> Unit,
-    onArtistClicked: (Int) -> Unit,
+    onTrackClicked: (Track, List<Track>) -> Unit,
 ) {
     val state by viewModel.state.collectAsState()
 
@@ -33,11 +32,11 @@ fun DiscoveryScreen(
                 CircularProgressIndicator()
             }
         }
-        state.error != null -> {
+        state.featuredChannels.isEmpty() && state.popularTracks.isEmpty() && state.error != null -> {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        "Failed to load discovery",
+                        "Failed to load home",
                         style = MaterialTheme.typography.headlineMedium,
                     )
                     Spacer(Modifier.height(8.dp))
@@ -54,30 +53,46 @@ fun DiscoveryScreen(
                     .fillMaxSize()
                     .padding(16.dp)
             ) {
-                item {
-                    Text(
-                        "Trending Now",
-                        style = MaterialTheme.typography.headlineSmall,
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    TrendingSection(
-                        tracks = state.trendingTracks,
-                        onTrackClicked = onTrackClicked,
-                        onArtistClicked = onArtistClicked,
-                    )
+                if (state.featuredChannels.isNotEmpty()) {
+                    item {
+                        Text(
+                            "Featured Playlists",
+                            style = MaterialTheme.typography.headlineSmall,
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        FeaturedPlaylistsSection(
+                            channels = state.featuredChannels,
+                            onChannelClicked = { },
+                        )
+                        Spacer(Modifier.height(24.dp))
+                    }
                 }
-                item {
-                    Spacer(Modifier.height(24.dp))
-                    Text(
-                        "Recommended For You",
-                        style = MaterialTheme.typography.headlineSmall,
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    RecommendationSection(
-                        recommendations = state.recommendations,
-                        onTrackClicked = onTrackClicked,
-                        onArtistClicked = onArtistClicked,
-                    )
+                if (state.popularTracks.isNotEmpty()) {
+                    item {
+                        Text(
+                            "Popular Songs",
+                            style = MaterialTheme.typography.headlineSmall,
+                        )
+                        Spacer(Modifier.height(8.dp))
+                    }
+                    item {
+                        PopularSongsSection(
+                            tracks = state.popularTracks,
+                            onTrackClicked = { track ->
+                                onTrackClicked(track, state.popularTracks)
+                            },
+                        )
+                    }
+                }
+                if (state.error != null) {
+                    item {
+                        Spacer(Modifier.height(16.dp))
+                        Text(
+                            state.error.orEmpty(),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
                 }
             }
         }

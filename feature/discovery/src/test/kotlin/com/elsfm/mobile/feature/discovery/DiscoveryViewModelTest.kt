@@ -1,8 +1,8 @@
 package com.elsfm.mobile.feature.discovery
 
 import com.elsfm.mobile.core.common.DispatcherProvider
-import com.elsfm.mobile.core.network.api.RecommendationApi
-import com.elsfm.mobile.core.network.api.TrendingApi
+import com.elsfm.mobile.core.network.api.ChannelApi
+import com.elsfm.mobile.core.network.api.TrackListApi
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
@@ -21,6 +21,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
@@ -46,21 +47,21 @@ class DiscoveryViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private fun mockTrendingApi(): TrendingApi {
+    private fun mockChannelApi(status: HttpStatusCode = HttpStatusCode.OK): ChannelApi {
         val mockEngine = MockEngine.create {
             dispatcher = testDispatcher
             addHandler { _ ->
                 val body = """
                     {
                       "data": [
-                        {"track": {"id": 1, "name": "Track 1", "image": null, "duration": 180000, "src": "storage/t1.mp3", "artists": []}, "rank": 1},
-                        {"track": {"id": 2, "name": "Track 2", "image": null, "duration": 200000, "src": "storage/t2.mp3", "artists": []}, "rank": 2}
+                        {"id": 1, "name": "Sunday School"},
+                        {"id": 2, "name": "Bhajans"}
                       ]
                     }
                 """.trimIndent()
                 respond(
                     body,
-                    HttpStatusCode.OK,
+                    status,
                     headersOf(HttpHeaders.ContentType, "application/json"),
                 )
             }
@@ -68,17 +69,26 @@ class DiscoveryViewModelTest {
         val httpClient = HttpClient(mockEngine) {
             install(ContentNegotiation) { json() }
         }
-        return TrendingApi(httpClient)
+        return ChannelApi(httpClient)
     }
 
-    private fun mockRecommendationApi(): RecommendationApi {
+    private fun mockTrackListApi(status: HttpStatusCode = HttpStatusCode.OK): TrackListApi {
         val mockEngine = MockEngine.create {
             dispatcher = testDispatcher
             addHandler { _ ->
-                val body = """{ "data": [] }"""
+                val body = """
+                    {
+                      "tracks": {
+                        "data": [
+                          {"id": 1, "name": "Track 1", "image": null, "duration": 180000, "src": "storage/t1.mp3", "artists": []},
+                          {"id": 2, "name": "Track 2", "image": null, "duration": 200000, "src": "storage/t2.mp3", "artists": []}
+                        ]
+                      }
+                    }
+                """.trimIndent()
                 respond(
                     body,
-                    HttpStatusCode.OK,
+                    status,
                     headersOf(HttpHeaders.ContentType, "application/json"),
                 )
             }
@@ -86,21 +96,38 @@ class DiscoveryViewModelTest {
         val httpClient = HttpClient(mockEngine) {
             install(ContentNegotiation) { json() }
         }
-        return RecommendationApi(httpClient)
+        return TrackListApi(httpClient)
     }
 
     @Test
-    fun loadTrendingSuccess() = runTest(testDispatcher) {
+    fun loadHomeSuccessLoadsChannelsAndTracks() = runTest(testDispatcher) {
         val viewModel = DiscoveryViewModel(
-            mockTrendingApi(),
-            mockRecommendationApi(),
+            mockChannelApi(),
+            mockTrackListApi(),
             FakeDispatcherProvider(testDispatcher),
         )
         advanceUntilIdle()
 
         val state = viewModel.state.value
-        assertEquals(2, state.trendingTracks.size)
+        assertEquals(2, state.featuredChannels.size)
+        assertEquals(2, state.popularTracks.size)
         assertEquals(false, state.isLoading)
         assertNull(state.error)
+    }
+
+    @Test
+    fun loadHomeShowsPopularTracksWhenChannelsFail() = runTest(testDispatcher) {
+        val viewModel = DiscoveryViewModel(
+            mockChannelApi(status = HttpStatusCode.InternalServerError),
+            mockTrackListApi(),
+            FakeDispatcherProvider(testDispatcher),
+        )
+        advanceUntilIdle()
+
+        val state = viewModel.state.value
+        assertEquals(0, state.featuredChannels.size)
+        assertEquals(2, state.popularTracks.size)
+        assertEquals(false, state.isLoading)
+        assertNotNull(state.error)
     }
 }

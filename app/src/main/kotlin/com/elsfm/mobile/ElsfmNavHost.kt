@@ -169,11 +169,8 @@ fun ElsfmNavHost(
                         composable(ROUTE_DISCOVERY) {
                             val playerViewModel: PlayerViewModel = hiltViewModel()
                             DiscoveryScreen(
-                                onTrackClicked = { track ->
-                                    playerViewModel.play(track, queue = emptyList())
-                                },
-                                onArtistClicked = { artistId ->
-                                    navController.navigate("artist/$artistId")
+                                onTrackClicked = { track, queue ->
+                                    playerViewModel.play(track, queue)
                                 },
                             )
                         }
