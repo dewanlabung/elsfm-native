@@ -116,7 +116,7 @@ fun ElsfmNavHost(
                 Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
                     NavHost(
                         navController = navController,
-                        startDestination = ROUTE_DISCOVERY,
+                        startDestination = if (current.route == ROUTE_LOGIN) ROUTE_LOGIN else ROUTE_DISCOVERY,
                         modifier = Modifier.weight(1f),
                     ) {
                         composable(ROUTE_LOGIN) {
