@@ -116,12 +116,12 @@ fun ElsfmNavHost(
                 Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
                     NavHost(
                         navController = navController,
-                        startDestination = current.route,
+                        startDestination = ROUTE_DISCOVERY,
                         modifier = Modifier.weight(1f),
                     ) {
                         composable(ROUTE_LOGIN) {
                             LoginScreen(onLoggedIn = {
-                                navController.navigate(ROUTE_HOME) { popUpTo(0) }
+                                navController.navigate(ROUTE_DISCOVERY) { popUpTo(0) }
                             })
                         }
                         composable(ROUTE_HOME) {
