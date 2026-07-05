@@ -1,5 +1,6 @@
 package com.elsfm.mobile.feature.artist
 
+import com.elsfm.mobile.core.common.DispatcherProvider
 import com.elsfm.mobile.core.model.Artist
 import com.elsfm.mobile.core.model.Track
 import com.elsfm.mobile.core.network.ApiResult
@@ -7,6 +8,7 @@ import com.elsfm.mobile.core.network.api.ArtistApi
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
@@ -19,6 +21,12 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
+
+private class FakeDispatcherProvider(dispatcher: CoroutineDispatcher) : DispatcherProvider {
+    override val io: CoroutineDispatcher = dispatcher
+    override val main: CoroutineDispatcher = dispatcher
+    override val default: CoroutineDispatcher = dispatcher
+}
 
 private class FakeArtistApi(
     private val artist: Artist?,
@@ -82,7 +90,7 @@ class ArtistDetailViewModelTest {
         val artistApi = FakeArtistApi(testArtist, testTracks)
         val savedStateHandle = androidx.lifecycle.SavedStateHandle()
         savedStateHandle["artistId"] = 1
-        val viewModel = ArtistDetailViewModel(artistApi, savedStateHandle, testDispatcher)
+        val viewModel = ArtistDetailViewModel(artistApi, savedStateHandle, FakeDispatcherProvider(testDispatcher))
         delay(100) // Allow coroutines to execute
 
         val state = viewModel.state.value
@@ -97,7 +105,7 @@ class ArtistDetailViewModelTest {
         val artistApi = FakeArtistApi(null, testTracks, artistError = true)
         val savedStateHandle = androidx.lifecycle.SavedStateHandle()
         savedStateHandle["artistId"] = 1
-        val viewModel = ArtistDetailViewModel(artistApi, savedStateHandle, testDispatcher)
+        val viewModel = ArtistDetailViewModel(artistApi, savedStateHandle, FakeDispatcherProvider(testDispatcher))
         delay(100) // Allow coroutines to execute
 
         val state = viewModel.state.value
@@ -111,7 +119,7 @@ class ArtistDetailViewModelTest {
         val artistApi = FakeArtistApi(testArtist, null, tracksError = true)
         val savedStateHandle = androidx.lifecycle.SavedStateHandle()
         savedStateHandle["artistId"] = 1
-        val viewModel = ArtistDetailViewModel(artistApi, savedStateHandle, testDispatcher)
+        val viewModel = ArtistDetailViewModel(artistApi, savedStateHandle, FakeDispatcherProvider(testDispatcher))
         delay(100) // Allow coroutines to execute
 
         val state = viewModel.state.value
@@ -124,7 +132,7 @@ class ArtistDetailViewModelTest {
     fun `initial state is empty when artistId is not provided`() = runTest(testDispatcher) {
         val artistApi = FakeArtistApi(testArtist, testTracks)
         val savedStateHandle = androidx.lifecycle.SavedStateHandle()
-        val viewModel = ArtistDetailViewModel(artistApi, savedStateHandle, testDispatcher)
+        val viewModel = ArtistDetailViewModel(artistApi, savedStateHandle, FakeDispatcherProvider(testDispatcher))
 
         val state = viewModel.state.value
         assertNull(state.artist)

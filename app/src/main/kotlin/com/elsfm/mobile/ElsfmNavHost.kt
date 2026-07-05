@@ -2,6 +2,16 @@ package com.elsfm.mobile
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -9,18 +19,38 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.elsfm.mobile.core.network.auth.SessionEvent
+import com.elsfm.mobile.feature.artist.ArtistDetailScreen
 import com.elsfm.mobile.feature.auth.LoginScreen
+import com.elsfm.mobile.feature.library.LibraryScreen
 import com.elsfm.mobile.feature.player.MiniPlayer
 import com.elsfm.mobile.feature.player.PlayerScreen
 import com.elsfm.mobile.feature.player.PlayerViewModel
+import com.elsfm.mobile.feature.search.SearchScreen
 
 private const val ROUTE_LOGIN = "login"
 private const val ROUTE_HOME = "home"
 private const val ROUTE_PLAYER = "player"
+private const val ROUTE_LIBRARY = "library"
+private const val ROUTE_SEARCH = "search"
+private const val ROUTE_ARTIST = "artist/{artistId}"
+
+private data class BottomTab(
+    val route: String,
+    val label: String,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+)
+
+private val bottomTabs = listOf(
+    BottomTab(ROUTE_HOME, "Home", Icons.Filled.Home),
+    BottomTab(ROUTE_LIBRARY, "Library", Icons.Filled.List),
+    BottomTab(ROUTE_SEARCH, "Search", Icons.Filled.Search),
+)
 
 @Composable
 fun ElsfmNavHost(
@@ -42,38 +72,93 @@ fun ElsfmNavHost(
     when (val current = startState) {
         StartDestinationState.Loading -> Unit
         is StartDestinationState.Resolved -> {
-            Column(modifier = Modifier.fillMaxSize()) {
-                NavHost(
-                    navController = navController,
-                    startDestination = current.route,
-                    modifier = Modifier.weight(1f),
-                ) {
-                    composable(ROUTE_LOGIN) {
-                        LoginScreen(onLoggedIn = {
-                            navController.navigate(ROUTE_HOME) { popUpTo(0) }
-                        })
+            val backStackEntry by navController.currentBackStackEntryAsState()
+            val currentRoute = backStackEntry?.destination
+            val showBottomBar = currentRoute?.hierarchy?.any { destination ->
+                bottomTabs.any { it.route == destination.route }
+            } == true
+
+            Scaffold(
+                bottomBar = {
+                    if (showBottomBar) {
+                        NavigationBar {
+                            bottomTabs.forEach { tab ->
+                                val selected = currentRoute?.hierarchy?.any { it.route == tab.route } == true
+                                NavigationBarItem(
+                                    selected = selected,
+                                    onClick = {
+                                        navController.navigate(tab.route) {
+                                            popUpTo(navController.graph.startDestinationId) {
+                                                saveState = true
+                                            }
+                                            launchSingleTop = true
+                                            restoreState = true
+                                        }
+                                    },
+                                    icon = { Icon(tab.icon, contentDescription = tab.label) },
+                                    label = { Text(tab.label) },
+                                )
+                            }
+                        }
                     }
-                    composable(ROUTE_HOME) {
-                        val user = current.restoredUser
-                        if (user != null) {
+                },
+            ) { innerPadding ->
+                Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+                    NavHost(
+                        navController = navController,
+                        startDestination = current.route,
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        composable(ROUTE_LOGIN) {
+                            LoginScreen(onLoggedIn = {
+                                navController.navigate(ROUTE_HOME) { popUpTo(0) }
+                            })
+                        }
+                        composable(ROUTE_HOME) {
+                            val user = current.restoredUser
+                            if (user != null) {
+                                val playerViewModel: PlayerViewModel = hiltViewModel()
+                                HomePlaceholderScreen(
+                                    user = user,
+                                    onLogoutClicked = {
+                                        startDestinationViewModel.logout()
+                                        navController.navigate(ROUTE_LOGIN) { popUpTo(0) }
+                                    },
+                                    onTrackClicked = { track, queue ->
+                                        playerViewModel.play(track, queue)
+                                    },
+                                )
+                            }
+                        }
+                        composable(ROUTE_PLAYER) {
+                            PlayerScreen()
+                        }
+                        composable(ROUTE_LIBRARY) {
+                            LibraryScreen(
+                                onChannelSelected = { /* TODO: show playlists */ },
+                            )
+                        }
+                        composable(ROUTE_SEARCH) {
                             val playerViewModel: PlayerViewModel = hiltViewModel()
-                            HomePlaceholderScreen(
-                                user = user,
-                                onLogoutClicked = {
-                                    startDestinationViewModel.logout()
-                                    navController.navigate(ROUTE_LOGIN) { popUpTo(0) }
-                                },
-                                onTrackClicked = { track, queue ->
-                                    playerViewModel.play(track, queue)
-                                },
+                            SearchScreen(
+                                onTrackClicked = { track, queue -> playerViewModel.play(track, queue) },
+                                onArtistClicked = { artistId -> navController.navigate("artist/$artistId") },
+                            )
+                        }
+                        composable(ROUTE_ARTIST) { backStackEntry ->
+                            val artistId = backStackEntry.arguments
+                                ?.getString("artistId")
+                                ?.toIntOrNull()
+                                ?: return@composable
+                            val playerViewModel: PlayerViewModel = hiltViewModel()
+                            ArtistDetailScreen(
+                                artistId = artistId,
+                                onTrackClicked = { track, queue -> playerViewModel.play(track, queue) },
                             )
                         }
                     }
-                    composable(ROUTE_PLAYER) {
-                        PlayerScreen()
-                    }
+                    MiniPlayer(onExpandClicked = { navController.navigate(ROUTE_PLAYER) })
                 }
-                MiniPlayer(onExpandClicked = { navController.navigate(ROUTE_PLAYER) })
             }
         }
     }

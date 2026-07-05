@@ -2,11 +2,10 @@ package com.elsfm.mobile.feature.artist
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.elsfm.mobile.core.common.DispatcherProvider
 import com.elsfm.mobile.core.network.ApiResult
 import com.elsfm.mobile.core.network.api.ArtistApi
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -17,8 +16,9 @@ import javax.inject.Inject
 class ArtistDetailViewModel @Inject constructor(
     private val artistApi: ArtistApi,
     private val savedStateHandle: androidx.lifecycle.SavedStateHandle,
-    private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
+    private val dispatcherProvider: DispatcherProvider,
 ) : ViewModel() {
+    private val dispatcher = dispatcherProvider.io
 
     private val _state = MutableStateFlow(ArtistDetailState())
     val state: StateFlow<ArtistDetailState> = _state.asStateFlow()

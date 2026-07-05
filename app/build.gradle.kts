@@ -59,6 +59,9 @@ dependencies {
     implementation(project(":feature:auth"))
     implementation(project(":core:media"))
     implementation(project(":feature:player"))
+    implementation(project(":feature:library"))
+    implementation(project(":feature:search"))
+    implementation(project(":feature:artist"))
 
     // Core Android
     implementation(libs.androidx.core.ktx)
