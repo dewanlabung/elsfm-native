@@ -57,6 +57,8 @@ dependencies {
     implementation(project(":core:network"))
     implementation(project(":core:designsystem"))
     implementation(project(":feature:auth"))
+    implementation(project(":core:media"))
+    implementation(project(":feature:player"))
 
     // Core Android
     implementation(libs.androidx.core.ktx)
