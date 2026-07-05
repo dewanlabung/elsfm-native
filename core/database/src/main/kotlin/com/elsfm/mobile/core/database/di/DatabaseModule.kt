@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.elsfm.mobile.core.database.AppDatabase
 import com.elsfm.mobile.core.database.UserDao
+import com.elsfm.mobile.core.database.dao.DownloadedTrackDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -18,9 +19,14 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun provideAppDatabase(@ApplicationContext context: Context): AppDatabase {
-        return Room.databaseBuilder(context, AppDatabase::class.java, "elsfm.db").build()
+        return Room.databaseBuilder(context, AppDatabase::class.java, "elsfm.db")
+            .fallbackToDestructiveMigration()
+            .build()
     }
 
     @Provides
     fun provideUserDao(database: AppDatabase): UserDao = database.userDao()
+
+    @Provides
+    fun provideDownloadedTrackDao(database: AppDatabase): DownloadedTrackDao = database.downloadedTrackDao()
 }
