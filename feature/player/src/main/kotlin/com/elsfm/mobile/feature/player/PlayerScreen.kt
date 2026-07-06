@@ -6,6 +6,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,6 +24,8 @@ import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -34,6 +37,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -43,6 +47,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
@@ -58,6 +63,9 @@ fun PlayerScreen(
     onCollapse: (() -> Unit)? = null,
 ) {
     val state by viewModel.state.collectAsState()
+    val menuState by viewModel.menuState.collectAsState()
+    var menuAnchorX by remember { mutableFloatStateOf(0f) }
+    var menuAnchorY by remember { mutableFloatStateOf(0f) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         // Blurred album art background with gradient overlay
@@ -147,29 +155,62 @@ fun PlayerScreen(
                 }
             }
 
-            // Track info
-            Column(
+            // Track info with long-press menu
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
+                    .padding(horizontal = 16.dp)
+                    .pointerInput(state.currentTrack) {
+                        detectTapGestures(
+                            onLongPress = { offset ->
+                                state.currentTrack?.let {
+                                    menuAnchorX = offset.x
+                                    menuAnchorY = offset.y
+                                    viewModel.onMenuEvent(PlayerMenuEvent.ShowMenu(it.id))
+                                }
+                            }
+                        )
+                    }
             ) {
-                Text(
-                    text = state.currentTrack?.name ?: "Nothing playing",
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = Color.White,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.testTag("player_track_title"),
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = state.currentTrack?.artists?.firstOrNull()?.name ?: "Unknown Artist",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = Color.White.copy(alpha = 0.7f),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.testTag("player_artist_name"),
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.Center),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text(
+                        text = state.currentTrack?.name ?: "Nothing playing",
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = Color.White,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.testTag("player_track_title"),
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = state.currentTrack?.artists?.firstOrNull()?.name ?: "Unknown Artist",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = Color.White.copy(alpha = 0.7f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.testTag("player_artist_name"),
+                    )
+                }
+
+                // Track context menu
+                TrackContextMenu(
+                    trackId = state.currentTrack?.id ?: -1,
+                    isVisible = menuState.isMenuVisible,
+                    onDismiss = { viewModel.onMenuEvent(PlayerMenuEvent.HideMenu) },
+                    onAddToPlaylist = { trackId ->
+                        // TODO: Show playlist selection dialog, then call:
+                        // viewModel.onMenuEvent(PlayerMenuEvent.AddToPlaylist(trackId, selectedPlaylistId))
+                    },
+                    onShare = {
+                        state.currentTrack?.let {
+                            viewModel.onMenuEvent(PlayerMenuEvent.ShareTrack(it.id))
+                        }
+                    }
                 )
             }
 
@@ -286,6 +327,37 @@ fun PlayerScreen(
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun TrackContextMenu(
+    trackId: Int,
+    isVisible: Boolean,
+    onDismiss: () -> Unit,
+    onAddToPlaylist: (Int) -> Unit,
+    onShare: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    if (isVisible) {
+        DropdownMenu(
+            expanded = true,
+            onDismissRequest = onDismiss,
+            modifier = modifier
+        ) {
+            DropdownMenuItem(
+                text = { Text("Add to Playlist") },
+                onClick = { onAddToPlaylist(trackId); onDismiss() }
+            )
+            DropdownMenuItem(
+                text = { Text("Share") },
+                onClick = { onShare(); onDismiss() }
+            )
+            DropdownMenuItem(
+                text = { Text("View Details") },
+                onClick = { onDismiss() }
+            )
         }
     }
 }
