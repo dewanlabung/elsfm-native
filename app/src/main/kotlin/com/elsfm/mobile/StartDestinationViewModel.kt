@@ -5,7 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.elsfm.mobile.core.model.User
 import com.elsfm.mobile.core.network.auth.SessionEvent
 import com.elsfm.mobile.core.network.auth.SessionManager
-import com.elsfm.mobile.feature.auth.AuthRepository
+import com.elsfm.mobile.feature.auth.data.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow

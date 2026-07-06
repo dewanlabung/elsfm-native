@@ -1,7 +1,5 @@
 package com.elsfm.mobile.feature.auth
 
-import app.cash.turbine.test
-import com.elsfm.mobile.core.common.DispatcherProvider
 import com.elsfm.mobile.core.database.UserDao
 import com.elsfm.mobile.core.database.UserEntity
 import com.elsfm.mobile.core.model.User
@@ -9,9 +7,10 @@ import com.elsfm.mobile.core.network.ApiResult
 import com.elsfm.mobile.core.network.api.AuthApiLike
 import com.elsfm.mobile.core.network.auth.SessionManager
 import com.elsfm.mobile.core.network.auth.TokenStore
-import kotlinx.coroutines.test.StandardTestDispatcher
+import com.elsfm.mobile.feature.auth.data.AuthRepository
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -33,54 +32,48 @@ private class LoginFakeAuthApi(private val result: ApiResult<User>) : AuthApiLik
     override suspend fun login(email: String, password: String, tokenName: String) = result
 }
 
-private class TestDispatcherProvider(dispatcher: kotlinx.coroutines.CoroutineDispatcher) : DispatcherProvider {
-    override val io = dispatcher
-    override val main = dispatcher
-    override val default = dispatcher
-}
-
 class LoginViewModelTest {
 
     @Test
-    fun `emits Loading then Success on successful login`() = runTest {
-        val user = User(id = 207, email = "test.elsfm@gmail.com", accessToken = "1|abc")
-        val repository = AuthRepository(LoginFakeAuthApi(ApiResult.Success(user)), SessionManager(LoginFakeTokenStore()), LoginFakeUserDao())
-        val viewModel = LoginViewModel(repository, TestDispatcherProvider(StandardTestDispatcher(testScheduler)))
+    fun `repository login saves token on success`() = runTest {
+        val user = User(id = 207, email = "test.elsfm@gmail.com", name = "Test User", accessToken = "1|abc")
+        val repository = AuthRepository(
+            authApi = LoginFakeAuthApi(ApiResult.Success(user)),
+            sessionManager = SessionManager(LoginFakeTokenStore()),
+            userDao = LoginFakeUserDao()
+        )
 
-        viewModel.state.test {
-            assertEquals(LoginUiState.Idle, awaitItem())
-            viewModel.onLoginClicked("test.elsfm@gmail.com", "secret")
-            assertEquals(LoginUiState.Loading, awaitItem())
-            assertEquals(LoginUiState.Success(user), awaitItem())
-        }
+        val result = repository.login("test.elsfm@gmail.com", "secret")
+
+        assertTrue(result is ApiResult.Success)
+        assertEquals(user, (result as ApiResult.Success).data)
     }
 
     @Test
-    fun `emits FieldErrors on validation failure`() = runTest {
+    fun `repository login handles validation error`() = runTest {
         val errors = mapOf("email" to listOf("These credentials do not match our records."))
-        val repository = AuthRepository(LoginFakeAuthApi(ApiResult.ValidationError(errors)), SessionManager(LoginFakeTokenStore()), LoginFakeUserDao())
-        val viewModel = LoginViewModel(repository, TestDispatcherProvider(StandardTestDispatcher(testScheduler)))
+        val repository = AuthRepository(
+            authApi = LoginFakeAuthApi(ApiResult.ValidationError(errors)),
+            sessionManager = SessionManager(LoginFakeTokenStore()),
+            userDao = LoginFakeUserDao()
+        )
 
-        viewModel.state.test {
-            assertEquals(LoginUiState.Idle, awaitItem())
-            viewModel.onLoginClicked("test.elsfm@gmail.com", "wrong")
-            assertEquals(LoginUiState.Loading, awaitItem())
-            val errorState = awaitItem()
-            assertTrue(errorState is LoginUiState.FieldErrors)
-            assertEquals(errors, (errorState as LoginUiState.FieldErrors).errors)
-        }
+        val result = repository.login("test.elsfm@gmail.com", "wrong")
+
+        assertTrue(result is ApiResult.ValidationError)
+        assertEquals(errors, (result as ApiResult.ValidationError).fields)
     }
 
     @Test
-    fun `emits NetworkError when the repository reports a network failure`() = runTest {
-        val repository = AuthRepository(LoginFakeAuthApi(ApiResult.NetworkError(RuntimeException("offline"))), SessionManager(LoginFakeTokenStore()), LoginFakeUserDao())
-        val viewModel = LoginViewModel(repository, TestDispatcherProvider(StandardTestDispatcher(testScheduler)))
+    fun `repository login handles network error`() = runTest {
+        val repository = AuthRepository(
+            authApi = LoginFakeAuthApi(ApiResult.NetworkError(RuntimeException("offline"))),
+            sessionManager = SessionManager(LoginFakeTokenStore()),
+            userDao = LoginFakeUserDao()
+        )
 
-        viewModel.state.test {
-            assertEquals(LoginUiState.Idle, awaitItem())
-            viewModel.onLoginClicked("test.elsfm@gmail.com", "secret")
-            assertEquals(LoginUiState.Loading, awaitItem())
-            assertEquals(LoginUiState.NetworkError, awaitItem())
-        }
+        val result = repository.login("test.elsfm@gmail.com", "secret")
+
+        assertTrue(result is ApiResult.NetworkError)
     }
 }

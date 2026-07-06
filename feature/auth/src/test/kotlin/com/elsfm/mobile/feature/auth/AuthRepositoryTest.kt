@@ -8,6 +8,7 @@ import com.elsfm.mobile.core.network.api.AuthApi
 import com.elsfm.mobile.core.network.api.AuthApiLike
 import com.elsfm.mobile.core.network.auth.SessionManager
 import com.elsfm.mobile.core.network.auth.TokenStore
+import com.elsfm.mobile.feature.auth.data.AuthRepository
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
