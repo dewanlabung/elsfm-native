@@ -33,6 +33,12 @@ class ArtistDetailViewModel @Inject constructor(
         }
     }
 
+    fun retryLoadArtistDetails() {
+        savedStateHandle.get<Int>("artistId")?.let { artistId ->
+            loadArtistDetails(artistId)
+        }
+    }
+
     private fun loadArtistDetails(id: Int) {
         viewModelScope.launch(dispatcher) {
             _state.value = _state.value.copy(isLoading = true, error = null)

@@ -13,6 +13,8 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Surface
@@ -54,6 +56,7 @@ fun LibraryScreen(
             libraryViewModel.selectChannel(channel.id)
             onChannelTap(channel)
         },
+        onRetry = libraryViewModel::loadLibrary,
     )
 }
 
@@ -64,6 +67,7 @@ internal fun LibraryContent(
     onPlaylistTap: (Playlist) -> Unit,
     onAlbumTap: (Album) -> Unit,
     onChannelTap: (Channel) -> Unit,
+    onRetry: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.fillMaxSize()) {
@@ -72,8 +76,22 @@ internal fun LibraryContent(
             onFilterSelected = onFilterSelected,
         )
 
+        if (state.isLoading) {
+            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+        }
+
+        if (state.error != null) {
+            LibraryErrorBanner(
+                error = state.error,
+                onRetry = onRetry
+            )
+        }
+
         when {
             state.isLoading -> LibraryLoading()
+            state.error != null -> {
+                Box(modifier = Modifier.fillMaxSize())
+            }
             state.isEmpty -> LibraryEmpty(filter = state.selectedFilter)
             else -> LibraryGrid(
                 state = state,
@@ -218,6 +236,38 @@ private fun ChannelCard(
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSecondaryContainer,
             )
+        }
+    }
+}
+
+@Composable
+private fun LibraryErrorBanner(
+    error: String,
+    onRetry: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(8.dp),
+        color = MaterialTheme.colorScheme.errorContainer,
+        shape = RoundedCornerShape(8.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                text = error,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onErrorContainer
+            )
+            Button(
+                onClick = onRetry,
+                modifier = Modifier.align(Alignment.End)
+            ) {
+                Text("Retry")
+            }
         }
     }
 }
