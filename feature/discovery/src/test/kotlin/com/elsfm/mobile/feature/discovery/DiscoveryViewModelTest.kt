@@ -1,7 +1,7 @@
 package com.elsfm.mobile.feature.discovery
 
 import com.elsfm.mobile.core.common.DispatcherProvider
-import com.elsfm.mobile.core.network.api.ChannelApi
+import com.elsfm.mobile.core.network.api.ProfileApi
 import com.elsfm.mobile.core.network.api.TrackListApi
 import com.elsfm.mobile.core.network.elsfmJson
 import io.ktor.client.HttpClient
@@ -22,8 +22,10 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
@@ -46,38 +48,6 @@ class DiscoveryViewModelTest {
     @After
     fun tearDown() {
         Dispatchers.resetMain()
-    }
-
-    private fun mockChannelApi(status: HttpStatusCode = HttpStatusCode.OK): ChannelApi {
-        val mockEngine = MockEngine.create {
-            dispatcher = testDispatcher
-            addHandler { _ ->
-                val body = """
-                    {
-                      "channel": {
-                        "id": 5,
-                        "name": "Nepali Christian Songs",
-                        "model_type": "channel",
-                        "content": {
-                          "data": [
-                            {"id": 1, "name": "Sunday School", "model_type": "channel"},
-                            {"id": 2, "name": "Bhajans", "model_type": "channel"}
-                          ]
-                        }
-                      }
-                    }
-                """.trimIndent()
-                respond(
-                    body,
-                    status,
-                    headersOf(HttpHeaders.ContentType, "application/json"),
-                )
-            }
-        }
-        val httpClient = HttpClient(mockEngine) {
-            install(ContentNegotiation) { json(elsfmJson()) }
-        }
-        return ChannelApi(httpClient)
     }
 
     private fun mockTrackListApi(status: HttpStatusCode = HttpStatusCode.OK): TrackListApi {
@@ -107,35 +77,62 @@ class DiscoveryViewModelTest {
         return TrackListApi(httpClient)
     }
 
+    private fun mockProfileApi(status: HttpStatusCode = HttpStatusCode.OK): ProfileApi {
+        val mockEngine = MockEngine.create {
+            dispatcher = testDispatcher
+            addHandler { _ ->
+                val body = """
+                    {
+                      "data": [
+                        {"id": 3, "name": "Track 3", "image": null, "duration": 210000, "plays": "5", "artists": []}
+                      ]
+                    }
+                """.trimIndent()
+                respond(
+                    body,
+                    status,
+                    headersOf(HttpHeaders.ContentType, "application/json"),
+                )
+            }
+        }
+        val httpClient = HttpClient(mockEngine) {
+            install(ContentNegotiation) { json(elsfmJson()) }
+        }
+        return ProfileApi(httpClient)
+    }
+
     @Test
-    fun loadHomeSuccessLoadsChannelsAndTracks() = runTest(testDispatcher) {
+    fun loadHomeSuccessLoadsAllSections() = runTest(testDispatcher) {
         val viewModel = DiscoveryViewModel(
-            mockChannelApi(),
             mockTrackListApi(),
+            mockProfileApi(),
             FakeDispatcherProvider(testDispatcher),
         )
         advanceUntilIdle()
 
         val state = viewModel.state.value
-        assertEquals(2, state.featuredChannels.size)
-        assertEquals(2, state.popularTracks.size)
-        assertEquals(false, state.isLoading)
+        assertTrue(state.featured.isNotEmpty())
+        assertEquals(2, state.popular.size)
+        assertTrue(state.newReleases.isNotEmpty())
+        assertEquals(1, state.recentlyPlayed.size)
+        assertFalse(state.isLoading)
         assertNull(state.error)
     }
 
     @Test
-    fun loadHomeShowsPopularTracksWhenChannelsFail() = runTest(testDispatcher) {
+    fun loadHomeShowsSampleSectionsWhenPopularTracksFail() = runTest(testDispatcher) {
         val viewModel = DiscoveryViewModel(
-            mockChannelApi(status = HttpStatusCode.InternalServerError),
-            mockTrackListApi(),
+            mockTrackListApi(status = HttpStatusCode.InternalServerError),
+            mockProfileApi(),
             FakeDispatcherProvider(testDispatcher),
         )
         advanceUntilIdle()
 
         val state = viewModel.state.value
-        assertEquals(0, state.featuredChannels.size)
-        assertEquals(2, state.popularTracks.size)
-        assertEquals(false, state.isLoading)
+        assertEquals(0, state.popular.size)
+        assertEquals(1, state.recentlyPlayed.size)
+        assertTrue(state.featured.isNotEmpty())
+        assertFalse(state.isLoading)
         assertNotNull(state.error)
     }
 }

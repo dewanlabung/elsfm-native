@@ -3,12 +3,15 @@ package com.elsfm.mobile.feature.discovery
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.elsfm.mobile.core.common.DispatcherProvider
-import com.elsfm.mobile.core.model.Channel
+import com.elsfm.mobile.core.model.Album
+import com.elsfm.mobile.core.model.Playlist
 import com.elsfm.mobile.core.model.Track
 import com.elsfm.mobile.core.network.ApiResult
-import com.elsfm.mobile.core.network.api.ChannelApi
+import com.elsfm.mobile.core.network.api.ProfileApi
 import com.elsfm.mobile.core.network.api.TrackListApi
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -17,21 +20,33 @@ import javax.inject.Inject
 
 private const val POPULAR_SONGS_PLAYLIST_ID = 8
 
-data class DiscoveryState(
-    val featuredChannels: List<Channel> = emptyList(),
-    val popularTracks: List<Track> = emptyList(),
+/**
+ * Immutable, hoisted UI state for [DiscoveryScreen].
+ *
+ * Featured playlists and new-release albums are not yet backed by a real
+ * backend endpoint (no `List<Playlist>` or `List<Album>` API exists in
+ * `core:network` at this time), so [DiscoveryViewModel] populates them with
+ * static sample data. Popular songs and recently played tracks are backed by
+ * the real [TrackListApi] and [ProfileApi] endpoints already used elsewhere
+ * in the app.
+ */
+data class DiscoveryUiState(
+    val featured: List<Playlist> = emptyList(),
+    val popular: List<Track> = emptyList(),
+    val newReleases: List<Album> = emptyList(),
+    val recentlyPlayed: List<Track> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null,
 )
 
 @HiltViewModel
 class DiscoveryViewModel @Inject constructor(
-    private val channelApi: ChannelApi,
     private val trackListApi: TrackListApi,
+    private val profileApi: ProfileApi,
     private val dispatcherProvider: DispatcherProvider,
 ) : ViewModel() {
-    private val _state = MutableStateFlow(DiscoveryState())
-    val state: StateFlow<DiscoveryState> = _state.asStateFlow()
+    private val _state = MutableStateFlow(DiscoveryUiState())
+    val state: StateFlow<DiscoveryUiState> = _state.asStateFlow()
 
     init {
         loadHome()
@@ -40,35 +55,50 @@ class DiscoveryViewModel @Inject constructor(
     fun loadHome() {
         viewModelScope.launch(dispatcherProvider.io) {
             _state.value = _state.value.copy(isLoading = true, error = null)
-            loadChannels()
-            loadPopularTracks()
-            _state.value = _state.value.copy(isLoading = false)
+
+            var loadError: String? = null
+
+            coroutineScope {
+                val popularDeferred = async { loadPopularTracks() }
+                val recentlyPlayedDeferred = async { loadRecentlyPlayed() }
+
+                val popular = popularDeferred.await()
+                val recentlyPlayed = recentlyPlayedDeferred.await()
+
+                if (popular == null) {
+                    loadError = "Failed to load popular songs"
+                }
+                if (recentlyPlayed == null) {
+                    loadError = loadError ?: "Failed to load recently played"
+                }
+
+                _state.value = _state.value.copy(
+                    featured = SampleDiscoveryData.featuredPlaylists,
+                    popular = popular.orEmpty(),
+                    newReleases = SampleDiscoveryData.newReleaseAlbums,
+                    recentlyPlayed = recentlyPlayed.orEmpty(),
+                )
+            }
+
+            _state.value = _state.value.copy(isLoading = false, error = loadError)
         }
     }
 
-    private suspend fun loadChannels() {
-        when (val result = channelApi.getChannels()) {
-            is ApiResult.Success -> {
-                _state.value = _state.value.copy(featuredChannels = result.data)
-            }
+    private suspend fun loadPopularTracks(): List<Track>? {
+        return when (val result = trackListApi.getPlaylistTracks(POPULAR_SONGS_PLAYLIST_ID)) {
+            is ApiResult.Success -> result.data
             is ApiResult.NetworkError,
             is ApiResult.ValidationError,
-            is ApiResult.Unauthorized -> {
-                _state.value = _state.value.copy(error = "Failed to load featured playlists")
-            }
+            is ApiResult.Unauthorized -> null
         }
     }
 
-    private suspend fun loadPopularTracks() {
-        when (val result = trackListApi.getPlaylistTracks(POPULAR_SONGS_PLAYLIST_ID)) {
-            is ApiResult.Success -> {
-                _state.value = _state.value.copy(popularTracks = result.data)
-            }
+    private suspend fun loadRecentlyPlayed(): List<Track>? {
+        return when (val result = profileApi.getRecentlyPlayed()) {
+            is ApiResult.Success -> result.data
             is ApiResult.NetworkError,
             is ApiResult.ValidationError,
-            is ApiResult.Unauthorized -> {
-                _state.value = _state.value.copy(error = "Failed to load popular songs")
-            }
+            is ApiResult.Unauthorized -> null
         }
     }
 }
