@@ -30,10 +30,10 @@ class DownloadsViewModel @Inject constructor(
                 val tracks = downloads.map { download ->
                     DownloadedTrackUI(
                         trackId = download.trackId,
-                        title = download.title,
-                        artist = download.artist,
-                        artworkUrl = download.artworkUrl,
-                        fileSize = formatFileSize(download.fileSize),
+                        title = download.fileName,
+                        artist = "Unknown",
+                        artworkUrl = null,
+                        fileSize = formatFileSize(download.fileSizeBytes),
                         downloadedAt = download.downloadedAt,
                         isOffline = true
                     )

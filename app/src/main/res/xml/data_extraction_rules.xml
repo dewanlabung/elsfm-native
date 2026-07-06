@@ -6,9 +6,7 @@
     for details.
     -->
     <domain-config>
-        <domain includeSubdomains="true">
-            <path-pattern>/.*</path-pattern>
-        </domain>
+        <domain includeSubdomains="true">api.elsfm.local</domain>
         <!--
          <exclude-domain includeSubdomains="true">example.com</exclude-domain>
          <exclude-domain includeSubdomains="true">example2.com</exclude-domain>

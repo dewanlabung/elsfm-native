@@ -31,8 +31,28 @@ class DownloadViewModel @Inject constructor(
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, error = null) }
             downloadedTrackDao.getAll().collect { tracks ->
-                _state.update { it.copy(downloadedTracks = tracks, isLoading = false) }
+                val uiTracks = tracks.map { track ->
+                    DownloadedTrackUI(
+                        trackId = track.trackId,
+                        title = "Track ${track.trackId}",
+                        artist = "Unknown",
+                        artworkUrl = null,
+                        fileSize = formatFileSize(track.fileSizeBytes),
+                        downloadedAt = track.downloadedAt,
+                        isOffline = true
+                    )
+                }
+                _state.update { it.copy(downloadedTracks = uiTracks, isLoading = false) }
             }
+        }
+    }
+
+    private fun formatFileSize(bytes: Long): String {
+        return when {
+            bytes >= 1_000_000_000 -> "%.2f GB".format(bytes / 1_000_000_000.0)
+            bytes >= 1_000_000 -> "%.2f MB".format(bytes / 1_000_000.0)
+            bytes >= 1_000 -> "%.2f KB".format(bytes / 1_000.0)
+            else -> "$bytes B"
         }
     }
 

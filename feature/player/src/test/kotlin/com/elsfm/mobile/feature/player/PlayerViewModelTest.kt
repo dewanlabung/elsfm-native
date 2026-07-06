@@ -2,7 +2,7 @@ package com.elsfm.mobile.feature.player
 
 import app.cash.turbine.test
 import com.elsfm.mobile.core.media.PlayHistoryApi
-import com.elsfm.mobile.core.model.ApiResult
+import com.elsfm.mobile.core.network.ApiResult
 import com.elsfm.mobile.core.model.Artist
 import com.elsfm.mobile.core.model.Track
 import com.elsfm.mobile.feature.player.data.PlayerMenuRepository

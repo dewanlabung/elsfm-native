@@ -120,9 +120,7 @@ fun ElsfmNavHost(
                         modifier = Modifier.weight(1f),
                     ) {
                         composable(ROUTE_LOGIN) {
-                            LoginScreen(onLoggedIn = {
-                                navController.navigate(ROUTE_DISCOVERY) { popUpTo(0) }
-                            })
+                            LoginScreen()
                         }
                         composable(ROUTE_HOME) {
                             val user = current.restoredUser
@@ -192,12 +190,7 @@ fun ElsfmNavHost(
                             )
                         }
                         composable(ROUTE_DOWNLOADS) {
-                            val playerViewModel: PlayerViewModel = hiltViewModel()
-                            DownloadsScreen(
-                                onTrackClicked = { track ->
-                                    playerViewModel.play(track, queue = emptyList())
-                                },
-                            )
+                            DownloadsScreen()
                         }
                     }
                     MiniPlayer(onExpandClicked = { navController.navigate(ROUTE_PLAYER) })

@@ -2,7 +2,7 @@ package com.elsfm.mobile.feature.auth
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.elsfm.mobile.core.model.ApiResult
+import com.elsfm.mobile.core.network.ApiResult
 import com.elsfm.mobile.feature.auth.data.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -69,9 +69,10 @@ class LoginViewModel @Inject constructor(
                     )
                 }
                 is ApiResult.ValidationError -> {
+                    val errorMessages = result.fields.values.flatten().joinToString(", ")
                     _state.value = _state.value.copy(
                         isLoading = false,
-                        error = result.message
+                        error = errorMessages.ifEmpty { "Validation error" }
                     )
                 }
                 is ApiResult.NetworkError -> {

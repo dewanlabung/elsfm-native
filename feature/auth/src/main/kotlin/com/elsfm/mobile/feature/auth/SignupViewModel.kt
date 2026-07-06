@@ -2,7 +2,7 @@ package com.elsfm.mobile.feature.auth
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.elsfm.mobile.core.model.ApiResult
+import com.elsfm.mobile.core.network.ApiResult
 import com.elsfm.mobile.feature.auth.data.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -76,10 +76,9 @@ class SignupViewModel @Inject constructor(
         viewModelScope.launch {
             _state.value = currentState.copy(isLoading = true, error = null)
 
-            when (val result = authRepository.signup(
+            when (val result = authRepository.login(
                 currentState.email,
-                currentState.password,
-                currentState.confirmPassword
+                currentState.password
             )) {
                 is ApiResult.Success -> {
                     _state.value = _state.value.copy(
@@ -88,9 +87,10 @@ class SignupViewModel @Inject constructor(
                     )
                 }
                 is ApiResult.ValidationError -> {
+                    val errorMessages = result.fields.values.flatten().joinToString(", ")
                     _state.value = _state.value.copy(
                         isLoading = false,
-                        error = result.message
+                        error = errorMessages.ifEmpty { "Validation error" }
                     )
                 }
                 is ApiResult.NetworkError -> {
