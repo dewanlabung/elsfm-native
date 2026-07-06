@@ -1,0 +1,126 @@
+package com.elsfm.mobile.core.network.api
+
+import com.elsfm.mobile.core.network.ApiResult
+import com.elsfm.mobile.core.network.elsfmJson
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.mock.MockEngine
+import io.ktor.client.engine.mock.respond
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.headersOf
+import io.ktor.serialization.kotlinx.json.json
+import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+class PlaylistApiTest {
+
+    private val playlistJson = """
+        {
+            "playlist": {
+                "id": 1,
+                "name": "Chill Vibes",
+                "description": "Relaxing music",
+                "image": "https://example.com/image.jpg",
+                "track_count": 42,
+                "created_at": "2024-01-15"
+            }
+        }
+    """.trimIndent()
+
+    private val tracksJson = """
+        {
+            "pagination": {
+                "data": [
+                    {
+                        "id": 101,
+                        "name": "Track 1",
+                        "duration": 180000,
+                        "image": "https://example.com/track1.jpg",
+                        "artists": []
+                    },
+                    {
+                        "id": 102,
+                        "name": "Track 2",
+                        "duration": 240000,
+                        "image": "https://example.com/track2.jpg",
+                        "artists": []
+                    }
+                ],
+                "total": 42,
+                "per_page": 50,
+                "current_page": 1
+            }
+        }
+    """.trimIndent()
+
+    private fun clientReturning(status: HttpStatusCode, body: String): HttpClient {
+        val mockEngine = MockEngine { _ ->
+            respond(body, status, headersOf(HttpHeaders.ContentType, "application/json"))
+        }
+        return HttpClient(mockEngine) {
+            install(ContentNegotiation) { json(elsfmJson()) }
+        }
+    }
+
+    @Test
+    fun `getPlaylist returns playlist with all fields`() = runTest {
+        val api = PlaylistApi(clientReturning(HttpStatusCode.OK, playlistJson))
+
+        val result = api.getPlaylist(1)
+
+        assertTrue(result is ApiResult.Success)
+        val playlist = (result as ApiResult.Success).data
+        assertEquals(1, playlist.id)
+        assertEquals("Chill Vibes", playlist.name)
+        assertEquals(42, playlist.trackCount)
+        assertNotNull(playlist.description)
+        assertNotNull(playlist.image)
+    }
+
+    @Test
+    fun `getPlaylist returns NetworkError on failure`() = runTest {
+        val api = PlaylistApi(clientReturning(HttpStatusCode.InternalServerError, "{}"))
+
+        val result = api.getPlaylist(1)
+
+        assertTrue(result is ApiResult.NetworkError)
+    }
+
+    @Test
+    fun `getPlaylistTracks returns PaginatedTracks with correct structure`() = runTest {
+        val api = PlaylistApi(clientReturning(HttpStatusCode.OK, tracksJson))
+
+        val result = api.getPlaylistTracks(1)
+
+        assertTrue(result is ApiResult.Success)
+        val tracks = (result as ApiResult.Success).data
+        assertEquals(2, tracks.data.size)
+        assertEquals(42, tracks.total)
+        assertEquals(50, tracks.perPage)
+        assertEquals(1, tracks.currentPage)
+        assertEquals("Track 1", tracks.data[0].name)
+        assertEquals(101, tracks.data[0].id)
+    }
+
+    @Test
+    fun `getPlaylistTracks with custom limit parameter`() = runTest {
+        val api = PlaylistApi(clientReturning(HttpStatusCode.OK, tracksJson))
+
+        val result = api.getPlaylistTracks(1, limit = 20)
+
+        assertTrue(result is ApiResult.Success)
+    }
+
+    @Test
+    fun `getPlaylistTracks returns NetworkError on failure`() = runTest {
+        val api = PlaylistApi(clientReturning(HttpStatusCode.InternalServerError, "{}"))
+
+        val result = api.getPlaylistTracks(1)
+
+        assertTrue(result is ApiResult.NetworkError)
+    }
+}
