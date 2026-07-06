@@ -12,6 +12,7 @@ import io.ktor.http.headersOf
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -61,18 +62,30 @@ class AlbumApiTest {
     }
 
     @Test
-    fun `getAlbum returns album detail`() = runTest {
+    fun `getAlbum returns album with all fields`() = runTest {
         val api = AlbumApi(clientReturning(HttpStatusCode.OK, albumResponseBody))
 
         val result = api.getAlbum(1)
 
         assertTrue(result is ApiResult.Success)
         val album = (result as ApiResult.Success).data
+        assertEquals(1, album.id)
         assertEquals("Dark Side", album.name)
+        assertEquals("https://example.com/album.jpg", album.image)
+        assertEquals("2024-01-15", album.releaseDate)
     }
 
     @Test
-    fun `getAlbumTracks returns list of tracks`() = runTest {
+    fun `getAlbum returns NetworkError on failure`() = runTest {
+        val api = AlbumApi(clientReturning(HttpStatusCode.InternalServerError, "{}"))
+
+        val result = api.getAlbum(1)
+
+        assertTrue(result is ApiResult.NetworkError)
+    }
+
+    @Test
+    fun `getAlbumTracks returns PaginatedTracks with correct structure`() = runTest {
         val api = AlbumApi(clientReturning(HttpStatusCode.OK, tracksResponseBody))
 
         val result = api.getAlbumTracks(1)
@@ -80,6 +93,21 @@ class AlbumApiTest {
         assertTrue(result is ApiResult.Success)
         val tracks = (result as ApiResult.Success).data
         assertEquals(2, tracks.size)
+        assertEquals(101, tracks[0].id)
         assertEquals("Track 1", tracks[0].name)
+        assertEquals(180000L, tracks[0].durationMs)
+        assertNotNull(tracks[0].image)
+        assertEquals(102, tracks[1].id)
+        assertEquals("Track 2", tracks[1].name)
+        assertEquals(240000L, tracks[1].durationMs)
+    }
+
+    @Test
+    fun `getAlbumTracks returns NetworkError on failure`() = runTest {
+        val api = AlbumApi(clientReturning(HttpStatusCode.InternalServerError, "{}"))
+
+        val result = api.getAlbumTracks(1)
+
+        assertTrue(result is ApiResult.NetworkError)
     }
 }
