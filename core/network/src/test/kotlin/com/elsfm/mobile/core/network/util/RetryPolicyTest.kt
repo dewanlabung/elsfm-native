@@ -78,7 +78,6 @@ class RetryPolicyTest {
     @Test
     fun `withRetry applies exponential backoff delays`() = runTest {
         val delays = mutableListOf<Long>()
-        val startTime = System.currentTimeMillis()
 
         var attemptCount = 0
         withRetry(maxAttempts = 3, backoff = { attempt ->
