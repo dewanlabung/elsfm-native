@@ -5,6 +5,8 @@ import com.elsfm.mobile.core.common.DispatcherProvider
 import com.elsfm.mobile.core.network.ElsfmApiConfig
 import com.elsfm.mobile.core.network.api.AuthApi
 import com.elsfm.mobile.core.network.api.AuthApiLike
+import com.elsfm.mobile.core.network.api.UserApi
+import com.elsfm.mobile.core.network.api.UserApiLike
 import com.elsfm.mobile.core.network.auth.AuthPlugin
 import com.elsfm.mobile.core.network.auth.EncryptedTokenStore
 import com.elsfm.mobile.core.network.auth.SessionManager
@@ -35,6 +37,10 @@ abstract class NetworkBindsModule {
     @Binds
     @Singleton
     abstract fun bindAuthApi(impl: AuthApi): AuthApiLike
+
+    @Binds
+    @Singleton
+    abstract fun bindUserApi(impl: UserApi): UserApiLike
 
     @Binds
     @Singleton

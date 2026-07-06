@@ -19,8 +19,8 @@ private data class FollowResponse(
 
 class UserApi @Inject constructor(
     private val httpClient: HttpClient,
-) {
-    suspend fun isArtistFollowed(artistId: Int): ApiResult<FollowState> {
+) : UserApiLike {
+    override suspend fun isArtistFollowed(artistId: Int): ApiResult<FollowState> {
         return try {
             val response = httpClient.get("api/v1/me/follows/artists/$artistId")
             if (response.status.isSuccess()) {
@@ -39,7 +39,7 @@ class UserApi @Inject constructor(
         }
     }
 
-    suspend fun followArtist(artistId: Int): ApiResult<FollowState> {
+    override suspend fun followArtist(artistId: Int): ApiResult<FollowState> {
         return try {
             val response = httpClient.post("api/v1/me/follows/artists/$artistId")
             if (response.status.isSuccess()) {
@@ -58,7 +58,7 @@ class UserApi @Inject constructor(
         }
     }
 
-    suspend fun unfollowArtist(artistId: Int): ApiResult<FollowState> {
+    override suspend fun unfollowArtist(artistId: Int): ApiResult<FollowState> {
         return try {
             val response = httpClient.delete("api/v1/me/follows/artists/$artistId")
             if (response.status.isSuccess()) {

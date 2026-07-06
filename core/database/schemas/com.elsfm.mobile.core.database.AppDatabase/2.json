@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 2,
-    "identityHash": "d00bb9059c0d242b1a0e67a14fd3e66d",
+    "identityHash": "2ba5479476c042ce15f67f45763f1c34",
     "entities": [
       {
         "tableName": "cached_user",
@@ -91,12 +91,38 @@
         },
         "indices": [],
         "foreignKeys": []
+      },
+      {
+        "tableName": "followed_artists",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`artistId` INTEGER NOT NULL, `followedAt` INTEGER NOT NULL, PRIMARY KEY(`artistId`))",
+        "fields": [
+          {
+            "fieldPath": "artistId",
+            "columnName": "artistId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "followedAt",
+            "columnName": "followedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "artistId"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
       }
     ],
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'd00bb9059c0d242b1a0e67a14fd3e66d')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '2ba5479476c042ce15f67f45763f1c34')"
     ]
   }
 }
