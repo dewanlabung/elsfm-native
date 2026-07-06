@@ -2,106 +2,120 @@ package com.elsfm.mobile.feature.auth
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.elsfm.mobile.core.model.User
-import kotlinx.coroutines.flow.StateFlow
 
 @Composable
 fun LoginScreen(
-    onLoggedIn: (User) -> Unit,
     viewModel: LoginViewModel = hiltViewModel(),
+    onLoginSuccess: () -> Unit = {},
+    onForgotPasswordClick: () -> Unit = {},
+    onSignupClick: () -> Unit = {},
 ) {
-    val context = LocalContext.current
-    val passwordSaver = remember { PasswordSaver(context) }
-    var lastCredentials by remember { mutableStateOf<Pair<String, String>?>(null) }
+    val state = viewModel.state.collectAsState().value
 
-    val state by viewModel.state.collectAsState()
-
-    LaunchedEffect(state) {
-        val currentState = state
-        if (currentState is LoginUiState.Success) {
-            lastCredentials?.let { (email, password) -> passwordSaver.save(email, password) }
-            onLoggedIn(currentState.user)
-        }
+    if (state.isLoggedIn) {
+        onLoginSuccess()
     }
-
-    LoginScreenContent(
-        state = viewModel.state,
-        onLoginClicked = { email, password ->
-            lastCredentials = email to password
-            viewModel.onLoginClicked(email, password)
-        },
-    )
-}
-
-@Composable
-fun LoginScreenContent(
-    state: StateFlow<LoginUiState>,
-    onLoginClicked: (email: String, password: String) -> Unit,
-) {
-    val currentState by state.collectAsState()
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-
-    val fieldErrors = (currentState as? LoginUiState.FieldErrors)?.errors ?: emptyMap()
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(24.dp),
         verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        Text(
+            text = "Sign in",
+            style = MaterialTheme.typography.headlineMedium,
+            modifier = Modifier.padding(bottom = 32.dp)
+        )
+
         OutlinedTextField(
-            value = email,
-            onValueChange = { email = it },
+            value = state.email,
+            onValueChange = { viewModel.onEvent(LoginEvent.EmailChanged(it)) },
             label = { Text("Email") },
-            isError = fieldErrors.containsKey("email"),
-            modifier = Modifier.fillMaxWidth().testTag("email_field"),
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true
         )
-        fieldErrors["email"]?.forEach { message -> Text(message) }
 
         OutlinedTextField(
-            value = password,
-            onValueChange = { password = it },
+            value = state.password,
+            onValueChange = { viewModel.onEvent(LoginEvent.PasswordChanged(it)) },
             label = { Text("Password") },
-            modifier = Modifier.fillMaxWidth().testTag("password_field"),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 16.dp),
+            visualTransformation = PasswordVisualTransformation(),
+            singleLine = true
         )
 
-        if (currentState == LoginUiState.InvalidCredentials) {
-            Text("Incorrect email or password.")
+        if (state.error != null) {
+            Text(
+                text = state.error,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(top = 16.dp)
+            )
         }
-        if (currentState == LoginUiState.NetworkError) {
-            Text("Couldn't reach elsfm.com. Check your connection and try again.")
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Checkbox(
+                    checked = state.rememberMe,
+                    onCheckedChange = { viewModel.onEvent(LoginEvent.RememberMeChanged(it)) }
+                )
+                Text("Stay signed in for a month")
+            }
+
+            TextButton(onClick = onForgotPasswordClick) {
+                Text("Forgot your password?")
+            }
         }
 
         Button(
-            onClick = { onLoginClicked(email, password) },
-            enabled = currentState != LoginUiState.Loading,
-            modifier = Modifier.testTag("login_button"),
+            onClick = { viewModel.onEvent(LoginEvent.LoginClicked) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 24.dp),
+            enabled = !state.isLoading && state.email.isNotBlank() && state.password.isNotBlank()
         ) {
-            if (currentState == LoginUiState.Loading) {
-                CircularProgressIndicator(modifier = Modifier.testTag("login_progress"))
+            if (state.isLoading) {
+                CircularProgressIndicator(modifier = Modifier.padding(8.dp))
             } else {
-                Text("Log in")
+                Text("Continue")
             }
+        }
+
+        TextButton(
+            onClick = onSignupClick,
+            modifier = Modifier.padding(top = 16.dp)
+        ) {
+            Text("Don't have an account? Sign up")
         }
     }
 }
