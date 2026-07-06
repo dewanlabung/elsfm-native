@@ -4,8 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.elsfm.mobile.core.media.PlayHistoryApi
 import com.elsfm.mobile.core.model.Track
+import com.elsfm.mobile.core.network.ApiResult
+import com.elsfm.mobile.feature.player.data.PlayerMenuRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -13,7 +17,11 @@ import javax.inject.Inject
 class PlayerViewModel @Inject constructor(
     private val playerController: PlayerController,
     private val playHistoryApi: PlayHistoryApi,
+    private val menuRepository: PlayerMenuRepository,
 ) : ViewModel() {
+
+    private val _menuState = MutableStateFlow(PlayerMenuState())
+    val menuState: StateFlow<PlayerMenuState> = _menuState.asStateFlow()
 
     val state: StateFlow<PlayerState> = playerController.state
 
@@ -26,4 +34,58 @@ class PlayerViewModel @Inject constructor(
     fun seekTo(positionMs: Long) = playerController.seekTo(positionMs)
     fun skipNext() = playerController.skipNext()
     fun skipPrevious() = playerController.skipPrevious()
+
+    fun onMenuEvent(event: PlayerMenuEvent) {
+        when (event) {
+            is PlayerMenuEvent.ShowMenu -> {
+                _menuState.value = _menuState.value.copy(
+                    isMenuVisible = true,
+                    selectedTrackId = event.trackId
+                )
+            }
+            PlayerMenuEvent.HideMenu -> {
+                _menuState.value = _menuState.value.copy(isMenuVisible = false)
+            }
+            is PlayerMenuEvent.AddToPlaylist -> {
+                viewModelScope.launch {
+                    _menuState.value = _menuState.value.copy(addToPlaylistLoading = true)
+                    when (menuRepository.addTrackToPlaylist(event.playlistId, event.trackId)) {
+                        is ApiResult.Success -> {
+                            _menuState.value = _menuState.value.copy(
+                                addToPlaylistLoading = false,
+                                error = null
+                            )
+                        }
+                        is ApiResult.NetworkError -> {
+                            _menuState.value = _menuState.value.copy(
+                                addToPlaylistLoading = false,
+                                error = "Failed to add track to playlist"
+                            )
+                        }
+                        else -> {}
+                    }
+                }
+            }
+            is PlayerMenuEvent.ShareTrack -> {
+                viewModelScope.launch {
+                    _menuState.value = _menuState.value.copy(shareLoading = true)
+                    when (menuRepository.shareTrack(event.trackId)) {
+                        is ApiResult.Success -> {
+                            _menuState.value = _menuState.value.copy(
+                                shareLoading = false,
+                                error = null
+                            )
+                        }
+                        is ApiResult.NetworkError -> {
+                            _menuState.value = _menuState.value.copy(
+                                shareLoading = false,
+                                error = "Failed to share track"
+                            )
+                        }
+                        else -> {}
+                    }
+                }
+            }
+        }
+    }
 }
