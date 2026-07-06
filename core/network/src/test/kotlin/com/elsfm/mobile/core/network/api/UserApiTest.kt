@@ -1,5 +1,6 @@
 package com.elsfm.mobile.core.network.api
 
+import com.elsfm.mobile.core.model.FollowState
 import com.elsfm.mobile.core.network.ApiResult
 import com.elsfm.mobile.core.network.elsfmJson
 import io.ktor.client.HttpClient
@@ -47,9 +48,9 @@ class UserApiTest {
         val result = api.isArtistFollowed(1)
 
         assertTrue(result is ApiResult.Success)
-        val response = (result as ApiResult.Success).data
-        assertEquals(true, response.following)
-        assertEquals("2024-01-15T10:30:00Z", response.timestamp)
+        val followState = (result as ApiResult.Success).data
+        assertEquals(true, followState.following)
+        assertEquals("2024-01-15T10:30:00Z", followState.timestamp)
     }
 
     @Test
@@ -59,9 +60,9 @@ class UserApiTest {
         val result = api.followArtist(1)
 
         assertTrue(result is ApiResult.Success)
-        val response = (result as ApiResult.Success).data
-        assertEquals(true, response.following)
-        assertEquals("2024-01-15T10:30:00Z", response.timestamp)
+        val followState = (result as ApiResult.Success).data
+        assertEquals(true, followState.following)
+        assertEquals("2024-01-15T10:30:00Z", followState.timestamp)
     }
 
     @Test
@@ -71,9 +72,9 @@ class UserApiTest {
         val result = api.unfollowArtist(1)
 
         assertTrue(result is ApiResult.Success)
-        val response = (result as ApiResult.Success).data
-        assertEquals(false, response.following)
-        assertEquals("2024-01-15T10:30:00Z", response.timestamp)
+        val followState = (result as ApiResult.Success).data
+        assertEquals(false, followState.following)
+        assertEquals("2024-01-15T10:30:00Z", followState.timestamp)
     }
 
     @Test
