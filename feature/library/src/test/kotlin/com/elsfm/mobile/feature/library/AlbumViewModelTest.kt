@@ -1,0 +1,100 @@
+package com.elsfm.mobile.feature.library
+
+import com.elsfm.mobile.core.model.Album
+import com.elsfm.mobile.core.network.api.TrackListApi
+import com.elsfm.mobile.core.network.elsfmJson
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.mock.MockEngine
+import io.ktor.client.engine.mock.respond
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.headersOf
+import io.ktor.serialization.kotlinx.json.json
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
+import org.junit.Before
+import org.junit.Test
+
+@OptIn(ExperimentalCoroutinesApi::class)
+class AlbumViewModelTest {
+
+    private val testDispatcher = StandardTestDispatcher()
+
+    @Before
+    fun setUp() {
+        Dispatchers.setMain(testDispatcher)
+    }
+
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
+    }
+
+    private fun mockTrackListApi(status: HttpStatusCode = HttpStatusCode.OK): TrackListApi {
+        val mockEngine = MockEngine.create {
+            dispatcher = testDispatcher
+            addHandler { _ ->
+                val body = """
+                    {
+                      "pagination": {
+                        "data": [
+                          {"id": 1, "name": "Track 1", "image": null, "duration": 180000, "plays": "12", "artists": []}
+                        ]
+                      }
+                    }
+                """.trimIndent()
+                respond(body, status, headersOf(HttpHeaders.ContentType, "application/json"))
+            }
+        }
+        val httpClient = HttpClient(mockEngine) {
+            install(ContentNegotiation) { json(elsfmJson()) }
+        }
+        return TrackListApi(httpClient)
+    }
+
+    private fun viewModel(status: HttpStatusCode = HttpStatusCode.OK) = AlbumViewModel(
+        mockTrackListApi(status),
+        FakeDispatcherProvider(testDispatcher),
+    )
+
+    @Test
+    fun `loadAlbum populates album and tracks on success`() = runTest(testDispatcher) {
+        val viewModel = viewModel()
+        val album = Album(id = 7, name = "Test Album", image = null, releaseDate = "2026-01-01")
+
+        viewModel.loadAlbum(album)
+        advanceUntilIdle()
+
+        val state = viewModel.state.value
+        assertEquals(album, state.album)
+        assertEquals(1, state.tracks.size)
+        assertFalse(state.isLoading)
+        assertNull(state.error)
+    }
+
+    @Test
+    fun `loadAlbum sets error when request fails`() = runTest(testDispatcher) {
+        val viewModel = viewModel(status = HttpStatusCode.InternalServerError)
+        val album = Album(id = 7, name = "Test Album", image = null, releaseDate = "2026-01-01")
+
+        viewModel.loadAlbum(album)
+        advanceUntilIdle()
+
+        val state = viewModel.state.value
+        assertEquals(album, state.album)
+        assertEquals(0, state.tracks.size)
+        assertFalse(state.isLoading)
+        assertNotNull(state.error)
+    }
+}

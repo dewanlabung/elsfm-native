@@ -19,6 +19,9 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
@@ -37,7 +40,7 @@ class LibraryViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private fun mockChannelApi(): ChannelApi {
+    private fun mockChannelApi(status: HttpStatusCode = HttpStatusCode.OK): ChannelApi {
         val mockEngine = MockEngine { _ ->
             val body = """
                 {
@@ -55,7 +58,7 @@ class LibraryViewModelTest {
             """.trimIndent()
             respond(
                 body,
-                HttpStatusCode.OK,
+                status,
                 headersOf(HttpHeaders.ContentType, "application/json")
             )
         }
@@ -66,7 +69,7 @@ class LibraryViewModelTest {
     }
 
     @Test
-    fun `loadChannels updates state with channels`() = runTest {
+    fun `loadLibrary updates state with playlists, albums and channels`() = runTest {
         val viewModel = LibraryViewModel(mockChannelApi())
 
         viewModel.state.test {
@@ -76,14 +79,41 @@ class LibraryViewModelTest {
             // Loading state
             val loadingState = awaitItem()
             assertEquals(true, loadingState.isLoading)
-            assertEquals(emptyList<Any>(), loadingState.channels)
 
             // Loaded state
             val loadedState = awaitItem()
+            assertTrue(loadedState.playlists.isNotEmpty())
+            assertTrue(loadedState.albums.isNotEmpty())
             assertEquals(1, loadedState.channels.size)
             assertEquals("Sunday School", loadedState.channels[0].name)
             assertEquals(false, loadedState.isLoading)
-            assertEquals(null, loadedState.error)
+            assertNull(loadedState.error)
         }
+    }
+
+    @Test
+    fun `loadLibrary still shows sample playlists and albums when channels fail`() = runTest {
+        val viewModel = LibraryViewModel(mockChannelApi(status = HttpStatusCode.InternalServerError))
+
+        viewModel.state.test {
+            assertEquals(LibraryState(), awaitItem())
+            awaitItem() // loading
+
+            val loadedState = awaitItem()
+            assertTrue(loadedState.playlists.isNotEmpty())
+            assertTrue(loadedState.albums.isNotEmpty())
+            assertEquals(0, loadedState.channels.size)
+            assertEquals(false, loadedState.isLoading)
+            assertNotNull(loadedState.error)
+        }
+    }
+
+    @Test
+    fun `selectFilter updates selectedFilter in state`() = runTest {
+        val viewModel = LibraryViewModel(mockChannelApi())
+
+        viewModel.selectFilter(LibraryFilter.PLAYLISTS)
+
+        assertEquals(LibraryFilter.PLAYLISTS, viewModel.state.value.selectedFilter)
     }
 }

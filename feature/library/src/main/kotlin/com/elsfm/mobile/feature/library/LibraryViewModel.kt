@@ -2,6 +2,7 @@ package com.elsfm.mobile.feature.library
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.elsfm.mobile.core.model.Album
 import com.elsfm.mobile.core.model.Channel
 import com.elsfm.mobile.core.model.Playlist
 import com.elsfm.mobile.core.network.ApiResult
@@ -13,13 +14,31 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+enum class LibraryFilter {
+    ALL,
+    PLAYLISTS,
+    ALBUMS,
+    CHANNELS,
+}
+
+/**
+ * Immutable, hoisted UI state for [LibraryScreen].
+ *
+ * Playlists and albums are not yet backed by a real backend endpoint (see
+ * [SampleLibraryData]); channels use the real [ChannelApi].
+ */
 data class LibraryState(
+    val playlists: List<Playlist> = emptyList(),
+    val albums: List<Album> = emptyList(),
     val channels: List<Channel> = emptyList(),
+    val selectedFilter: LibraryFilter = LibraryFilter.ALL,
     val selectedChannelId: Int? = null,
-    val playlistsInChannel: List<Playlist> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null,
-)
+) {
+    val isEmpty: Boolean
+        get() = playlists.isEmpty() && albums.isEmpty() && channels.isEmpty()
+}
 
 @HiltViewModel
 class LibraryViewModel @Inject constructor(
@@ -29,22 +48,33 @@ class LibraryViewModel @Inject constructor(
     val state: StateFlow<LibraryState> = _state.asStateFlow()
 
     init {
-        loadChannels()
+        loadLibrary()
     }
 
-    fun loadChannels() {
+    fun loadLibrary() {
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true, error = null)
             val result = channelApi.getChannels()
             if (result is ApiResult.Success) {
-                _state.value = _state.value.copy(channels = result.data, isLoading = false)
+                _state.value = _state.value.copy(
+                    playlists = SampleLibraryData.playlists,
+                    albums = SampleLibraryData.albums,
+                    channels = result.data,
+                    isLoading = false,
+                )
             } else {
                 _state.value = _state.value.copy(
+                    playlists = SampleLibraryData.playlists,
+                    albums = SampleLibraryData.albums,
                     isLoading = false,
-                    error = "Failed to load channels"
+                    error = "Failed to load channels",
                 )
             }
         }
+    }
+
+    fun selectFilter(filter: LibraryFilter) {
+        _state.value = _state.value.copy(selectedFilter = filter)
     }
 
     fun selectChannel(channelId: Int) {
