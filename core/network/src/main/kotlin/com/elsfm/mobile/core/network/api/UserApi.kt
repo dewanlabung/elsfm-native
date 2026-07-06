@@ -17,6 +17,12 @@ private data class FollowResponse(
     val timestamp: String,
 )
 
+@Serializable
+data class ShareTrackResponse(
+    @kotlinx.serialization.SerialName("share_url")
+    val shareUrl: String,
+)
+
 class UserApi @Inject constructor(
     private val httpClient: HttpClient,
 ) : UserApiLike {
@@ -69,6 +75,20 @@ class UserApi @Inject constructor(
                         timestamp = followResponse.timestamp,
                     )
                 )
+            } else {
+                ApiResult.NetworkError(RuntimeException("Unexpected status: ${response.status}"))
+            }
+        } catch (e: Exception) {
+            ApiResult.NetworkError(e)
+        }
+    }
+
+    suspend fun shareTrack(trackId: Int): ApiResult<ShareTrackResponse> {
+        return try {
+            val response = httpClient.post("api/v1/tracks/$trackId/share")
+            if (response.status.isSuccess()) {
+                val shareResponse = response.body<ShareTrackResponse>()
+                ApiResult.Success(shareResponse)
             } else {
                 ApiResult.NetworkError(RuntimeException("Unexpected status: ${response.status}"))
             }

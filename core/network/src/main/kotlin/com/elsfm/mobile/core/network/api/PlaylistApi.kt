@@ -6,6 +6,10 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.http.ContentType
+import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -69,6 +73,22 @@ class PlaylistApi @Inject constructor(
             if (response.status.isSuccess()) {
                 val tracks = response.body<PaginatedTracksResponse>().pagination
                 ApiResult.Success(tracks)
+            } else {
+                ApiResult.NetworkError(RuntimeException("Unexpected status: ${response.status}"))
+            }
+        } catch (e: Exception) {
+            ApiResult.NetworkError(e)
+        }
+    }
+
+    suspend fun addTrackToPlaylist(playlistId: Int, trackId: Int): ApiResult<Unit> {
+        return try {
+            val response = httpClient.post("api/v1/playlists/$playlistId/tracks") {
+                contentType(ContentType.Application.Json)
+                setBody(mapOf("trackId" to trackId))
+            }
+            if (response.status.isSuccess()) {
+                ApiResult.Success(Unit)
             } else {
                 ApiResult.NetworkError(RuntimeException("Unexpected status: ${response.status}"))
             }
