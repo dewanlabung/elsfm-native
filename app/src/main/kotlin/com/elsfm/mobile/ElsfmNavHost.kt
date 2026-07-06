@@ -29,6 +29,8 @@ import androidx.navigation.compose.rememberNavController
 import com.elsfm.mobile.core.network.auth.SessionEvent
 import com.elsfm.mobile.feature.artist.ArtistDetailScreen
 import com.elsfm.mobile.feature.auth.LoginScreen
+import com.elsfm.mobile.feature.auth.PasswordResetScreen
+import com.elsfm.mobile.feature.auth.SignupScreen
 import com.elsfm.mobile.feature.discovery.DiscoveryScreen
 import com.elsfm.mobile.feature.downloads.DownloadsScreen
 import com.elsfm.mobile.feature.library.LibraryScreen
@@ -47,6 +49,8 @@ private const val ROUTE_ARTIST = "artist/{artistId}"
 private const val ROUTE_DISCOVERY = "discovery"
 private const val ROUTE_PROFILE = "profile"
 private const val ROUTE_DOWNLOADS = "downloads"
+private const val ROUTE_SIGNUP = "signup"
+private const val ROUTE_PASSWORD_RESET = "password_reset"
 
 private data class BottomTab(
     val route: String,
@@ -120,7 +124,21 @@ fun ElsfmNavHost(
                         modifier = Modifier.weight(1f),
                     ) {
                         composable(ROUTE_LOGIN) {
-                            LoginScreen()
+                            LoginScreen(
+                                onForgotPasswordClick = { navController.navigate(ROUTE_PASSWORD_RESET) },
+                                onSignupClick = { navController.navigate(ROUTE_SIGNUP) },
+                            )
+                        }
+                        composable(ROUTE_SIGNUP) {
+                            SignupScreen(
+                                onSignupSuccess = { navController.navigate(ROUTE_HOME) { popUpTo(0) } },
+                                onSigninClick = { navController.popBackStack() },
+                            )
+                        }
+                        composable(ROUTE_PASSWORD_RESET) {
+                            PasswordResetScreen(
+                                onBackClick = { navController.popBackStack() },
+                            )
                         }
                         composable(ROUTE_HOME) {
                             val user = current.restoredUser

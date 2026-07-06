@@ -10,6 +10,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -109,6 +110,15 @@ fun LoginScreen(
             } else {
                 Text("Continue")
             }
+        }
+
+        OutlinedButton(
+            onClick = { /* TODO: wire real Google Sign-In SDK - not yet integrated */ },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 12.dp)
+        ) {
+            Text("Sign in with Google")
         }
 
         TextButton(

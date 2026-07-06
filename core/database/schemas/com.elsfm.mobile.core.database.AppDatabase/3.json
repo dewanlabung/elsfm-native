@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 3,
-    "identityHash": "014d7954df8e17ba83bb8071aa76cbab",
+    "identityHash": "4cb9b0f350ad298b4075dcc2e012d966",
     "entities": [
       {
         "tableName": "cached_user",
@@ -56,12 +56,24 @@
       },
       {
         "tableName": "downloaded_tracks",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`trackId` INTEGER NOT NULL, `fileName` TEXT NOT NULL, `fileSizeBytes` INTEGER NOT NULL, `downloaded_at` INTEGER NOT NULL, PRIMARY KEY(`trackId`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`trackId` INTEGER NOT NULL, `title` TEXT NOT NULL, `artist` TEXT NOT NULL, `fileName` TEXT NOT NULL, `fileSizeBytes` INTEGER NOT NULL, `downloaded_at` INTEGER NOT NULL, `artworkUrl` TEXT, PRIMARY KEY(`trackId`))",
         "fields": [
           {
             "fieldPath": "trackId",
             "columnName": "trackId",
             "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "artist",
+            "columnName": "artist",
+            "affinity": "TEXT",
             "notNull": true
           },
           {
@@ -81,6 +93,12 @@
             "columnName": "downloaded_at",
             "affinity": "INTEGER",
             "notNull": true
+          },
+          {
+            "fieldPath": "artworkUrl",
+            "columnName": "artworkUrl",
+            "affinity": "TEXT",
+            "notNull": false
           }
         ],
         "primaryKey": {
@@ -166,7 +184,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '014d7954df8e17ba83bb8071aa76cbab')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '4cb9b0f350ad298b4075dcc2e012d966')"
     ]
   }
 }

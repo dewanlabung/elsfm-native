@@ -14,11 +14,10 @@ import io.ktor.http.headersOf
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertIs
-import kotlin.test.assertTrue
 
 class PlayerMenuRepositoryTest {
     private lateinit var repository: PlayerMenuRepository
@@ -33,14 +32,14 @@ class PlayerMenuRepositoryTest {
                     respond(
                         content = "{}",
                         status = HttpStatusCode.OK,
-                        headers = headersOf(Pair("Content-Type", "application/json"))
+                        headers = headersOf(Pair("Content-Type", listOf("application/json")))
                     )
                 }
                 request.url.toString().contains("/api/v1/tracks/1/share") -> {
                     respond(
                         content = """{"share_url": "https://elsfm.com/share/track/1"}""",
                         status = HttpStatusCode.OK,
-                        headers = headersOf(Pair("Content-Type", "application/json"))
+                        headers = headersOf(Pair("Content-Type", listOf("application/json")))
                     )
                 }
                 else -> respond("", status = HttpStatusCode.NotFound)
@@ -62,19 +61,19 @@ class PlayerMenuRepositoryTest {
     @Test
     fun testAddTrackToPlaylistSuccess() = runTest {
         val result = repository.addTrackToPlaylist(1, 1)
-        assertIs<ApiResult.Success<Unit>>(result)
+        assertTrue(result is ApiResult.Success<Unit>)
     }
 
     @Test
     fun testAddTrackToPlaylistNetworkError() = runTest {
         val result = repository.addTrackToPlaylist(999, 999)
-        assertIs<ApiResult.NetworkError>(result)
+        assertTrue(result is ApiResult.NetworkError)
     }
 
     @Test
     fun testShareTrackSuccess() = runTest {
         val result = repository.shareTrack(1)
-        assertIs<ApiResult.Success<String>>(result)
+        assertTrue(result is ApiResult.Success<String>)
         assertEquals("https://elsfm.com/share/track/1", (result as ApiResult.Success).data)
     }
 }

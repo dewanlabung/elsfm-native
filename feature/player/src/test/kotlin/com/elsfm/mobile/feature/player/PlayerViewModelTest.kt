@@ -2,9 +2,10 @@ package com.elsfm.mobile.feature.player
 
 import app.cash.turbine.test
 import com.elsfm.mobile.core.media.PlayHistoryApi
-import com.elsfm.mobile.core.network.ApiResult
 import com.elsfm.mobile.core.model.Artist
 import com.elsfm.mobile.core.model.Track
+import com.elsfm.mobile.core.network.api.PlaylistApi
+import com.elsfm.mobile.core.network.api.UserApi
 import com.elsfm.mobile.feature.player.data.PlayerMenuRepository
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
@@ -49,14 +50,14 @@ private class FakePlayerController : PlayerController {
     override fun skipPrevious() = Unit
 }
 
-private class FakePlayerMenuRepository {
-    suspend fun addTrackToPlaylist(playlistId: Int, trackId: Int): ApiResult<Unit> {
-        return ApiResult.Success(Unit)
+private fun fakePlayerMenuRepository(): PlayerMenuRepository {
+    val mockEngine = MockEngine { _ ->
+        respond("{}", HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
     }
-
-    suspend fun shareTrack(trackId: Int): ApiResult<String> {
-        return ApiResult.Success("https://elsfm.com/share/track/$trackId")
+    val httpClient = HttpClient(mockEngine) {
+        install(ContentNegotiation) { json() }
     }
+    return PlayerMenuRepository(PlaylistApi(httpClient), UserApi(httpClient))
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -96,7 +97,7 @@ class PlayerViewModelTest {
     fun `play delegates to controller and records play history`() = runTest {
         val controller = FakePlayerController()
         val playHistoryApi = playHistoryApiReturning(HttpStatusCode.OK)
-        val menuRepository = FakePlayerMenuRepository()
+        val menuRepository = fakePlayerMenuRepository()
         val viewModel = PlayerViewModel(controller, playHistoryApi, menuRepository)
 
         viewModel.play(track, listOf(track))
@@ -113,7 +114,7 @@ class PlayerViewModelTest {
     fun `togglePlayPause delegates to controller`() = runTest {
         val controller = FakePlayerController()
         val playHistoryApi = playHistoryApiReturning(HttpStatusCode.OK)
-        val menuRepository = FakePlayerMenuRepository()
+        val menuRepository = fakePlayerMenuRepository()
         val viewModel = PlayerViewModel(controller, playHistoryApi, menuRepository)
         viewModel.play(track, listOf(track))
 

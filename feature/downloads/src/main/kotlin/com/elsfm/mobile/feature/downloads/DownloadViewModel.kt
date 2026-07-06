@@ -72,8 +72,11 @@ class DownloadViewModel @Inject constructor(
             }.onSuccess { file ->
                 val downloaded = DownloadedTrack(
                     trackId = track.id,
+                    title = track.name,
+                    artist = track.artists.firstOrNull()?.name ?: "Unknown",
                     fileName = file.name,
                     fileSizeBytes = file.length(),
+                    artworkUrl = track.image,
                 )
                 downloadedTrackDao.insert(downloaded)
                 _state.update { it.copy(downloadProgress = it.downloadProgress - track.id) }

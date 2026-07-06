@@ -30,7 +30,7 @@ private class FakeDispatcherProvider(dispatcher: CoroutineDispatcher) : Dispatch
     override val default: CoroutineDispatcher = dispatcher
 }
 
-private class FakeDownloadedTrackDao(
+internal class FakeDownloadedTrackDao(
     initialTracks: List<DownloadedTrack> = emptyList(),
 ) : DownloadedTrackDao {
     private val tracksFlow = MutableStateFlow(initialTracks)
@@ -80,7 +80,15 @@ class DownloadViewModelTest {
     @Test
     fun loadDownloadsSuccess() = runTest(testDispatcher) {
         val dao = FakeDownloadedTrackDao(
-            listOf(DownloadedTrack(trackId = 1, fileName = "track.mp3", fileSizeBytes = 5_000_000)),
+            listOf(
+                DownloadedTrack(
+                    trackId = 1,
+                    title = "Track 1",
+                    artist = "Artist 1",
+                    fileName = "track.mp3",
+                    fileSizeBytes = 5_000_000,
+                ),
+            ),
         )
         val viewModel = DownloadViewModel(
             dao,
