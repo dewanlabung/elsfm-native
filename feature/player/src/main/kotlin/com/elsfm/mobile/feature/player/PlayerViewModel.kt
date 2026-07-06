@@ -34,6 +34,7 @@ class PlayerViewModel @Inject constructor(
     fun seekTo(positionMs: Long) = playerController.seekTo(positionMs)
     fun skipNext() = playerController.skipNext()
     fun skipPrevious() = playerController.skipPrevious()
+    fun jumpToQueueItem(track: Track) = playerController.jumpToQueueItem(track)
 
     fun onMenuEvent(event: PlayerMenuEvent) {
         when (event) {

@@ -87,4 +87,13 @@ class Media3PlayerController @Inject constructor(
     override fun skipPrevious() {
         mediaController?.seekToPreviousMediaItem()
     }
+
+    override fun jumpToQueueItem(track: Track) {
+        val index = currentQueue.indexOfFirst { it.id == track.id }
+        if (index < 0) return
+        mediaController?.apply {
+            seekTo(index, 0)
+            play()
+        }
+    }
 }

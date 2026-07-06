@@ -51,6 +51,26 @@ private class FakeProfileApi(
     }
 }
 
+private class FakeFailingProfileApi(
+    private val profile: UserProfile?,
+) : ProfileApi(HttpClient(MockEngine { respond("{}") })) {
+    override suspend fun getProfile(): ApiResult<UserProfile> {
+        return if (profile == null) {
+            ApiResult.NetworkError(RuntimeException("Failed to load profile"))
+        } else {
+            ApiResult.Success(profile)
+        }
+    }
+
+    override suspend fun getRecentlyPlayed(): ApiResult<List<Track>> {
+        return ApiResult.Success(emptyList())
+    }
+
+    override suspend fun updateProfile(name: String, bio: String?): ApiResult<UserProfile> {
+        return ApiResult.NetworkError(RuntimeException("Update failed"))
+    }
+}
+
 @OptIn(ExperimentalCoroutinesApi::class)
 class ProfileViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
@@ -76,5 +96,64 @@ class ProfileViewModelTest {
         val state = viewModel.state.value
         assertEquals("John", state.userProfile?.name)
         assertEquals(false, state.isLoading)
+    }
+
+    @Test
+    fun `setEditMode true enables edit mode`() = runTest(testDispatcher) {
+        val profile = UserProfile(id = 1, name = "John", email = "john@example.com")
+        val api = FakeProfileApi(profile = profile)
+        val viewModel = ProfileViewModel(api, FakeDispatcherProvider(testDispatcher))
+        delay(100)
+
+        viewModel.setEditMode(true)
+
+        assertEquals(true, viewModel.state.value.isEditMode)
+    }
+
+    @Test
+    fun `setEditMode false disables edit mode`() = runTest(testDispatcher) {
+        val profile = UserProfile(id = 1, name = "John", email = "john@example.com")
+        val api = FakeProfileApi(profile = profile)
+        val viewModel = ProfileViewModel(api, FakeDispatcherProvider(testDispatcher))
+        delay(100)
+        viewModel.setEditMode(true)
+
+        viewModel.setEditMode(false)
+
+        assertEquals(false, viewModel.state.value.isEditMode)
+    }
+
+    @Test
+    fun `updateProfile success updates profile and exits edit mode`() = runTest(testDispatcher) {
+        val profile = UserProfile(id = 1, name = "John", email = "john@example.com", bio = "old bio")
+        val api = FakeProfileApi(profile = profile)
+        val viewModel = ProfileViewModel(api, FakeDispatcherProvider(testDispatcher))
+        delay(100)
+        viewModel.setEditMode(true)
+
+        viewModel.updateProfile("Jane", "new bio")
+        delay(100)
+
+        val state = viewModel.state.value
+        assertEquals("Jane", state.userProfile?.name)
+        assertEquals("new bio", state.userProfile?.bio)
+        assertEquals(false, state.isEditMode)
+    }
+
+    @Test
+    fun `updateProfile network error surfaces error and stays in edit mode`() = runTest(testDispatcher) {
+        val profile = UserProfile(id = 1, name = "John", email = "john@example.com")
+        val api = FakeFailingProfileApi(profile = profile)
+        val viewModel = ProfileViewModel(api, FakeDispatcherProvider(testDispatcher))
+        delay(100)
+        viewModel.setEditMode(true)
+
+        viewModel.updateProfile("Jane", null)
+        delay(100)
+
+        val state = viewModel.state.value
+        assertEquals("John", state.userProfile?.name)
+        assertEquals(true, state.isEditMode)
+        assertEquals("Update failed", state.error)
     }
 }

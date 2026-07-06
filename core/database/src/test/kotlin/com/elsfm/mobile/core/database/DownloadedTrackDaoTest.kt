@@ -35,7 +35,7 @@ class DownloadedTrackDaoTest {
 
     @Test
     fun insertAndRetrieveDownload() = runTest {
-        val track = DownloadedTrack(trackId = 1, fileName = "track.mp3", fileSizeBytes = 5_000_000)
+        val track = DownloadedTrack(trackId = 1, title = "Track 1", artist = "Artist 1", fileName = "track.mp3", fileSizeBytes = 5_000_000)
         dao.insert(track)
 
         val retrieved = dao.getById(1)
@@ -45,7 +45,7 @@ class DownloadedTrackDaoTest {
 
     @Test
     fun deleteDownload() = runTest {
-        val track = DownloadedTrack(trackId = 1, fileName = "track.mp3", fileSizeBytes = 5_000_000)
+        val track = DownloadedTrack(trackId = 1, title = "Track 1", artist = "Artist 1", fileName = "track.mp3", fileSizeBytes = 5_000_000)
         dao.insert(track)
 
         dao.delete(1)
@@ -55,8 +55,8 @@ class DownloadedTrackDaoTest {
 
     @Test
     fun getTotalSizeBytesSumsAllDownloadedTracks() = runTest {
-        dao.insert(DownloadedTrack(trackId = 1, fileName = "track1.mp3", fileSizeBytes = 3_000_000))
-        dao.insert(DownloadedTrack(trackId = 2, fileName = "track2.mp3", fileSizeBytes = 2_000_000))
+        dao.insert(DownloadedTrack(trackId = 1, title = "Track 1", artist = "Artist 1", fileName = "track1.mp3", fileSizeBytes = 3_000_000))
+        dao.insert(DownloadedTrack(trackId = 2, title = "Track 2", artist = "Artist 2", fileName = "track2.mp3", fileSizeBytes = 2_000_000))
 
         val totalSize = dao.getTotalSizeBytes().first()
 

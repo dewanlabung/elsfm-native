@@ -59,6 +59,7 @@ fun PlaylistScreen(
         onTrackTap = onTrackTap,
         onAddToQueue = onAddToQueue,
         onDeleteTrack = viewModel::deleteTrack,
+        onToggleTrackLike = viewModel::toggleTrackLike,
     )
 }
 
@@ -69,6 +70,7 @@ internal fun PlaylistDetailContent(
     onTrackTap: (Track, List<Track>) -> Unit,
     onAddToQueue: (Track) -> Unit,
     onDeleteTrack: (Int) -> Unit,
+    onToggleTrackLike: (Int) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val playlist = state.playlist
@@ -103,6 +105,9 @@ internal fun PlaylistDetailContent(
                             onClick = { onTrackTap(track, state.tracks) },
                             onAddToQueue = { onAddToQueue(track) },
                             onDelete = { onDeleteTrack(track.id) },
+                            isLiked = state.likedTrackIds.contains(track.id),
+                            isLikeLoading = state.likeLoadingTrackIds.contains(track.id),
+                            onToggleLike = { onToggleTrackLike(track.id) },
                         )
                     }
                     if (state.error != null) {
@@ -160,6 +165,9 @@ private fun PlaylistTrackRow(
     onClick: () -> Unit,
     onAddToQueue: () -> Unit,
     onDelete: () -> Unit,
+    isLiked: Boolean = false,
+    isLikeLoading: Boolean = false,
+    onToggleLike: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
@@ -176,6 +184,9 @@ private fun PlaylistTrackRow(
             onClick = onClick,
             onMoreClick = { menuExpanded = true },
             modifier = Modifier.weight(1f),
+            isLiked = isLiked,
+            isLikeLoading = isLikeLoading,
+            onLikeClick = onToggleLike,
         )
 
         Box {

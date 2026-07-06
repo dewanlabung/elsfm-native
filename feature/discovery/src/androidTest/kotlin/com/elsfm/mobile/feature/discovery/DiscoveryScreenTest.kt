@@ -5,6 +5,8 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToIndex
+import com.elsfm.mobile.core.model.Album
+import com.elsfm.mobile.core.model.Playlist
 import com.elsfm.mobile.core.model.Track
 import org.junit.Rule
 import org.junit.Test
@@ -14,11 +16,15 @@ class DiscoveryScreenTest {
     val composeRule = createComposeRule()
 
     private fun testState() = DiscoveryUiState(
-        featured = SampleDiscoveryData.featuredPlaylists,
+        featured = listOf(
+            Playlist(id = 8, name = "All Sunday School Songs", image = null),
+        ),
         popular = listOf(
             Track(id = 1, name = "Popular Track", image = null, durationMs = 180000, artists = emptyList()),
         ),
-        newReleases = SampleDiscoveryData.newReleaseAlbums,
+        newReleases = listOf(
+            Album(id = 460, name = "2026 EL Shaddai Youth Camp Songs", image = null, releaseDate = "2026-02-08"),
+        ),
         recentlyPlayed = listOf(
             Track(id = 2, name = "Recent Track", image = null, durationMs = 200000, artists = emptyList()),
         ),

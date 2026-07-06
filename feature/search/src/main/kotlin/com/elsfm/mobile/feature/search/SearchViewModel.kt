@@ -9,6 +9,7 @@ import com.elsfm.mobile.core.model.SearchResult
 import com.elsfm.mobile.core.model.Track
 import com.elsfm.mobile.core.network.ApiResult
 import com.elsfm.mobile.core.network.api.SearchApi
+import com.elsfm.mobile.feature.library.data.TrackLikeController
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -33,11 +34,14 @@ data class SearchUiState(
     val isLoading: Boolean = false,
     val hasSearched: Boolean = false,
     val error: String? = null,
+    val likedTrackIds: Set<Int> = emptySet(),
+    val likeLoadingTrackIds: Set<Int> = emptySet(),
 )
 
 @HiltViewModel
 class SearchViewModel @Inject constructor(
     private val searchApi: SearchApi,
+    private val trackLikeController: TrackLikeController,
 ) : ViewModel() {
     private val _state = MutableStateFlow(SearchUiState())
     val state: StateFlow<SearchUiState> = _state.asStateFlow()
@@ -76,5 +80,25 @@ class SearchViewModel @Inject constructor(
 
     fun clearResults() {
         _state.value = SearchUiState()
+    }
+
+    fun toggleTrackLike(trackId: Int) {
+        val currentlyLiked = _state.value.likedTrackIds.contains(trackId)
+        _state.value = _state.value.copy(
+            likeLoadingTrackIds = _state.value.likeLoadingTrackIds + trackId,
+        )
+
+        viewModelScope.launch {
+            val newLikedState = trackLikeController.toggleLike(trackId, currentlyLiked)
+            _state.value = _state.value.copy(
+                likedTrackIds = when (newLikedState) {
+                    true -> _state.value.likedTrackIds + trackId
+                    false -> _state.value.likedTrackIds - trackId
+                    null -> _state.value.likedTrackIds
+                },
+                likeLoadingTrackIds = _state.value.likeLoadingTrackIds - trackId,
+                error = if (newLikedState == null) "Failed to update library" else _state.value.error,
+            )
+        }
     }
 }

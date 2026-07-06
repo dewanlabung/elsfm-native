@@ -7,7 +7,9 @@ import com.elsfm.mobile.core.model.Playlist
 import com.elsfm.mobile.core.model.Track
 import com.elsfm.mobile.core.network.ApiResult
 import com.elsfm.mobile.core.network.api.SearchApi
+import com.elsfm.mobile.core.network.api.UserApi
 import com.elsfm.mobile.core.network.elsfmJson
+import com.elsfm.mobile.feature.library.data.TrackLikeController
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
@@ -19,6 +21,7 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -57,9 +60,19 @@ class SearchViewModelTest {
         return SearchApi(httpClient)
     }
 
+    private fun mockTrackLikeController(status: HttpStatusCode = HttpStatusCode.OK): TrackLikeController {
+        val mockEngine = MockEngine { _ ->
+            respond("{}", status, headersOf(HttpHeaders.ContentType, "application/json"))
+        }
+        val httpClient = HttpClient(mockEngine) {
+            install(ContentNegotiation) { json(elsfmJson()) }
+        }
+        return TrackLikeController(UserApi(httpClient))
+    }
+
     @Test
     fun `search populates tracks artists and playlists buckets`() = runTest {
-        val viewModel = SearchViewModel(mockSearchApi())
+        val viewModel = SearchViewModel(mockSearchApi(), mockTrackLikeController())
         viewModel.state.test {
             val initialState = awaitItem()
             assertEquals("", initialState.query)
@@ -92,7 +105,7 @@ class SearchViewModelTest {
 
     @Test
     fun `search with empty results marks hasSearched true with empty buckets`() = runTest {
-        val viewModel = SearchViewModel(mockSearchApi(body = EMPTY_BODY))
+        val viewModel = SearchViewModel(mockSearchApi(body = EMPTY_BODY), mockTrackLikeController())
         viewModel.state.test {
             awaitItem() // initial
             viewModel.search("nomatches")
@@ -109,7 +122,7 @@ class SearchViewModelTest {
 
     @Test
     fun `search surfaces error on failure without silently swallowing it`() = runTest {
-        val viewModel = SearchViewModel(mockSearchApi(status = HttpStatusCode.InternalServerError, body = "{}"))
+        val viewModel = SearchViewModel(mockSearchApi(status = HttpStatusCode.InternalServerError, body = "{}"), mockTrackLikeController())
         viewModel.state.test {
             awaitItem() // initial
             viewModel.search("test")
@@ -125,7 +138,7 @@ class SearchViewModelTest {
 
     @Test
     fun `search with blank query resets to initial state without calling api`() = runTest {
-        val viewModel = SearchViewModel(mockSearchApi())
+        val viewModel = SearchViewModel(mockSearchApi(), mockTrackLikeController())
         viewModel.state.test {
             awaitItem() // initial
 
@@ -144,7 +157,7 @@ class SearchViewModelTest {
 
     @Test
     fun `clearResults resets state to defaults`() = runTest {
-        val viewModel = SearchViewModel(mockSearchApi())
+        val viewModel = SearchViewModel(mockSearchApi(), mockTrackLikeController())
         viewModel.state.test {
             awaitItem() // initial
 
@@ -156,6 +169,34 @@ class SearchViewModelTest {
             val clearedState = awaitItem()
             assertEquals(SearchUiState(), clearedState)
         }
+    }
+
+    @Test
+    fun `toggleTrackLike adds track to likedTrackIds on success`() = runTest {
+        val viewModel = SearchViewModel(mockSearchApi(), mockTrackLikeController())
+        viewModel.search("test")
+        advanceUntilIdle()
+
+        viewModel.toggleTrackLike(100)
+        advanceUntilIdle()
+
+        val state = viewModel.state.value
+        assertTrue(state.likedTrackIds.contains(100))
+        assertFalse(state.likeLoadingTrackIds.contains(100))
+    }
+
+    @Test
+    fun `toggleTrackLike surfaces error without changing liked state on failure`() = runTest {
+        val viewModel = SearchViewModel(mockSearchApi(), mockTrackLikeController(HttpStatusCode.InternalServerError))
+        viewModel.search("test")
+        advanceUntilIdle()
+
+        viewModel.toggleTrackLike(100)
+        advanceUntilIdle()
+
+        val state = viewModel.state.value
+        assertFalse(state.likedTrackIds.contains(100))
+        assertEquals("Failed to update library", state.error)
     }
 
     private companion object {

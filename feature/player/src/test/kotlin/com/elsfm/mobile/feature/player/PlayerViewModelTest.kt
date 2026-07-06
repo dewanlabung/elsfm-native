@@ -32,6 +32,7 @@ private class FakePlayerController : PlayerController {
     private val _state = MutableStateFlow(PlayerState())
     override val state: StateFlow<PlayerState> = _state
     var lastPlayedTrack: Track? = null
+    var lastJumpedTrack: Track? = null
 
     override fun play(track: Track, queue: List<Track>) {
         lastPlayedTrack = track
@@ -48,6 +49,11 @@ private class FakePlayerController : PlayerController {
 
     override fun skipNext() = Unit
     override fun skipPrevious() = Unit
+
+    override fun jumpToQueueItem(track: Track) {
+        lastJumpedTrack = track
+        _state.value = _state.value.copy(currentTrack = track, isPlaying = true)
+    }
 }
 
 private fun fakePlayerMenuRepository(): PlayerMenuRepository {
@@ -122,6 +128,23 @@ class PlayerViewModelTest {
 
         viewModel.state.test {
             assertEquals(false, awaitItem().isPlaying)
+        }
+    }
+
+    @Test
+    fun `jumpToQueueItem delegates to controller`() = runTest {
+        val controller = FakePlayerController()
+        val playHistoryApi = playHistoryApiReturning(HttpStatusCode.OK)
+        val menuRepository = fakePlayerMenuRepository()
+        val viewModel = PlayerViewModel(controller, playHistoryApi, menuRepository)
+        val secondTrack = track.copy(id = 2001, name = "Second Track")
+        viewModel.play(track, listOf(track, secondTrack))
+
+        viewModel.jumpToQueueItem(secondTrack)
+
+        assertEquals(secondTrack, controller.lastJumpedTrack)
+        viewModel.state.test {
+            assertEquals(secondTrack, awaitItem().currentTrack)
         }
     }
 }

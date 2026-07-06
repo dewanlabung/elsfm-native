@@ -11,10 +11,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -22,13 +22,22 @@ import androidx.compose.ui.unit.dp
 import com.elsfm.mobile.core.model.UserProfile
 
 @Composable
-fun ProfileHeader(profile: UserProfile, onLogout: () -> Unit) {
+fun ProfileHeader(profile: UserProfile, onEditProfileClicked: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        Box(modifier = Modifier.fillMaxWidth()) {
+            TextButton(
+                onClick = onEditProfileClicked,
+                modifier = Modifier.align(Alignment.TopEnd)
+            ) {
+                Text("Edit")
+            }
+        }
+
         // Avatar
         Surface(
             shape = CircleShape,
@@ -71,16 +80,6 @@ fun ProfileHeader(profile: UserProfile, onLogout: () -> Unit) {
         ) {
             StatItem(label = "Followers", value = profile.followersCount.toString())
             StatItem(label = "Following", value = profile.followedCount.toString())
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Logout button
-        Button(
-            onClick = onLogout,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Logout")
         }
 
         // Bio if available

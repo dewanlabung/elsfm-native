@@ -10,4 +10,7 @@ interface PlayerController {
     fun seekTo(positionMs: Long)
     fun skipNext()
     fun skipPrevious()
+
+    /** Jumps playback directly to [track] within the current queue, if present. */
+    fun jumpToQueueItem(track: Track)
 }

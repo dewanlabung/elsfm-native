@@ -58,6 +58,7 @@ fun AlbumScreen(
         onPlayAll = viewModel::playAll,
         onTrackTap = onTrackTap,
         onAddToQueue = onAddToQueue,
+        onToggleTrackLike = viewModel::toggleTrackLike,
     )
 }
 
@@ -67,6 +68,7 @@ internal fun AlbumDetailContent(
     onPlayAll: () -> Unit,
     onTrackTap: (Track, List<Track>) -> Unit,
     onAddToQueue: (Track) -> Unit,
+    onToggleTrackLike: (Int) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val album = state.album
@@ -100,6 +102,9 @@ internal fun AlbumDetailContent(
                             track = track,
                             onClick = { onTrackTap(track, state.tracks) },
                             onAddToQueue = { onAddToQueue(track) },
+                            isLiked = state.likedTrackIds.contains(track.id),
+                            isLikeLoading = state.likeLoadingTrackIds.contains(track.id),
+                            onToggleLike = { onToggleTrackLike(track.id) },
                         )
                     }
                     if (state.error != null) {
@@ -162,6 +167,9 @@ private fun AlbumTrackRow(
     track: Track,
     onClick: () -> Unit,
     onAddToQueue: () -> Unit,
+    isLiked: Boolean = false,
+    isLikeLoading: Boolean = false,
+    onToggleLike: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
@@ -178,6 +186,9 @@ private fun AlbumTrackRow(
             onClick = onClick,
             onMoreClick = { menuExpanded = true },
             modifier = Modifier.weight(1f),
+            isLiked = isLiked,
+            isLikeLoading = isLikeLoading,
+            onLikeClick = onToggleLike,
         )
 
         Box {

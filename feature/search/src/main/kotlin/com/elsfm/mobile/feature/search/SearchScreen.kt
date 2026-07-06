@@ -54,6 +54,7 @@ fun SearchScreen(
         onAlbumTap = onAlbumTap,
         onArtistTap = onArtistTap,
         onPlaylistTap = onPlaylistTap,
+        onToggleTrackLike = searchViewModel::toggleTrackLike,
     )
 }
 
@@ -65,6 +66,7 @@ internal fun SearchContent(
     onAlbumTap: (Album) -> Unit,
     onArtistTap: (Artist) -> Unit,
     onPlaylistTap: (Playlist) -> Unit,
+    onToggleTrackLike: (Int) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     var selectedTabIndex by remember { mutableIntStateOf(0) }
@@ -96,6 +98,7 @@ internal fun SearchContent(
             SearchTab.TRACKS -> TracksTabContent(
                 state = state,
                 onTrackTap = onTrackTap,
+                onToggleTrackLike = onToggleTrackLike,
                 modifier = Modifier.fillMaxSize(),
             )
             SearchTab.ALBUMS -> AlbumsTabContent(

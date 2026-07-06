@@ -3,7 +3,9 @@ package com.elsfm.mobile.feature.library
 import com.elsfm.mobile.core.common.DispatcherProvider
 import com.elsfm.mobile.core.model.Playlist
 import com.elsfm.mobile.core.network.api.TrackListApi
+import com.elsfm.mobile.core.network.api.UserApi
 import com.elsfm.mobile.core.network.elsfmJson
+import com.elsfm.mobile.feature.library.data.TrackLikeController
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
@@ -25,6 +27,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
@@ -72,8 +75,25 @@ class PlaylistViewModelTest {
         return TrackListApi(httpClient)
     }
 
-    private fun viewModel(status: HttpStatusCode = HttpStatusCode.OK) = PlaylistViewModel(
+    private fun mockUserApi(status: HttpStatusCode = HttpStatusCode.OK): UserApi {
+        val mockEngine = MockEngine.create {
+            dispatcher = testDispatcher
+            addHandler { _ ->
+                respond("{}", status, headersOf(HttpHeaders.ContentType, "application/json"))
+            }
+        }
+        val httpClient = HttpClient(mockEngine) {
+            install(ContentNegotiation) { json(elsfmJson()) }
+        }
+        return UserApi(httpClient)
+    }
+
+    private fun viewModel(
+        status: HttpStatusCode = HttpStatusCode.OK,
+        likeStatus: HttpStatusCode = HttpStatusCode.OK,
+    ) = PlaylistViewModel(
         mockTrackListApi(status),
+        TrackLikeController(mockUserApi(likeStatus)),
         FakeDispatcherProvider(testDispatcher),
     )
 
@@ -120,5 +140,53 @@ class PlaylistViewModelTest {
         val state = viewModel.state.value
         assertEquals(1, state.tracks.size)
         assertEquals(2, state.tracks.first().id)
+    }
+
+    @Test
+    fun `toggleTrackLike adds track to likedTrackIds on success`() = runTest(testDispatcher) {
+        val viewModel = viewModel()
+        val playlist = Playlist(id = 42, name = "Test Playlist", image = null)
+        viewModel.loadPlaylist(playlist)
+        advanceUntilIdle()
+
+        viewModel.toggleTrackLike(1)
+        advanceUntilIdle()
+
+        val state = viewModel.state.value
+        assertTrue(state.likedTrackIds.contains(1))
+        assertFalse(state.likeLoadingTrackIds.contains(1))
+        assertNull(state.error)
+    }
+
+    @Test
+    fun `toggleTrackLike removes track from likedTrackIds when already liked`() = runTest(testDispatcher) {
+        val viewModel = viewModel()
+        val playlist = Playlist(id = 42, name = "Test Playlist", image = null)
+        viewModel.loadPlaylist(playlist)
+        advanceUntilIdle()
+        viewModel.toggleTrackLike(1)
+        advanceUntilIdle()
+        assertTrue(viewModel.state.value.likedTrackIds.contains(1))
+
+        viewModel.toggleTrackLike(1)
+        advanceUntilIdle()
+
+        assertFalse(viewModel.state.value.likedTrackIds.contains(1))
+    }
+
+    @Test
+    fun `toggleTrackLike sets error and leaves state unchanged on failure`() = runTest(testDispatcher) {
+        val viewModel = viewModel(likeStatus = HttpStatusCode.InternalServerError)
+        val playlist = Playlist(id = 42, name = "Test Playlist", image = null)
+        viewModel.loadPlaylist(playlist)
+        advanceUntilIdle()
+
+        viewModel.toggleTrackLike(1)
+        advanceUntilIdle()
+
+        val state = viewModel.state.value
+        assertFalse(state.likedTrackIds.contains(1))
+        assertFalse(state.likeLoadingTrackIds.contains(1))
+        assertNotNull(state.error)
     }
 }

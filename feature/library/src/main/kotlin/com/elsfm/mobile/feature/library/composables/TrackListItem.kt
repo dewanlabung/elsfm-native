@@ -23,6 +23,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.elsfm.mobile.core.designsystem.LikeButton
 import com.elsfm.mobile.core.model.Track
 
 @Composable
@@ -32,6 +33,9 @@ fun TrackListItem(
     onClick: () -> Unit,
     onMoreClick: () -> Unit = {},
     modifier: Modifier = Modifier,
+    isLiked: Boolean? = null,
+    isLikeLoading: Boolean = false,
+    onLikeClick: (() -> Unit)? = null,
 ) {
     Row(
         modifier = modifier
@@ -76,6 +80,16 @@ fun TrackListItem(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
+            )
+        }
+
+        // Like/save toggle (only rendered when the caller wires up like state)
+        if (isLiked != null && onLikeClick != null) {
+            LikeButton(
+                isLiked = isLiked,
+                isLoading = isLikeLoading,
+                onClick = onLikeClick,
+                modifier = Modifier.size(40.dp),
             )
         }
 

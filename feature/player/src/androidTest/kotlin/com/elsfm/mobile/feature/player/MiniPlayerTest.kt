@@ -33,6 +33,7 @@ private class FakePlayerController : PlayerController {
     override fun seekTo(positionMs: Long) = Unit
     override fun skipNext() = Unit
     override fun skipPrevious() = Unit
+    override fun jumpToQueueItem(track: com.elsfm.mobile.core.model.Track) = Unit
 }
 
 @RunWith(AndroidJUnit4::class)

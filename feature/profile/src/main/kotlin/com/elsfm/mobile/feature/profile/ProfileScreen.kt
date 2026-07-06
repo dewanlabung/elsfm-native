@@ -23,10 +23,12 @@ import com.elsfm.mobile.core.model.UserProfile
 @Composable
 fun ProfileScreen(
     viewModel: ProfileViewModel = hiltViewModel(),
+    themeViewModel: ThemeViewModel = hiltViewModel(),
     onTrackClicked: (Track) -> Unit,
     onLogout: () -> Unit,
 ) {
     val state by viewModel.state.collectAsState()
+    val isDarkMode by themeViewModel.isDarkMode.collectAsState()
 
     Column(modifier = Modifier.fillMaxSize()) {
         when {
@@ -44,9 +46,10 @@ fun ProfileScreen(
             }
 
             state.userProfile != null -> {
+                val profile = state.userProfile!!
                 ProfileHeader(
-                    profile = state.userProfile!!,
-                    onLogout = onLogout
+                    profile = profile,
+                    onEditProfileClicked = { viewModel.setEditMode(true) }
                 )
                 HorizontalDivider()
                 LazyColumn(
@@ -54,6 +57,18 @@ fun ProfileScreen(
                         .fillMaxSize()
                         .padding(16.dp)
                 ) {
+                    item {
+                        AccountSection(
+                            profile = profile,
+                            isEditMode = state.isEditMode,
+                            onEditProfileClicked = { viewModel.setEditMode(true) },
+                            onSaveProfile = { name, bio -> viewModel.updateProfile(name, bio) },
+                            onCancelEdit = { viewModel.setEditMode(false) },
+                            isDarkMode = isDarkMode,
+                            onToggleDarkMode = { themeViewModel.setDarkMode(it) },
+                            onLogout = onLogout,
+                        )
+                    }
                     item {
                         Text(
                             "Recently Played",

@@ -27,6 +27,7 @@ private const val SHIMMER_ROW_COUNT = 6
 internal fun TracksTabContent(
     state: SearchUiState,
     onTrackTap: (Track) -> Unit,
+    onToggleTrackLike: (Int) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     when {
@@ -45,7 +46,13 @@ internal fun TracksTabContent(
                 contentPadding = PaddingValues(16.dp),
             ) {
                 items(state.tracks, key = { it.id }) { track ->
-                    TrackListItem(track = track, onClick = { onTrackTap(track) })
+                    TrackListItem(
+                        track = track,
+                        onClick = { onTrackTap(track) },
+                        isLiked = state.likedTrackIds.contains(track.id),
+                        isLikeLoading = state.likeLoadingTrackIds.contains(track.id),
+                        onLikeClick = { onToggleTrackLike(track.id) },
+                    )
                 }
             }
         }

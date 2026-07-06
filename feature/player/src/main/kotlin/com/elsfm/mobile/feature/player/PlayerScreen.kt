@@ -6,6 +6,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,8 +18,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.QueueMusic
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
@@ -26,13 +30,16 @@ import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -55,8 +62,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import com.elsfm.mobile.core.model.Track
 import kotlin.math.max
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlayerScreen(
     viewModel: PlayerViewModel = hiltViewModel(),
@@ -66,6 +75,7 @@ fun PlayerScreen(
     val menuState by viewModel.menuState.collectAsState()
     var menuAnchorX by remember { mutableFloatStateOf(0f) }
     var menuAnchorY by remember { mutableFloatStateOf(0f) }
+    var isQueueVisible by remember { mutableStateOf(false) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         // Blurred album art background with gradient overlay
@@ -111,7 +121,8 @@ fun PlayerScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 8.dp),
-                horizontalArrangement = Arrangement.Start,
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 IconButton(
                     onClick = { onCollapse?.invoke() },
@@ -120,6 +131,17 @@ fun PlayerScreen(
                     Icon(
                         imageVector = Icons.Filled.KeyboardArrowDown,
                         contentDescription = "Collapse player",
+                        tint = Color.White,
+                    )
+                }
+
+                IconButton(
+                    onClick = { isQueueVisible = true },
+                    modifier = Modifier.testTag("player_queue_toggle"),
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.QueueMusic,
+                        contentDescription = "Show queue",
                         tint = Color.White,
                     )
                 }
@@ -327,6 +349,109 @@ fun PlayerScreen(
                     )
                 }
             }
+        }
+    }
+
+    if (isQueueVisible) {
+        QueueBottomSheet(
+            queue = state.queue,
+            currentTrack = state.currentTrack,
+            onTrackTap = { track ->
+                viewModel.jumpToQueueItem(track)
+                isQueueVisible = false
+            },
+            onDismiss = { isQueueVisible = false },
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun QueueBottomSheet(
+    queue: List<Track>,
+    currentTrack: Track?,
+    onTrackTap: (Track) -> Unit,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val sheetState = rememberModalBottomSheetState()
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        modifier = modifier.testTag("player_queue_sheet"),
+    ) {
+        Text(
+            text = "Up Next",
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+        )
+
+        if (queue.isEmpty()) {
+            Text(
+                text = "Queue is empty",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(16.dp),
+            )
+        } else {
+            LazyColumn(modifier = Modifier.testTag("player_queue_list")) {
+                items(queue, key = { it.id }) { track ->
+                    QueueRow(
+                        track = track,
+                        isCurrent = track.id == currentTrack?.id,
+                        onClick = { onTrackTap(track) },
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun QueueRow(
+    track: Track,
+    isCurrent: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Surface(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(RoundedCornerShape(4.dp)),
+            color = MaterialTheme.colorScheme.surfaceVariant,
+        ) {
+            AsyncImage(
+                model = track.image,
+                contentDescription = track.name,
+                modifier = Modifier.size(40.dp),
+                contentScale = ContentScale.Crop,
+            )
+        }
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = track.name,
+                style = MaterialTheme.typography.bodyMedium,
+                color = if (isCurrent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = track.artists.firstOrNull()?.name ?: "Unknown",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
     }
 }
