@@ -10,5 +10,6 @@ data class ArtistDetailState(
     val albums: List<Album> = emptyList(),
     val followedByUser: Boolean = false,
     val isLoading: Boolean = false,
+    val isFollowLoading: Boolean = false,
     val error: String? = null,
 )

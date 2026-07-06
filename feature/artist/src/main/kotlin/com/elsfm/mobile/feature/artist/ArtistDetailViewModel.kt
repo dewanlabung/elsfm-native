@@ -3,6 +3,7 @@ package com.elsfm.mobile.feature.artist
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.elsfm.mobile.core.common.DispatcherProvider
+import com.elsfm.mobile.core.database.repository.FollowStateRepository
 import com.elsfm.mobile.core.model.Album
 import com.elsfm.mobile.core.network.ApiResult
 import com.elsfm.mobile.core.network.api.ArtistApi
@@ -17,6 +18,7 @@ import javax.inject.Inject
 @HiltViewModel
 class ArtistDetailViewModel @Inject constructor(
     private val artistApi: ArtistApi,
+    private val followStateRepository: FollowStateRepository,
     private val savedStateHandle: androidx.lifecycle.SavedStateHandle,
     private val dispatcherProvider: DispatcherProvider,
 ) : ViewModel() {
@@ -38,13 +40,22 @@ class ArtistDetailViewModel @Inject constructor(
                 coroutineScope {
                     val artistResult = artistApi.getArtist(id)
                     val tracksResult = artistApi.getArtistTracks(id)
+                    val albumsResult = artistApi.getArtistAlbums(id)
 
                     when {
+                        artistResult is ApiResult.Success && tracksResult is ApiResult.Success && albumsResult is ApiResult.Success -> {
+                            _state.value = _state.value.copy(
+                                artist = artistResult.data,
+                                tracks = tracksResult.data,
+                                albums = albumsResult.data,
+                                isLoading = false
+                            )
+                        }
                         artistResult is ApiResult.Success && tracksResult is ApiResult.Success -> {
                             _state.value = _state.value.copy(
                                 artist = artistResult.data,
                                 tracks = tracksResult.data,
-                                albums = sampleArtistAlbums(),
+                                albums = emptyList(),
                                 isLoading = false
                             )
                         }
@@ -52,7 +63,7 @@ class ArtistDetailViewModel @Inject constructor(
                             _state.value = _state.value.copy(
                                 artist = artistResult.data,
                                 tracks = emptyList(),
-                                albums = sampleArtistAlbums(),
+                                albums = emptyList(),
                                 isLoading = false
                             )
                         }
@@ -78,16 +89,24 @@ class ArtistDetailViewModel @Inject constructor(
 
     fun toggleFollow() {
         viewModelScope.launch(dispatcher) {
-            _state.value = _state.value.copy(
-                followedByUser = !_state.value.followedByUser
-            )
+            val artistId = _state.value.artist?.id ?: return@launch
+            _state.value = _state.value.copy(isFollowLoading = true)
+            try {
+                if (_state.value.followedByUser) {
+                    followStateRepository.unfollow(artistId)
+                } else {
+                    followStateRepository.follow(artistId)
+                }
+                _state.value = _state.value.copy(
+                    followedByUser = !_state.value.followedByUser,
+                    isFollowLoading = false
+                )
+            } catch (e: Exception) {
+                _state.value = _state.value.copy(
+                    isFollowLoading = false,
+                    error = e.message ?: "Failed to update follow state"
+                )
+            }
         }
-    }
-
-    private fun sampleArtistAlbums(): List<Album> {
-        return listOf(
-            Album(id = 1, name = "Greatest Hits", image = null, releaseDate = "2023"),
-            Album(id = 2, name = "New Era", image = null, releaseDate = "2024"),
-        )
     }
 }

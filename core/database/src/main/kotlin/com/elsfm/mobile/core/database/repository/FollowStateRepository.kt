@@ -7,17 +7,17 @@ import com.elsfm.mobile.core.network.api.UserApiLike
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
-class FollowStateRepository @Inject constructor(
+open class FollowStateRepository @Inject constructor(
     private val followStateDao: FollowStateDao,
     private val userApi: UserApiLike,
 ) {
-    fun observeFollowing(artistId: Int): Flow<Boolean> =
+    open fun observeFollowing(artistId: Int): Flow<Boolean> =
         followStateDao.observeIsFollowing(artistId)
 
-    suspend fun isFollowing(artistId: Int): Boolean =
+    open suspend fun isFollowing(artistId: Int): Boolean =
         followStateDao.isFollowing(artistId)
 
-    suspend fun follow(artistId: Int) {
+    open suspend fun follow(artistId: Int) {
         try {
             val result = userApi.followArtist(artistId)
             when (result) {
@@ -34,7 +34,7 @@ class FollowStateRepository @Inject constructor(
         }
     }
 
-    suspend fun unfollow(artistId: Int) {
+    open suspend fun unfollow(artistId: Int) {
         try {
             val result = userApi.unfollowArtist(artistId)
             when (result) {
