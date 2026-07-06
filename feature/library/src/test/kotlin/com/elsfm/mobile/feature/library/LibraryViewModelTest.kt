@@ -1,16 +1,7 @@
 package com.elsfm.mobile.feature.library
 
 import app.cash.turbine.test
-import com.elsfm.mobile.core.network.api.ChannelApi
-import com.elsfm.mobile.core.network.elsfmJson
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.mock.MockEngine
-import io.ktor.client.engine.mock.respond
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.http.HttpHeaders
-import io.ktor.http.HttpStatusCode
-import io.ktor.http.headersOf
-import io.ktor.serialization.kotlinx.json.json
+import com.elsfm.mobile.core.model.Channel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -40,37 +31,15 @@ class LibraryViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private fun mockChannelApi(status: HttpStatusCode = HttpStatusCode.OK): ChannelApi {
-        val mockEngine = MockEngine { _ ->
-            val body = """
-                {
-                  "channel": {
-                    "id": 5,
-                    "name": "Nepali Christian Songs",
-                    "model_type": "channel",
-                    "content": {
-                      "data": [
-                        {"id": 1, "name": "Sunday School", "model_type": "channel"}
-                      ]
-                    }
-                  }
-                }
-            """.trimIndent()
-            respond(
-                body,
-                status,
-                headersOf(HttpHeaders.ContentType, "application/json")
-            )
-        }
-        val httpClient = HttpClient(mockEngine) {
-            install(ContentNegotiation) { json(elsfmJson()) }
-        }
-        return ChannelApi(httpClient)
-    }
-
     @Test
     fun `loadLibrary updates state with playlists, albums and channels`() = runTest {
-        val viewModel = LibraryViewModel(mockChannelApi())
+        val testChannel = Channel(id = 1, name = "Sunday School", modelType = "channel")
+        val repository = FakeLibraryApiRepository(
+            playlists = SampleLibraryData.playlists,
+            albums = SampleLibraryData.albums,
+            channels = listOf(testChannel),
+        )
+        val viewModel = LibraryViewModel(repository)
 
         viewModel.state.test {
             // Initial state (empty)
@@ -92,25 +61,27 @@ class LibraryViewModelTest {
     }
 
     @Test
-    fun `loadLibrary still shows sample playlists and albums when channels fail`() = runTest {
-        val viewModel = LibraryViewModel(mockChannelApi(status = HttpStatusCode.InternalServerError))
+    fun `loadLibrary sets error when repository fails`() = runTest {
+        val repository = FakeLibraryApiRepository(
+            error = RuntimeException("Network error"),
+        )
+        val viewModel = LibraryViewModel(repository)
 
         viewModel.state.test {
             assertEquals(LibraryState(), awaitItem())
             awaitItem() // loading
 
             val loadedState = awaitItem()
-            assertTrue(loadedState.playlists.isNotEmpty())
-            assertTrue(loadedState.albums.isNotEmpty())
-            assertEquals(0, loadedState.channels.size)
             assertEquals(false, loadedState.isLoading)
             assertNotNull(loadedState.error)
+            assertEquals("Failed to load library", loadedState.error)
         }
     }
 
     @Test
     fun `selectFilter updates selectedFilter in state`() = runTest {
-        val viewModel = LibraryViewModel(mockChannelApi())
+        val repository = FakeLibraryApiRepository()
+        val viewModel = LibraryViewModel(repository)
 
         viewModel.selectFilter(LibraryFilter.PLAYLISTS)
 

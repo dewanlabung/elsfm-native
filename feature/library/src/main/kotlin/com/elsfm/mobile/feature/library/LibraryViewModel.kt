@@ -6,7 +6,7 @@ import com.elsfm.mobile.core.model.Album
 import com.elsfm.mobile.core.model.Channel
 import com.elsfm.mobile.core.model.Playlist
 import com.elsfm.mobile.core.network.ApiResult
-import com.elsfm.mobile.core.network.api.ChannelApi
+import com.elsfm.mobile.feature.library.data.LibraryApiRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -25,7 +25,7 @@ enum class LibraryFilter {
  * Immutable, hoisted UI state for [LibraryScreen].
  *
  * Playlists and albums are not yet backed by a real backend endpoint (see
- * [SampleLibraryData]); channels use the real [ChannelApi].
+ * [SampleLibraryData]); channels use the real API via [LibraryApiRepository].
  */
 data class LibraryState(
     val playlists: List<Playlist> = emptyList(),
@@ -42,7 +42,7 @@ data class LibraryState(
 
 @HiltViewModel
 class LibraryViewModel @Inject constructor(
-    private val channelApi: ChannelApi,
+    private val libraryRepository: LibraryApiRepository,
 ) : ViewModel() {
     private val _state = MutableStateFlow(LibraryState())
     val state: StateFlow<LibraryState> = _state.asStateFlow()
@@ -54,20 +54,18 @@ class LibraryViewModel @Inject constructor(
     fun loadLibrary() {
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true, error = null)
-            val result = channelApi.getChannels()
+            val result = libraryRepository.loadLibrary()
             if (result is ApiResult.Success) {
                 _state.value = _state.value.copy(
-                    playlists = SampleLibraryData.playlists,
-                    albums = SampleLibraryData.albums,
-                    channels = result.data,
+                    playlists = result.data.playlists,
+                    albums = result.data.albums,
+                    channels = result.data.channels,
                     isLoading = false,
                 )
             } else {
                 _state.value = _state.value.copy(
-                    playlists = SampleLibraryData.playlists,
-                    albums = SampleLibraryData.albums,
                     isLoading = false,
-                    error = "Failed to load channels",
+                    error = "Failed to load library",
                 )
             }
         }
