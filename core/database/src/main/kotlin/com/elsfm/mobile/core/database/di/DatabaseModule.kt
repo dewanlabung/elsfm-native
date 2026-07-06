@@ -5,6 +5,7 @@ import androidx.room.Room
 import com.elsfm.mobile.core.database.AppDatabase
 import com.elsfm.mobile.core.database.UserDao
 import com.elsfm.mobile.core.database.dao.DownloadedTrackDao
+import com.elsfm.mobile.core.database.dao.FollowStateDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -29,4 +30,7 @@ object DatabaseModule {
 
     @Provides
     fun provideDownloadedTrackDao(database: AppDatabase): DownloadedTrackDao = database.downloadedTrackDao()
+
+    @Provides
+    fun provideFollowStateDao(database: AppDatabase): FollowStateDao = database.followStateDao()
 }
