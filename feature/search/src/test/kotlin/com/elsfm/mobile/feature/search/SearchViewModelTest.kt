@@ -1,7 +1,10 @@
 package com.elsfm.mobile.feature.search
 
 import app.cash.turbine.test
-import com.elsfm.mobile.core.model.SearchResult
+import com.elsfm.mobile.core.model.Album
+import com.elsfm.mobile.core.model.Artist
+import com.elsfm.mobile.core.model.Playlist
+import com.elsfm.mobile.core.model.Track
 import com.elsfm.mobile.core.network.ApiResult
 import com.elsfm.mobile.core.network.api.SearchApi
 import com.elsfm.mobile.core.network.elsfmJson
@@ -21,6 +24,9 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
@@ -38,32 +44,12 @@ class SearchViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private fun mockSearchApi(): SearchApi {
+    private fun mockSearchApi(
+        status: HttpStatusCode = HttpStatusCode.OK,
+        body: String = SUCCESS_BODY,
+    ): SearchApi {
         val mockEngine = MockEngine { _ ->
-            val body = """
-                {
-                  "query": "test",
-                  "results": {
-                    "tracks": {
-                      "data": [
-                        {
-                          "id": 100,
-                          "name": "Result Track",
-                          "duration": 200000,
-                          "plays": "5",
-                          "image": "test.jpg",
-                          "artists": [{"id": 1, "name": "Artist"}]
-                        }
-                      ]
-                    },
-                    "artists": {"data": []},
-                    "albums": {"data": []},
-                    "playlists": {"data": []},
-                    "users": {"data": []}
-                  }
-                }
-            """.trimIndent()
-            respond(body, HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
+            respond(body, status, headersOf(HttpHeaders.ContentType, "application/json"))
         }
         val httpClient = HttpClient(mockEngine) {
             install(ContentNegotiation) { json(elsfmJson()) }
@@ -72,23 +58,142 @@ class SearchViewModelTest {
     }
 
     @Test
-    fun `search updates results`() = runTest {
+    fun `search populates tracks artists and playlists buckets`() = runTest {
         val viewModel = SearchViewModel(mockSearchApi())
         viewModel.state.test {
             val initialState = awaitItem()
             assertEquals("", initialState.query)
-            assertEquals(emptyList<SearchResult>(), initialState.results)
-            assertEquals(false, initialState.isLoading)
+            assertEquals(emptyList<Track>(), initialState.tracks)
+            assertEquals(emptyList<Album>(), initialState.albums)
+            assertEquals(emptyList<Artist>(), initialState.artists)
+            assertEquals(emptyList<Playlist>(), initialState.playlists)
+            assertFalse(initialState.isLoading)
+            assertFalse(initialState.hasSearched)
 
             viewModel.search("test")
             val loadingState = awaitItem()
             assertEquals("test", loadingState.query)
-            assertEquals(true, loadingState.isLoading)
+            assertTrue(loadingState.isLoading)
 
             val successState = awaitItem()
             assertEquals("test", successState.query)
-            assertEquals(1, successState.results.size)
-            assertEquals(false, successState.isLoading)
+            assertEquals(1, successState.tracks.size)
+            assertEquals("Result Track", successState.tracks.first().name)
+            assertEquals(1, successState.artists.size)
+            assertEquals("Result Artist", successState.artists.first().name)
+            assertEquals(1, successState.playlists.size)
+            assertEquals("Result Playlist", successState.playlists.first().name)
+            assertEquals(emptyList<Album>(), successState.albums)
+            assertFalse(successState.isLoading)
+            assertTrue(successState.hasSearched)
+            assertNull(successState.error)
         }
+    }
+
+    @Test
+    fun `search with empty results marks hasSearched true with empty buckets`() = runTest {
+        val viewModel = SearchViewModel(mockSearchApi(body = EMPTY_BODY))
+        viewModel.state.test {
+            awaitItem() // initial
+            viewModel.search("nomatches")
+            awaitItem() // loading
+
+            val successState = awaitItem()
+            assertTrue(successState.hasSearched)
+            assertTrue(successState.tracks.isEmpty())
+            assertTrue(successState.artists.isEmpty())
+            assertTrue(successState.playlists.isEmpty())
+            assertTrue(successState.albums.isEmpty())
+        }
+    }
+
+    @Test
+    fun `search surfaces error on failure without silently swallowing it`() = runTest {
+        val viewModel = SearchViewModel(mockSearchApi(status = HttpStatusCode.InternalServerError, body = "{}"))
+        viewModel.state.test {
+            awaitItem() // initial
+            viewModel.search("test")
+            awaitItem() // loading
+
+            val errorState = awaitItem()
+            assertFalse(errorState.isLoading)
+            assertTrue(errorState.hasSearched)
+            assertEquals("Search failed", errorState.error)
+            assertTrue(errorState.tracks.isEmpty())
+        }
+    }
+
+    @Test
+    fun `search with blank query resets to initial state without calling api`() = runTest {
+        val viewModel = SearchViewModel(mockSearchApi())
+        viewModel.state.test {
+            awaitItem() // initial
+
+            viewModel.search("test")
+            awaitItem() // loading
+            awaitItem() // success
+
+            viewModel.search("")
+            val blankState = awaitItem()
+            assertEquals("", blankState.query)
+            assertTrue(blankState.tracks.isEmpty())
+            assertFalse(blankState.hasSearched)
+            assertFalse(blankState.isLoading)
+        }
+    }
+
+    @Test
+    fun `clearResults resets state to defaults`() = runTest {
+        val viewModel = SearchViewModel(mockSearchApi())
+        viewModel.state.test {
+            awaitItem() // initial
+
+            viewModel.search("test")
+            awaitItem() // loading
+            awaitItem() // success
+
+            viewModel.clearResults()
+            val clearedState = awaitItem()
+            assertEquals(SearchUiState(), clearedState)
+        }
+    }
+
+    private companion object {
+        const val SUCCESS_BODY = """
+            {
+              "query": "test",
+              "results": {
+                "tracks": {
+                  "data": [
+                    {
+                      "id": 100,
+                      "name": "Result Track",
+                      "duration": 200000,
+                      "plays": "5",
+                      "image": "test.jpg",
+                      "artists": [{"id": 1, "name": "Artist"}]
+                    }
+                  ]
+                },
+                "artists": {"data": [{"id": 5, "name": "Result Artist", "plays": "10"}]},
+                "albums": {"data": []},
+                "playlists": {"data": [{"id": 9, "name": "Result Playlist"}]},
+                "users": {"data": []}
+              }
+            }
+        """
+
+        const val EMPTY_BODY = """
+            {
+              "query": "nomatches",
+              "results": {
+                "tracks": {"data": []},
+                "artists": {"data": []},
+                "albums": {"data": []},
+                "playlists": {"data": []},
+                "users": {"data": []}
+              }
+            }
+        """
     }
 }

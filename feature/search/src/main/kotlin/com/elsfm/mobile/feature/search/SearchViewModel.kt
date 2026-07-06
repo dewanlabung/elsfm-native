@@ -2,7 +2,11 @@ package com.elsfm.mobile.feature.search
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.elsfm.mobile.core.model.Album
+import com.elsfm.mobile.core.model.Artist
+import com.elsfm.mobile.core.model.Playlist
 import com.elsfm.mobile.core.model.SearchResult
+import com.elsfm.mobile.core.model.Track
 import com.elsfm.mobile.core.network.ApiResult
 import com.elsfm.mobile.core.network.api.SearchApi
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -12,10 +16,22 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-data class SearchState(
+/**
+ * Immutable, hoisted UI state for [SearchScreen].
+ *
+ * Note: [SearchApi] does not currently return albums in its response envelope
+ * (the backend search endpoint only returns tracks/artists/playlists), so
+ * [albums] will always be empty until that API is extended. The Albums tab
+ * is still modeled here so the UI is ready once the backend supports it.
+ */
+data class SearchUiState(
     val query: String = "",
-    val results: List<SearchResult> = emptyList(),
+    val tracks: List<Track> = emptyList(),
+    val albums: List<Album> = emptyList(),
+    val artists: List<Artist> = emptyList(),
+    val playlists: List<Playlist> = emptyList(),
     val isLoading: Boolean = false,
+    val hasSearched: Boolean = false,
     val error: String? = null,
 )
 
@@ -23,25 +39,42 @@ data class SearchState(
 class SearchViewModel @Inject constructor(
     private val searchApi: SearchApi,
 ) : ViewModel() {
-    private val _state = MutableStateFlow(SearchState())
-    val state: StateFlow<SearchState> = _state.asStateFlow()
+    private val _state = MutableStateFlow(SearchUiState())
+    val state: StateFlow<SearchUiState> = _state.asStateFlow()
 
     fun search(query: String) {
+        if (query.isBlank()) {
+            _state.value = SearchUiState(query = query)
+            return
+        }
+
         _state.value = _state.value.copy(query = query, isLoading = true, error = null)
+
         viewModelScope.launch {
-            val result = searchApi.search(query)
-            if (result is ApiResult.Success) {
-                _state.value = _state.value.copy(results = result.data, isLoading = false)
-            } else {
-                _state.value = _state.value.copy(
-                    isLoading = false,
-                    error = "Search failed"
-                )
+            when (val result = searchApi.search(query)) {
+                is ApiResult.Success -> {
+                    val results = result.data
+                    _state.value = _state.value.copy(
+                        tracks = results.filterIsInstance<SearchResult.TrackResult>().map { it.track },
+                        artists = results.filterIsInstance<SearchResult.ArtistResult>().map { it.artist },
+                        playlists = results.filterIsInstance<SearchResult.PlaylistResult>().map { it.playlist },
+                        isLoading = false,
+                        hasSearched = true,
+                        error = null,
+                    )
+                }
+                else -> {
+                    _state.value = _state.value.copy(
+                        isLoading = false,
+                        hasSearched = true,
+                        error = "Search failed",
+                    )
+                }
             }
         }
     }
 
-    fun clearSearch() {
-        _state.value = SearchState()
+    fun clearResults() {
+        _state.value = SearchUiState()
     }
 }

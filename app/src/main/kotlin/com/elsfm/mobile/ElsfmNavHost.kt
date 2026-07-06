@@ -145,14 +145,18 @@ fun ElsfmNavHost(
                         }
                         composable(ROUTE_LIBRARY) {
                             LibraryScreen(
-                                onChannelSelected = { /* TODO: show playlists */ },
+                                onPlaylistTap = { /* TODO: navigate to playlist detail */ },
+                                onAlbumTap = { /* TODO: navigate to album detail */ },
+                                onChannelTap = { /* TODO: navigate to channel */ },
                             )
                         }
                         composable(ROUTE_SEARCH) {
                             val playerViewModel: PlayerViewModel = hiltViewModel()
                             SearchScreen(
-                                onTrackClicked = { track, queue -> playerViewModel.play(track, queue) },
-                                onArtistClicked = { artistId -> navController.navigate("artist/$artistId") },
+                                onTrackTap = { track -> playerViewModel.play(track, queue = emptyList()) },
+                                onAlbumTap = { /* TODO: navigate to album detail */ },
+                                onArtistTap = { artist -> navController.navigate("artist/${artist.id}") },
+                                onPlaylistTap = { /* TODO: navigate to playlist detail */ },
                             )
                         }
                         composable(ROUTE_ARTIST) { backStackEntry ->
@@ -164,6 +168,7 @@ fun ElsfmNavHost(
                             ArtistDetailScreen(
                                 artistId = artistId,
                                 onTrackClicked = { track, queue -> playerViewModel.play(track, queue) },
+                                onAlbumClicked = { /* TODO: navigate to album detail */ },
                             )
                         }
                         composable(ROUTE_DISCOVERY) {
