@@ -2,8 +2,10 @@ package com.elsfm.mobile.feature.player
 
 import app.cash.turbine.test
 import com.elsfm.mobile.core.media.PlayHistoryApi
+import com.elsfm.mobile.core.model.ApiResult
 import com.elsfm.mobile.core.model.Artist
 import com.elsfm.mobile.core.model.Track
+import com.elsfm.mobile.feature.player.data.PlayerMenuRepository
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
@@ -47,6 +49,16 @@ private class FakePlayerController : PlayerController {
     override fun skipPrevious() = Unit
 }
 
+private class FakePlayerMenuRepository {
+    suspend fun addTrackToPlaylist(playlistId: Int, trackId: Int): ApiResult<Unit> {
+        return ApiResult.Success(Unit)
+    }
+
+    suspend fun shareTrack(trackId: Int): ApiResult<String> {
+        return ApiResult.Success("https://elsfm.com/share/track/$trackId")
+    }
+}
+
 @OptIn(ExperimentalCoroutinesApi::class)
 class PlayerViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
@@ -84,7 +96,8 @@ class PlayerViewModelTest {
     fun `play delegates to controller and records play history`() = runTest {
         val controller = FakePlayerController()
         val playHistoryApi = playHistoryApiReturning(HttpStatusCode.OK)
-        val viewModel = PlayerViewModel(controller, playHistoryApi)
+        val menuRepository = FakePlayerMenuRepository()
+        val viewModel = PlayerViewModel(controller, playHistoryApi, menuRepository)
 
         viewModel.play(track, listOf(track))
 
@@ -100,7 +113,8 @@ class PlayerViewModelTest {
     fun `togglePlayPause delegates to controller`() = runTest {
         val controller = FakePlayerController()
         val playHistoryApi = playHistoryApiReturning(HttpStatusCode.OK)
-        val viewModel = PlayerViewModel(controller, playHistoryApi)
+        val menuRepository = FakePlayerMenuRepository()
+        val viewModel = PlayerViewModel(controller, playHistoryApi, menuRepository)
         viewModel.play(track, listOf(track))
 
         viewModel.togglePlayPause()
