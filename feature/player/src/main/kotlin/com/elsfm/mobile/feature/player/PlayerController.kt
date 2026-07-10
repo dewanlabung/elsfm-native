@@ -13,4 +13,7 @@ interface PlayerController {
 
     /** Jumps playback directly to [track] within the current queue, if present. */
     fun jumpToQueueItem(track: Track)
+
+    /** Appends [track] to the end of the current playback queue. Purely local, no API call. */
+    fun addToQueue(track: Track)
 }

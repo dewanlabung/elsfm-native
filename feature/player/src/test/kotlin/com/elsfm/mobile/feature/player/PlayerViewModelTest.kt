@@ -5,6 +5,7 @@ import com.elsfm.mobile.core.media.PlayHistoryApi
 import com.elsfm.mobile.core.model.Artist
 import com.elsfm.mobile.core.model.Track
 import com.elsfm.mobile.core.network.api.PlaylistApi
+import com.elsfm.mobile.core.network.api.RepostApi
 import com.elsfm.mobile.core.network.api.UserApi
 import com.elsfm.mobile.feature.player.data.PlayerMenuRepository
 import io.ktor.client.HttpClient
@@ -33,6 +34,7 @@ private class FakePlayerController : PlayerController {
     override val state: StateFlow<PlayerState> = _state
     var lastPlayedTrack: Track? = null
     var lastJumpedTrack: Track? = null
+    var lastQueuedTrack: Track? = null
 
     override fun play(track: Track, queue: List<Track>) {
         lastPlayedTrack = track
@@ -54,16 +56,21 @@ private class FakePlayerController : PlayerController {
         lastJumpedTrack = track
         _state.value = _state.value.copy(currentTrack = track, isPlaying = true)
     }
+
+    override fun addToQueue(track: Track) {
+        lastQueuedTrack = track
+        _state.value = _state.value.copy(queue = _state.value.queue + track)
+    }
 }
 
-private fun fakePlayerMenuRepository(): PlayerMenuRepository {
+private fun fakePlayerMenuRepository(responseBody: String = "{}"): PlayerMenuRepository {
     val mockEngine = MockEngine { _ ->
-        respond("{}", HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
+        respond(responseBody, HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
     }
     val httpClient = HttpClient(mockEngine) {
         install(ContentNegotiation) { json() }
     }
-    return PlayerMenuRepository(PlaylistApi(httpClient), UserApi(httpClient))
+    return PlayerMenuRepository(PlaylistApi(httpClient), UserApi(httpClient), RepostApi(httpClient))
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -145,6 +152,52 @@ class PlayerViewModelTest {
         assertEquals(secondTrack, controller.lastJumpedTrack)
         viewModel.state.test {
             assertEquals(secondTrack, awaitItem().currentTrack)
+        }
+    }
+
+    @Test
+    fun `AddToQueue event appends currently playing track to controller queue`() = runTest {
+        val controller = FakePlayerController()
+        val playHistoryApi = playHistoryApiReturning(HttpStatusCode.OK)
+        val menuRepository = fakePlayerMenuRepository()
+        val viewModel = PlayerViewModel(controller, playHistoryApi, menuRepository)
+        viewModel.play(track, listOf(track))
+
+        viewModel.onMenuEvent(PlayerMenuEvent.AddToQueue(track.id))
+
+        assertEquals(track, controller.lastQueuedTrack)
+        viewModel.menuState.test {
+            assertEquals(false, awaitItem().isMenuVisible)
+        }
+    }
+
+    @Test
+    fun `AddToLibrary event succeeds and clears loading state`() = runTest {
+        val controller = FakePlayerController()
+        val playHistoryApi = playHistoryApiReturning(HttpStatusCode.OK)
+        val menuRepository = fakePlayerMenuRepository()
+        val viewModel = PlayerViewModel(controller, playHistoryApi, menuRepository)
+
+        viewModel.onMenuEvent(PlayerMenuEvent.AddToLibrary(track.id))
+
+        viewModel.menuState.test {
+            assertEquals(false, awaitItem().addToLibraryLoading)
+        }
+    }
+
+    @Test
+    fun `Repost event succeeds and clears loading state`() = runTest {
+        val controller = FakePlayerController()
+        val playHistoryApi = playHistoryApiReturning(HttpStatusCode.OK)
+        val menuRepository = fakePlayerMenuRepository("""{"action": "added"}""")
+        val viewModel = PlayerViewModel(controller, playHistoryApi, menuRepository)
+
+        viewModel.onMenuEvent(PlayerMenuEvent.Repost(track.id))
+
+        viewModel.menuState.test {
+            val state = awaitItem()
+            assertEquals(false, state.repostLoading)
+            assertEquals(null, state.error)
         }
     }
 }

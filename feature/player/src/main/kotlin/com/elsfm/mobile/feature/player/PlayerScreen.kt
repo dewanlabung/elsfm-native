@@ -65,11 +65,27 @@ import coil.compose.AsyncImage
 import com.elsfm.mobile.core.model.Track
 import kotlin.math.max
 
+/**
+ * Purely navigational callbacks for the track context menu's "Go to artist", "Go to album",
+ * "Go to track", and "View lyrics" items. None of these need ViewModel state (no loading/error
+ * to track), so they are plain lambdas rather than [PlayerMenuEvent]s. A future nav-host wiring
+ * step (NOT done here, per task scope) should supply:
+ * - [onGoToArtist] -> navigate to the artist detail screen for the given artist id
+ * - [onGoToAlbum] -> navigate to the album detail screen for the given album id
+ * - [onGoToTrack] -> navigate to a track detail screen for the given track id (if one exists)
+ * - [onViewLyrics] -> navigate to a lyrics screen for the given track id, backed by the real
+ *   `LyricsApi.getTrackLyrics()` (`GET api/v1/tracks/{id}/lyrics`); no lyrics screen is built by
+ *   this change, only the callback plumbing and the API client.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlayerScreen(
     viewModel: PlayerViewModel = hiltViewModel(),
     onCollapse: (() -> Unit)? = null,
+    onGoToArtist: (Int) -> Unit = {},
+    onGoToAlbum: (Int) -> Unit = {},
+    onGoToTrack: (Int) -> Unit = {},
+    onViewLyrics: (Int) -> Unit = {},
 ) {
     val state by viewModel.state.collectAsState()
     val menuState by viewModel.menuState.collectAsState()
@@ -222,17 +238,32 @@ fun PlayerScreen(
                 // Track context menu
                 TrackContextMenu(
                     trackId = state.currentTrack?.id ?: -1,
+                    artistId = state.currentTrack?.artists?.firstOrNull()?.id,
+                    albumId = state.currentTrack?.album?.id,
                     isVisible = menuState.isMenuVisible,
                     onDismiss = { viewModel.onMenuEvent(PlayerMenuEvent.HideMenu) },
+                    onAddToQueue = { trackId ->
+                        viewModel.onMenuEvent(PlayerMenuEvent.AddToQueue(trackId))
+                    },
+                    onAddToLibrary = { trackId ->
+                        viewModel.onMenuEvent(PlayerMenuEvent.AddToLibrary(trackId))
+                    },
                     onAddToPlaylist = { trackId ->
                         // TODO: Show playlist selection dialog, then call:
                         // viewModel.onMenuEvent(PlayerMenuEvent.AddToPlaylist(trackId, selectedPlaylistId))
                     },
+                    onGoToArtist = onGoToArtist,
+                    onGoToAlbum = onGoToAlbum,
+                    onGoToTrack = onGoToTrack,
+                    onViewLyrics = onViewLyrics,
                     onShare = {
                         state.currentTrack?.let {
                             viewModel.onMenuEvent(PlayerMenuEvent.ShareTrack(it.id))
                         }
-                    }
+                    },
+                    onRepost = { trackId ->
+                        viewModel.onMenuEvent(PlayerMenuEvent.Repost(trackId))
+                    },
                 )
             }
 
@@ -456,13 +487,33 @@ private fun QueueRow(
     }
 }
 
+/**
+ * Track context menu matching the real elsfm.com PWA's item order and set:
+ * Add to queue, Add to library, Add to playlist, Go to artist, Go to album, Go to track,
+ * View lyrics, Share, Repost.
+ *
+ * [artistId] and [albumId] are nullable because the currently playing [Track] may not carry
+ * that information (a [Track] always has an artist per its API contract in practice, but
+ * `album` is only populated when the backend eager-loads that relation — see
+ * [com.elsfm.mobile.core.model.TrackAlbum]). The corresponding menu items are hidden rather
+ * than firing a callback with a fabricated id.
+ */
 @Composable
 fun TrackContextMenu(
     trackId: Int,
     isVisible: Boolean,
     onDismiss: () -> Unit,
+    onAddToQueue: (Int) -> Unit,
+    onAddToLibrary: (Int) -> Unit,
     onAddToPlaylist: (Int) -> Unit,
     onShare: () -> Unit,
+    onRepost: (Int) -> Unit,
+    artistId: Int? = null,
+    albumId: Int? = null,
+    onGoToArtist: (Int) -> Unit = {},
+    onGoToAlbum: (Int) -> Unit = {},
+    onGoToTrack: (Int) -> Unit = {},
+    onViewLyrics: (Int) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     if (isVisible) {
@@ -472,16 +523,44 @@ fun TrackContextMenu(
             modifier = modifier
         ) {
             DropdownMenuItem(
-                text = { Text("Add to Playlist") },
+                text = { Text("Add to queue") },
+                onClick = { onAddToQueue(trackId); onDismiss() }
+            )
+            DropdownMenuItem(
+                text = { Text("Add to library") },
+                onClick = { onAddToLibrary(trackId); onDismiss() }
+            )
+            DropdownMenuItem(
+                text = { Text("Add to playlist") },
                 onClick = { onAddToPlaylist(trackId); onDismiss() }
+            )
+            if (artistId != null) {
+                DropdownMenuItem(
+                    text = { Text("Go to artist") },
+                    onClick = { onGoToArtist(artistId); onDismiss() }
+                )
+            }
+            if (albumId != null) {
+                DropdownMenuItem(
+                    text = { Text("Go to album") },
+                    onClick = { onGoToAlbum(albumId); onDismiss() }
+                )
+            }
+            DropdownMenuItem(
+                text = { Text("Go to track") },
+                onClick = { onGoToTrack(trackId); onDismiss() }
+            )
+            DropdownMenuItem(
+                text = { Text("View lyrics") },
+                onClick = { onViewLyrics(trackId); onDismiss() }
             )
             DropdownMenuItem(
                 text = { Text("Share") },
                 onClick = { onShare(); onDismiss() }
             )
             DropdownMenuItem(
-                text = { Text("View Details") },
-                onClick = { onDismiss() }
+                text = { Text("Repost") },
+                onClick = { onRepost(trackId); onDismiss() }
             )
         }
     }

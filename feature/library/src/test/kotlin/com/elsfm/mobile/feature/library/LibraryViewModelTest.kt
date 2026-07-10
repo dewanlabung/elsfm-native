@@ -1,7 +1,9 @@
 package com.elsfm.mobile.feature.library
 
 import app.cash.turbine.test
+import com.elsfm.mobile.core.model.Album
 import com.elsfm.mobile.core.model.Channel
+import com.elsfm.mobile.core.model.Playlist
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -35,8 +37,8 @@ class LibraryViewModelTest {
     fun `loadLibrary updates state with playlists, albums and channels`() = runTest {
         val testChannel = Channel(id = 1, name = "Sunday School", modelType = "channel")
         val repository = FakeLibraryApiRepository(
-            playlists = SampleLibraryData.playlists,
-            albums = SampleLibraryData.albums,
+            playlists = listOf(Playlist(id = 8, name = "All Sunday School Songs", image = null)),
+            albums = listOf(Album(id = 460, name = "2026 EL Shaddai Youth Camp Songs", image = null)),
             channels = listOf(testChannel),
         )
         val viewModel = LibraryViewModel(repository)

@@ -7,17 +7,21 @@ import com.elsfm.mobile.core.database.entity.FollowedArtistEntity
 import com.elsfm.mobile.core.database.repository.FollowStateRepository
 import com.elsfm.mobile.core.model.Album
 import com.elsfm.mobile.core.model.Artist
+import com.elsfm.mobile.core.model.ArtistFollower
 import com.elsfm.mobile.core.model.FollowState
 import com.elsfm.mobile.core.model.Track
 import com.elsfm.mobile.core.network.ApiResult
 import com.elsfm.mobile.core.network.api.ArtistApi
+import com.elsfm.mobile.core.network.api.UserApi
 import com.elsfm.mobile.core.network.api.UserApiLike
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import io.ktor.http.HttpHeaders
+import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -38,10 +42,22 @@ private class FakeArtistApi(
     private val artistResult: ApiResult<Artist> = ApiResult.Success(testArtist),
     private val tracksResult: ApiResult<List<Track>> = ApiResult.Success(testTracks),
     private val albumsResult: ApiResult<List<Album>> = ApiResult.Success(testAlbums),
+    private val followersResult: ApiResult<List<ArtistFollower>> = ApiResult.Success(testFollowers),
 ) : ArtistApi(fakeHttpClient) {
     override suspend fun getArtist(id: Int) = artistResult
     override suspend fun getArtistTracks(id: Int) = tracksResult
     override suspend fun getArtistAlbums(id: Int) = albumsResult
+    override suspend fun getArtistFollowers(id: Int) = followersResult
+}
+
+private fun buildFakeUserApi(): UserApi {
+    val mockEngine = MockEngine { _ ->
+        respond("{}", HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
+    }
+    val httpClient = HttpClient(mockEngine) {
+        install(ContentNegotiation) { json() }
+    }
+    return UserApi(httpClient)
 }
 
 private class FakeFollowStateDao : FollowStateDao {
@@ -117,6 +133,11 @@ private val testAlbums = listOf(
     Album(id = 2, name = "Album 2", image = null, releaseDate = "2024"),
 )
 
+private val testFollowers = listOf(
+    ArtistFollower(id = 10, name = "Follower One", username = "follower1"),
+    ArtistFollower(id = 11, name = "Follower Two", username = "follower2"),
+)
+
 class ArtistDetailViewModelTest {
 
     @Test
@@ -127,6 +148,7 @@ class ArtistDetailViewModelTest {
         val viewModel = ArtistDetailViewModel(
             artistApi = fakeApi,
             followStateRepository = fakeRepository,
+            userApi = buildFakeUserApi(),
             savedStateHandle = androidx.lifecycle.SavedStateHandle().apply { set("artistId", 1) },
             dispatcherProvider = TestDispatcherProvider(StandardTestDispatcher(testScheduler))
         )
@@ -156,6 +178,7 @@ class ArtistDetailViewModelTest {
         val viewModel = ArtistDetailViewModel(
             artistApi = fakeApi,
             followStateRepository = fakeRepository,
+            userApi = buildFakeUserApi(),
             savedStateHandle = androidx.lifecycle.SavedStateHandle().apply { set("artistId", 1) },
             dispatcherProvider = TestDispatcherProvider(StandardTestDispatcher(testScheduler))
         )
@@ -181,6 +204,7 @@ class ArtistDetailViewModelTest {
         val viewModel = ArtistDetailViewModel(
             artistApi = fakeApi,
             followStateRepository = fakeRepository,
+            userApi = buildFakeUserApi(),
             savedStateHandle = androidx.lifecycle.SavedStateHandle().apply { set("artistId", 1) },
             dispatcherProvider = TestDispatcherProvider(StandardTestDispatcher(testScheduler))
         )
@@ -205,6 +229,7 @@ class ArtistDetailViewModelTest {
         val viewModel = ArtistDetailViewModel(
             artistApi = fakeApi,
             followStateRepository = fakeRepository,
+            userApi = buildFakeUserApi(),
             savedStateHandle = androidx.lifecycle.SavedStateHandle().apply { set("artistId", 1) },
             dispatcherProvider = TestDispatcherProvider(StandardTestDispatcher(testScheduler))
         )
@@ -238,6 +263,7 @@ class ArtistDetailViewModelTest {
         val viewModel = ArtistDetailViewModel(
             artistApi = fakeApi,
             followStateRepository = fakeRepository,
+            userApi = buildFakeUserApi(),
             savedStateHandle = androidx.lifecycle.SavedStateHandle().apply { set("artistId", 1) },
             dispatcherProvider = TestDispatcherProvider(StandardTestDispatcher(testScheduler))
         )
@@ -266,6 +292,7 @@ class ArtistDetailViewModelTest {
         val viewModel = ArtistDetailViewModel(
             artistApi = fakeApi,
             followStateRepository = fakeRepository,
+            userApi = buildFakeUserApi(),
             savedStateHandle = androidx.lifecycle.SavedStateHandle(),
             dispatcherProvider = TestDispatcherProvider(StandardTestDispatcher(testScheduler))
         )
@@ -280,5 +307,102 @@ class ArtistDetailViewModelTest {
             assertFalse(fakeUserApi.followCalled)
             assertFalse(fakeUserApi.unfollowCalled)
         }
+    }
+
+    @Test
+    fun `selectTab updates selectedTab and lazily loads followers`() = runTest {
+        val fakeApi = FakeArtistApi()
+        val fakeUserApi = FakeUserApi()
+        val fakeRepository = FollowStateRepository(FakeFollowStateDao(), fakeUserApi)
+        val viewModel = ArtistDetailViewModel(
+            artistApi = fakeApi,
+            followStateRepository = fakeRepository,
+            userApi = buildFakeUserApi(),
+            savedStateHandle = androidx.lifecycle.SavedStateHandle().apply { set("artistId", 1) },
+            dispatcherProvider = TestDispatcherProvider(StandardTestDispatcher(testScheduler))
+        )
+
+        viewModel.state.test {
+            awaitItem() // initial
+            awaitItem() // loading
+            awaitItem() // success, followers not yet loaded
+
+            viewModel.selectTab(ArtistTab.FOLLOWERS)
+            val tabSelectedState = awaitItem()
+            assertEquals(ArtistTab.FOLLOWERS, tabSelectedState.selectedTab)
+
+            val followersLoadingState = awaitItem()
+            assertTrue(followersLoadingState.isFollowersLoading)
+
+            val followersLoadedState = awaitItem()
+            assertFalse(followersLoadedState.isFollowersLoading)
+            assertEquals(testFollowers, followersLoadedState.followers)
+        }
+    }
+
+    @Test
+    fun `toggleFollowUser marks a follower as followed`() = runTest {
+        val fakeApi = FakeArtistApi()
+        val fakeUserApi = FakeUserApi()
+        val fakeRepository = FollowStateRepository(FakeFollowStateDao(), fakeUserApi)
+        val viewModel = ArtistDetailViewModel(
+            artistApi = fakeApi,
+            followStateRepository = fakeRepository,
+            userApi = buildFakeUserApi(),
+            savedStateHandle = androidx.lifecycle.SavedStateHandle().apply { set("artistId", 1) },
+            dispatcherProvider = TestDispatcherProvider(StandardTestDispatcher(testScheduler))
+        )
+
+        viewModel.state.test {
+            awaitItem() // initial
+            awaitItem() // loading
+            awaitItem() // success
+
+            viewModel.toggleFollowUser(testFollowers[0].id)
+            val updatedState = awaitItem()
+
+            assertTrue(updatedState.followedUserIds.contains(testFollowers[0].id))
+        }
+    }
+
+    @Test
+    fun `buildArtistShareUrl returns a slugified client-built link`() = runTest {
+        val fakeApi = FakeArtistApi()
+        val fakeUserApi = FakeUserApi()
+        val fakeRepository = FollowStateRepository(FakeFollowStateDao(), fakeUserApi)
+        val viewModel = ArtistDetailViewModel(
+            artistApi = fakeApi,
+            followStateRepository = fakeRepository,
+            userApi = buildFakeUserApi(),
+            savedStateHandle = androidx.lifecycle.SavedStateHandle().apply { set("artistId", 1) },
+            dispatcherProvider = TestDispatcherProvider(StandardTestDispatcher(testScheduler))
+        )
+
+        viewModel.state.test {
+            awaitItem() // initial
+            awaitItem() // loading
+            awaitItem() // success
+
+            assertEquals(
+                "https://www.elsfm.com/artist/1/test-artist",
+                viewModel.buildArtistShareUrl(),
+            )
+        }
+    }
+
+    @Test
+    fun `buildArtistShareUrl returns null when artist has not loaded`() = runTest {
+        val fakeApi = FakeArtistApi()
+        val fakeUserApi = FakeUserApi()
+        val fakeRepository = FollowStateRepository(FakeFollowStateDao(), fakeUserApi)
+        val viewModel = ArtistDetailViewModel(
+            artistApi = fakeApi,
+            followStateRepository = fakeRepository,
+            userApi = buildFakeUserApi(),
+            savedStateHandle = androidx.lifecycle.SavedStateHandle(),
+            dispatcherProvider = TestDispatcherProvider(StandardTestDispatcher(testScheduler))
+        )
+
+        assertEquals(null, viewModel.buildArtistShareUrl())
     }
 }

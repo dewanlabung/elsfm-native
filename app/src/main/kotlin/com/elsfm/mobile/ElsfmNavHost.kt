@@ -6,14 +6,18 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -22,18 +26,24 @@ import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.elsfm.mobile.core.network.auth.SessionEvent
 import com.elsfm.mobile.feature.artist.ArtistDetailScreen
 import com.elsfm.mobile.feature.auth.LoginScreen
 import com.elsfm.mobile.feature.auth.PasswordResetScreen
 import com.elsfm.mobile.feature.auth.SignupScreen
+import com.elsfm.mobile.feature.discovery.ChannelDetailScreen
 import com.elsfm.mobile.feature.discovery.DiscoveryScreen
 import com.elsfm.mobile.feature.downloads.DownloadsScreen
 import com.elsfm.mobile.feature.library.LibraryScreen
+import com.elsfm.mobile.feature.library.LikedSongsScreen
+import com.elsfm.mobile.feature.library.ListeningHistoryScreen
+import com.elsfm.mobile.feature.notifications.NotificationsScreen
 import com.elsfm.mobile.feature.player.MiniPlayer
 import com.elsfm.mobile.feature.player.PlayerScreen
 import com.elsfm.mobile.feature.player.PlayerViewModel
@@ -51,6 +61,11 @@ private const val ROUTE_PROFILE = "profile"
 private const val ROUTE_DOWNLOADS = "downloads"
 private const val ROUTE_SIGNUP = "signup"
 private const val ROUTE_PASSWORD_RESET = "password_reset"
+private const val ROUTE_CHANNEL = "channel/{channelId}"
+private const val ROUTE_NOTIFICATIONS = "notifications"
+private const val ROUTE_LIKED_SONGS = "liked_songs"
+private const val ROUTE_LISTENING_HISTORY = "listening_history"
+private const val CHANNEL_ID_ARG = "channelId"
 
 private data class BottomTab(
     val route: String,
@@ -66,6 +81,7 @@ private val bottomTabs = listOf(
     BottomTab(ROUTE_DOWNLOADS, "Downloads", Icons.Filled.Star),
 )
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ElsfmNavHost(
     navController: NavHostController = rememberNavController(),
@@ -93,6 +109,18 @@ fun ElsfmNavHost(
             } == true
 
             Scaffold(
+                topBar = {
+                    if (showBottomBar) {
+                        TopAppBar(
+                            title = {},
+                            actions = {
+                                IconButton(onClick = { navController.navigate(ROUTE_NOTIFICATIONS) }) {
+                                    Icon(Icons.Filled.Notifications, contentDescription = "Notifications")
+                                }
+                            },
+                        )
+                    }
+                },
                 bottomBar = {
                     if (showBottomBar) {
                         NavigationBar {
@@ -157,13 +185,48 @@ fun ElsfmNavHost(
                             }
                         }
                         composable(ROUTE_PLAYER) {
-                            PlayerScreen()
+                            PlayerScreen(
+                                onCollapse = { navController.popBackStack() },
+                                onGoToArtist = { artistId -> navController.navigate("artist/$artistId") },
+                                onGoToAlbum = { /* TODO: navigate to album detail */ },
+                                onGoToTrack = { /* TODO: no track-detail screen yet */ },
+                                onViewLyrics = { /* TODO: no lyrics screen yet - LyricsApi exists, UI not built */ },
+                            )
                         }
                         composable(ROUTE_LIBRARY) {
                             LibraryScreen(
                                 onPlaylistTap = { /* TODO: navigate to playlist detail */ },
                                 onAlbumTap = { /* TODO: navigate to album detail */ },
-                                onChannelTap = { /* TODO: navigate to channel */ },
+                                onChannelTap = { channel -> navController.navigate("channel/${channel.id}") },
+                                onSongsClicked = { navController.navigate(ROUTE_LIKED_SONGS) },
+                                onPlayHistoryClicked = { navController.navigate(ROUTE_LISTENING_HISTORY) },
+                            )
+                        }
+                        composable(ROUTE_LIKED_SONGS) {
+                            val playerViewModel: PlayerViewModel = hiltViewModel()
+                            LikedSongsScreen(
+                                onTrackTap = { track, queue -> playerViewModel.play(track, queue) },
+                            )
+                        }
+                        composable(ROUTE_LISTENING_HISTORY) {
+                            val playerViewModel: PlayerViewModel = hiltViewModel()
+                            ListeningHistoryScreen(
+                                onTrackTap = { track, queue -> playerViewModel.play(track, queue) },
+                            )
+                        }
+                        composable(ROUTE_NOTIFICATIONS) {
+                            NotificationsScreen(onBack = { navController.popBackStack() })
+                        }
+                        composable(
+                            route = ROUTE_CHANNEL,
+                            arguments = listOf(navArgument(CHANNEL_ID_ARG) { type = NavType.IntType }),
+                        ) {
+                            val playerViewModel: PlayerViewModel = hiltViewModel()
+                            ChannelDetailScreen(
+                                onTrackClicked = { track, queue -> playerViewModel.play(track, queue) },
+                                onPlaylistClicked = { /* TODO: navigate to playlist detail */ },
+                                onAlbumClicked = { /* TODO: navigate to album detail */ },
+                                onChannelClicked = { channelId -> navController.navigate("channel/$channelId") },
                             )
                         }
                         composable(ROUTE_SEARCH) {
@@ -185,6 +248,7 @@ fun ElsfmNavHost(
                                 artistId = artistId,
                                 onTrackClicked = { track, queue -> playerViewModel.play(track, queue) },
                                 onAlbumClicked = { /* TODO: navigate to album detail */ },
+                                onArtistClicked = { otherArtistId -> navController.navigate("artist/$otherArtistId") },
                             )
                         }
                         composable(ROUTE_DISCOVERY) {
@@ -193,6 +257,7 @@ fun ElsfmNavHost(
                                 onTrackClicked = { track, queue ->
                                     playerViewModel.play(track, queue)
                                 },
+                                onChannelClicked = { channelId -> navController.navigate("channel/$channelId") },
                             )
                         }
                         composable(ROUTE_PROFILE) {

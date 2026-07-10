@@ -3,7 +3,6 @@ package com.elsfm.mobile.feature.discovery
 import com.elsfm.mobile.core.common.DispatcherProvider
 import com.elsfm.mobile.core.network.api.ChannelApi
 import com.elsfm.mobile.core.network.api.ProfileApi
-import com.elsfm.mobile.core.network.api.TrackListApi
 import com.elsfm.mobile.core.network.elsfmJson
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
@@ -51,33 +50,6 @@ class DiscoveryViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private fun mockTrackListApi(status: HttpStatusCode = HttpStatusCode.OK): TrackListApi {
-        val mockEngine = MockEngine.create {
-            dispatcher = testDispatcher
-            addHandler { _ ->
-                val body = """
-                    {
-                      "pagination": {
-                        "data": [
-                          {"id": 1, "name": "Track 1", "image": null, "duration": 180000, "plays": "12", "artists": []},
-                          {"id": 2, "name": "Track 2", "image": null, "duration": 200000, "plays": "34", "artists": []}
-                        ]
-                      }
-                    }
-                """.trimIndent()
-                respond(
-                    body,
-                    status,
-                    headersOf(HttpHeaders.ContentType, "application/json"),
-                )
-            }
-        }
-        val httpClient = HttpClient(mockEngine) {
-            install(ContentNegotiation) { json(elsfmJson()) }
-        }
-        return TrackListApi(httpClient)
-    }
-
     private fun mockProfileApi(status: HttpStatusCode = HttpStatusCode.OK): ProfileApi {
         val mockEngine = MockEngine.create {
             dispatcher = testDispatcher
@@ -102,8 +74,11 @@ class DiscoveryViewModelTest {
         return ProfileApi(httpClient)
     }
 
-    // Home channel (5) response: two nested sub-channels, one playlist-backed
-    // ("Kids Zone", id 24) and one album-backed ("New Releases", id 1).
+    // Home channel (5) response mirrors the real backend's four nested
+    // sub-channels under "Nepali Christian Songs": Kids Zone (playlists),
+    // Explore More Channel (playlists), New Release ... songs (albums) and
+    // Mostly Played Songs (tracks). Ids match the live API as of this
+    // session's verification via `curl .../api/v1/channel/5?loader=channelPage`.
     private val homeChannelsBody = """
         {
           "channel": {
@@ -113,14 +88,16 @@ class DiscoveryViewModelTest {
             "content": {
               "data": [
                 {"id": 24, "name": "Kids Zone", "model_type": "channel"},
-                {"id": 1, "name": "New Release Nepali Christian songs", "model_type": "channel"}
+                {"id": 23, "name": "Explore More Channel", "model_type": "channel"},
+                {"id": 1, "name": "New Release Nepali Christian songs", "model_type": "channel"},
+                {"id": 4, "name": "Mostly Played Songs", "model_type": "channel"}
               ]
             }
           }
         }
     """.trimIndent()
 
-    private val playlistChannelBody = """
+    private val kidsZoneChannelBody = """
         {
           "channel": {
             "id": 24,
@@ -135,7 +112,23 @@ class DiscoveryViewModelTest {
         }
     """.trimIndent()
 
-    private val albumChannelBody = """
+    private val exploreMoreChannelBody = """
+        {
+          "channel": {
+            "id": 23,
+            "name": "Explore More Channel",
+            "config": {"contentModel": "playlist"},
+            "content": {
+              "data": [
+                {"id": 25, "name": "Youth Camp Nepali Christian Songs", "image": null},
+                {"id": 26, "name": "Holy Convocation Songs", "image": null}
+              ]
+            }
+          }
+        }
+    """.trimIndent()
+
+    private val newReleasesChannelBody = """
         {
           "channel": {
             "id": 1,
@@ -150,6 +143,22 @@ class DiscoveryViewModelTest {
         }
     """.trimIndent()
 
+    private val mostlyPlayedChannelBody = """
+        {
+          "channel": {
+            "id": 4,
+            "name": "Mostly Played Songs",
+            "config": {"contentModel": "track"},
+            "content": {
+              "data": [
+                {"id": 1497, "name": "Khrist Timro Ikchya Lai", "image": null, "duration": 180000, "plays": "12", "artists": []},
+                {"id": 1506, "name": "Kasei Ma Timi Bich Maya", "image": null, "duration": 200000, "plays": "34", "artists": []}
+              ]
+            }
+          }
+        }
+    """.trimIndent()
+
     private fun mockChannelApi(homeChannelsStatus: HttpStatusCode = HttpStatusCode.OK): ChannelApi {
         val mockEngine = MockEngine.create {
             dispatcher = testDispatcher
@@ -157,8 +166,10 @@ class DiscoveryViewModelTest {
                 val path = request.url.encodedPath
                 val body = when {
                     path.endsWith("/channel/5") -> homeChannelsBody
-                    path.endsWith("/channel/24") -> playlistChannelBody
-                    path.endsWith("/channel/1") -> albumChannelBody
+                    path.endsWith("/channel/24") -> kidsZoneChannelBody
+                    path.endsWith("/channel/23") -> exploreMoreChannelBody
+                    path.endsWith("/channel/1") -> newReleasesChannelBody
+                    path.endsWith("/channel/4") -> mostlyPlayedChannelBody
                     else -> "{}"
                 }
                 val status = if (path.endsWith("/channel/5")) homeChannelsStatus else HttpStatusCode.OK
@@ -172,9 +183,8 @@ class DiscoveryViewModelTest {
     }
 
     @Test
-    fun loadHomeSuccessLoadsAllSections() = runTest(testDispatcher) {
+    fun loadHomeSuccessLoadsAllSectionsWithRealNames() = runTest(testDispatcher) {
         val viewModel = DiscoveryViewModel(
-            mockTrackListApi(),
             mockProfileApi(),
             mockChannelApi(),
             FakeDispatcherProvider(testDispatcher),
@@ -182,30 +192,41 @@ class DiscoveryViewModelTest {
         advanceUntilIdle()
 
         val state = viewModel.state.value
-        assertEquals(1, state.featured.size)
-        assertEquals("All Sunday School Songs", state.featured[0].name)
-        assertEquals(2, state.popular.size)
+        assertEquals(1, state.kidsZone.size)
+        assertEquals("All Sunday School Songs", state.kidsZone[0].name)
+        assertEquals("Kids Zone", state.kidsZoneTitle)
+
+        assertEquals(2, state.exploreMoreChannel.size)
+        assertEquals("Youth Camp Nepali Christian Songs", state.exploreMoreChannel[0].name)
+        assertEquals("Explore More Channel", state.exploreMoreChannelTitle)
+        assertEquals(23, state.exploreMoreChannelId)
+
         assertEquals(1, state.newReleases.size)
         assertEquals("2026 EL Shaddai Youth Camp Songs", state.newReleases[0].name)
+        assertEquals("New Release Nepali Christian songs", state.newReleasesTitle)
+
+        assertEquals(2, state.mostlyPlayedSongs.size)
+        assertEquals("Khrist Timro Ikchya Lai", state.mostlyPlayedSongs[0].name)
+        assertEquals("Mostly Played Songs", state.mostlyPlayedSongsTitle)
+
         assertEquals(1, state.recentlyPlayed.size)
         assertFalse(state.isLoading)
         assertNull(state.error)
     }
 
     @Test
-    fun loadHomeKeepsOtherSectionsWhenPopularTracksFail() = runTest(testDispatcher) {
+    fun loadHomeKeepsOtherSectionsWhenRecentlyPlayedFails() = runTest(testDispatcher) {
         val viewModel = DiscoveryViewModel(
-            mockTrackListApi(status = HttpStatusCode.InternalServerError),
-            mockProfileApi(),
+            mockProfileApi(status = HttpStatusCode.InternalServerError),
             mockChannelApi(),
             FakeDispatcherProvider(testDispatcher),
         )
         advanceUntilIdle()
 
         val state = viewModel.state.value
-        assertEquals(0, state.popular.size)
-        assertEquals(1, state.recentlyPlayed.size)
-        assertEquals(1, state.featured.size)
+        assertEquals(0, state.recentlyPlayed.size)
+        assertEquals(2, state.mostlyPlayedSongs.size)
+        assertEquals(1, state.kidsZone.size)
         assertEquals(1, state.newReleases.size)
         assertFalse(state.isLoading)
         assertNotNull(state.error)
@@ -214,7 +235,6 @@ class DiscoveryViewModelTest {
     @Test
     fun loadHomeKeepsOtherSectionsWhenHomeChannelsFail() = runTest(testDispatcher) {
         val viewModel = DiscoveryViewModel(
-            mockTrackListApi(),
             mockProfileApi(),
             mockChannelApi(homeChannelsStatus = HttpStatusCode.InternalServerError),
             FakeDispatcherProvider(testDispatcher),
@@ -222,9 +242,10 @@ class DiscoveryViewModelTest {
         advanceUntilIdle()
 
         val state = viewModel.state.value
-        assertTrue(state.featured.isEmpty())
+        assertTrue(state.kidsZone.isEmpty())
+        assertTrue(state.exploreMoreChannel.isEmpty())
         assertTrue(state.newReleases.isEmpty())
-        assertEquals(2, state.popular.size)
+        assertTrue(state.mostlyPlayedSongs.isEmpty())
         assertEquals(1, state.recentlyPlayed.size)
         assertFalse(state.isLoading)
         assertNotNull(state.error)

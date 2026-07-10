@@ -235,4 +235,71 @@ class UserApiTest {
 
         assertTrue(result is ApiResult.NetworkError)
     }
+
+    private val likedTracksResponseBody = """
+        {
+          "pagination": {
+            "data": [
+              {
+                "id": 42,
+                "name": "Liked Track One",
+                "image": "storage/track_image_media/liked.jpeg",
+                "duration": 210000,
+                "plays": "500",
+                "artists": [{"id": 7, "name": "Some Artist"}]
+              }
+            ]
+          }
+        }
+    """.trimIndent()
+
+    @Test
+    fun `getLikedTracks parses tracks from the response`() = runTest {
+        val api = UserApi(clientReturning(HttpStatusCode.OK, likedTracksResponseBody))
+
+        val result = api.getLikedTracks(userId = 5)
+
+        assertTrue(result is ApiResult.Success)
+        val tracks = (result as ApiResult.Success).data
+        assertEquals(1, tracks.size)
+        assertEquals("Liked Track One", tracks[0].name)
+    }
+
+    @Test
+    fun `getLikedTracks requests the user-scoped liked-tracks endpoint`() = runTest {
+        var capturedPath: String? = null
+        val api = UserApi(
+            clientCapturingRequest(HttpStatusCode.OK, likedTracksResponseBody) { request ->
+                capturedPath = request.url.encodedPath
+            },
+        )
+
+        api.getLikedTracks(userId = 5)
+
+        assertEquals("/api/v1/users/5/liked-tracks", capturedPath)
+    }
+
+    @Test
+    fun `getLikedTracks returns NetworkError on server error`() = runTest {
+        val api = UserApi(clientReturning(HttpStatusCode.InternalServerError, ""))
+
+        val result = api.getLikedTracks(userId = 5)
+
+        assertTrue(result is ApiResult.NetworkError)
+    }
+
+    @Test
+    fun `getLikedTracks returns NetworkError on exception`() = runTest {
+        val mockEngine = MockEngine { _ ->
+            throw RuntimeException("Network error")
+        }
+        val client = HttpClient(mockEngine) {
+            install(ContentNegotiation) { json(elsfmJson()) }
+        }
+        val api = UserApi(client)
+
+        val result = api.getLikedTracks(userId = 5)
+
+        assertTrue(result is ApiResult.NetworkError)
+    }
 }

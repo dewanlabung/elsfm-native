@@ -47,6 +47,33 @@ class PlayerViewModel @Inject constructor(
             PlayerMenuEvent.HideMenu -> {
                 _menuState.value = _menuState.value.copy(isMenuVisible = false)
             }
+            is PlayerMenuEvent.AddToQueue -> {
+                // Purely local: no backend call, just appends to the in-memory queue.
+                state.value.currentTrack?.takeIf { it.id == event.trackId }?.let { track ->
+                    playerController.addToQueue(track)
+                }
+                _menuState.value = _menuState.value.copy(isMenuVisible = false)
+            }
+            is PlayerMenuEvent.AddToLibrary -> {
+                viewModelScope.launch {
+                    _menuState.value = _menuState.value.copy(addToLibraryLoading = true)
+                    when (menuRepository.addTrackToLibrary(event.trackId)) {
+                        is ApiResult.Success -> {
+                            _menuState.value = _menuState.value.copy(
+                                addToLibraryLoading = false,
+                                error = null
+                            )
+                        }
+                        is ApiResult.NetworkError -> {
+                            _menuState.value = _menuState.value.copy(
+                                addToLibraryLoading = false,
+                                error = "Failed to add track to library"
+                            )
+                        }
+                        else -> {}
+                    }
+                }
+            }
             is PlayerMenuEvent.AddToPlaylist -> {
                 viewModelScope.launch {
                     _menuState.value = _menuState.value.copy(addToPlaylistLoading = true)
@@ -81,6 +108,26 @@ class PlayerViewModel @Inject constructor(
                             _menuState.value = _menuState.value.copy(
                                 shareLoading = false,
                                 error = "Failed to share track"
+                            )
+                        }
+                        else -> {}
+                    }
+                }
+            }
+            is PlayerMenuEvent.Repost -> {
+                viewModelScope.launch {
+                    _menuState.value = _menuState.value.copy(repostLoading = true)
+                    when (menuRepository.repostTrack(event.trackId)) {
+                        is ApiResult.Success -> {
+                            _menuState.value = _menuState.value.copy(
+                                repostLoading = false,
+                                error = null
+                            )
+                        }
+                        is ApiResult.NetworkError -> {
+                            _menuState.value = _menuState.value.copy(
+                                repostLoading = false,
+                                error = "Failed to repost track"
                             )
                         }
                         else -> {}

@@ -96,4 +96,11 @@ class Media3PlayerController @Inject constructor(
             play()
         }
     }
+
+    override fun addToQueue(track: Track) {
+        if (currentQueue.any { it.id == track.id }) return
+        currentQueue = currentQueue + track
+        _state.value = _state.value.copy(queue = currentQueue)
+        mediaController?.addMediaItem(track.toMediaItem())
+    }
 }

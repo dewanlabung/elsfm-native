@@ -2,6 +2,7 @@ package com.elsfm.mobile.feature.player.data
 
 import com.elsfm.mobile.core.network.ApiResult
 import com.elsfm.mobile.core.network.api.PlaylistApi
+import com.elsfm.mobile.core.network.api.RepostApi
 import com.elsfm.mobile.core.network.api.ShareTrackResponse
 import com.elsfm.mobile.core.network.api.UserApi
 import io.ktor.client.HttpClient
@@ -23,6 +24,7 @@ class PlayerMenuRepositoryTest {
     private lateinit var repository: PlayerMenuRepository
     private lateinit var playlistApi: PlaylistApi
     private lateinit var userApi: UserApi
+    private lateinit var repostApi: RepostApi
 
     @Before
     fun setup() {
@@ -42,6 +44,20 @@ class PlayerMenuRepositoryTest {
                         headers = headersOf(Pair("Content-Type", listOf("application/json")))
                     )
                 }
+                request.url.toString().contains("/api/v1/users/me/add-to-library") -> {
+                    respond(
+                        content = "{}",
+                        status = HttpStatusCode.OK,
+                        headers = headersOf(Pair("Content-Type", listOf("application/json")))
+                    )
+                }
+                request.url.toString().contains("/api/v1/reposts/toggle") -> {
+                    respond(
+                        content = """{"action": "added"}""",
+                        status = HttpStatusCode.OK,
+                        headers = headersOf(Pair("Content-Type", listOf("application/json")))
+                    )
+                }
                 else -> respond("", status = HttpStatusCode.NotFound)
             }
         }
@@ -55,7 +71,8 @@ class PlayerMenuRepositoryTest {
         }
         playlistApi = PlaylistApi(httpClient)
         userApi = UserApi(httpClient)
-        repository = PlayerMenuRepository(playlistApi, userApi)
+        repostApi = RepostApi(httpClient)
+        repository = PlayerMenuRepository(playlistApi, userApi, repostApi)
     }
 
     @Test
@@ -75,5 +92,19 @@ class PlayerMenuRepositoryTest {
         val result = repository.shareTrack(1)
         assertTrue(result is ApiResult.Success<String>)
         assertEquals("https://elsfm.com/share/track/1", (result as ApiResult.Success).data)
+    }
+
+    @Test
+    fun testAddTrackToLibrarySuccess() = runTest {
+        val result = repository.addTrackToLibrary(1)
+        assertTrue(result is ApiResult.Success<Boolean>)
+        assertEquals(true, (result as ApiResult.Success).data)
+    }
+
+    @Test
+    fun testRepostTrackSuccess() = runTest {
+        val result = repository.repostTrack(1)
+        assertTrue(result is ApiResult.Success<String>)
+        assertEquals("added", (result as ApiResult.Success).data)
     }
 }

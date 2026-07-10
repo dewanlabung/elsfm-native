@@ -7,6 +7,7 @@ import com.elsfm.mobile.core.database.repository.FollowStateRepository
 import com.elsfm.mobile.core.model.Album
 import com.elsfm.mobile.core.network.ApiResult
 import com.elsfm.mobile.core.network.api.ArtistApi
+import com.elsfm.mobile.core.network.api.UserApi
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,6 +20,7 @@ import javax.inject.Inject
 class ArtistDetailViewModel @Inject constructor(
     private val artistApi: ArtistApi,
     private val followStateRepository: FollowStateRepository,
+    private val userApi: UserApi,
     private val savedStateHandle: androidx.lifecycle.SavedStateHandle,
     private val dispatcherProvider: DispatcherProvider,
 ) : ViewModel() {
@@ -114,5 +116,89 @@ class ArtistDetailViewModel @Inject constructor(
                 )
             }
         }
+    }
+
+    /**
+     * Switches the active profile tab. Followers are fetched lazily the first time that tab
+     * is selected (`GET artists/{id}/followers`), matching the web client's per-tab data
+     * loading instead of eagerly fetching data the user may never view.
+     */
+    fun selectTab(tab: ArtistTab) {
+        _state.value = _state.value.copy(selectedTab = tab)
+        if (tab == ArtistTab.FOLLOWERS && _state.value.followers.isEmpty() && !_state.value.isFollowersLoading) {
+            loadFollowers()
+        }
+    }
+
+    private fun loadFollowers() {
+        val artistId = _state.value.artist?.id ?: return
+        viewModelScope.launch(dispatcher) {
+            _state.value = _state.value.copy(isFollowersLoading = true, followersError = null)
+            when (val result = artistApi.getArtistFollowers(artistId)) {
+                is ApiResult.Success -> {
+                    _state.value = _state.value.copy(
+                        followers = result.data,
+                        isFollowersLoading = false
+                    )
+                }
+                is ApiResult.NetworkError -> {
+                    _state.value = _state.value.copy(
+                        isFollowersLoading = false,
+                        followersError = result.cause.message ?: "Failed to load followers"
+                    )
+                }
+                is ApiResult.ValidationError -> {
+                    _state.value = _state.value.copy(isFollowersLoading = false, followersError = "Validation error")
+                }
+                is ApiResult.Unauthorized -> {
+                    _state.value = _state.value.copy(isFollowersLoading = false, followersError = "Unauthorized")
+                }
+            }
+        }
+    }
+
+    /**
+     * Follows/unfollows a *user* from the Followers tab's per-row Follow button. This is
+     * user-to-user following (`UserApi.followUser`/`unfollowUser`, backed by the real
+     * `POST users/{id}/follow` / `unfollow` routes) — distinct from [toggleFollow], which
+     * follows the *artist* itself.
+     */
+    fun toggleFollowUser(userId: Int) {
+        val wasFollowed = _state.value.followedUserIds.contains(userId)
+        viewModelScope.launch(dispatcher) {
+            val result = if (wasFollowed) userApi.unfollowUser(userId) else userApi.followUser(userId)
+            when (result) {
+                is ApiResult.Success -> {
+                    val updatedIds = if (wasFollowed) {
+                        _state.value.followedUserIds - userId
+                    } else {
+                        _state.value.followedUserIds + userId
+                    }
+                    _state.value = _state.value.copy(followedUserIds = updatedIds)
+                }
+                else -> {
+                    _state.value = _state.value.copy(followersError = "Failed to update follow state")
+                }
+            }
+        }
+    }
+
+    /**
+     * Builds the shareable artist profile URL client-side, mirroring the real web client's
+     * `getArtistLink()` (`resources/client/web-player/artists/artist-link.tsx`):
+     * `{base_url}/artist/{id}/{slugified-name}`. No backend "share" endpoint exists for artists
+     * (there is none in `routes/api.php`) so this is purely local, matching the PWA.
+     */
+    fun buildArtistShareUrl(): String? {
+        val artist = _state.value.artist ?: return null
+        return "https://www.elsfm.com/artist/${artist.id}/${slugify(artist.name)}"
+    }
+
+    private fun slugify(input: String): String {
+        return input
+            .lowercase()
+            .replace(Regex("[^a-z0-9\\s-]"), "")
+            .trim()
+            .replace(Regex("\\s+"), "-")
     }
 }

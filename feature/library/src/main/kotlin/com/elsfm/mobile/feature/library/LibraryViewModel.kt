@@ -24,8 +24,8 @@ enum class LibraryFilter {
 /**
  * Immutable, hoisted UI state for [LibraryScreen].
  *
- * Playlists and albums are not yet backed by a real backend endpoint (see
- * [SampleLibraryData]); channels use the real API via [LibraryApiRepository].
+ * Playlists, albums and channels are all backed by real API data via
+ * [LibraryApiRepository].
  */
 data class LibraryState(
     val playlists: List<Playlist> = emptyList(),

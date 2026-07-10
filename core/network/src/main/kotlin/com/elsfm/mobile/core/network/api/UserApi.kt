@@ -1,6 +1,7 @@
 package com.elsfm.mobile.core.network.api
 
 import com.elsfm.mobile.core.model.FollowState
+import com.elsfm.mobile.core.model.Track
 import com.elsfm.mobile.core.network.ApiResult
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -35,6 +36,12 @@ private data class LikeableRequestItem(
 
 @Serializable
 private data class LikeablesRequest(val likeables: List<LikeableRequestItem>)
+
+@Serializable
+private data class LikedTracksPagination(val data: List<Track>)
+
+@Serializable
+private data class LikedTracksResponse(val pagination: LikedTracksPagination)
 
 private const val LIKEABLE_TYPE_TRACK = "track"
 
@@ -134,6 +141,28 @@ class UserApi @Inject constructor(
     suspend fun removeTrackFromLibrary(trackId: Int): ApiResult<Boolean> =
         postLikeable("api/v1/users/me/remove-from-library", trackId, likedResult = false)
 
+    /**
+     * Fetches the full list of tracks the given user has liked ("liked songs").
+     *
+     * Backed by `GET api/v1/users/{user}/liked-tracks` (`UserLibraryTracksController::index`),
+     * route-model-bound on the user's numeric id, ordered by `likes.created_at desc` by
+     * default, paginated 30-per-page server-side (same envelope shape as
+     * [TrackListApi.getPlaylistTracks]: `{ "pagination": { "data": [...] } }`). Only the
+     * first page is requested here — pagination/"load more" is not wired yet.
+     */
+    suspend fun getLikedTracks(userId: Int): ApiResult<List<Track>> {
+        return try {
+            val response = httpClient.get("api/v1/users/$userId/liked-tracks")
+            if (response.status.isSuccess()) {
+                ApiResult.Success(response.body<LikedTracksResponse>().pagination.data)
+            } else {
+                ApiResult.NetworkError(RuntimeException("Unexpected status: ${response.status}"))
+            }
+        } catch (e: Exception) {
+            ApiResult.NetworkError(e)
+        }
+    }
+
     private suspend fun postLikeable(
         path: String,
         trackId: Int,
@@ -152,6 +181,36 @@ class UserApi @Inject constructor(
             }
             if (response.status.isSuccess()) {
                 ApiResult.Success(likedResult)
+            } else {
+                ApiResult.NetworkError(RuntimeException("Unexpected status: ${response.status}"))
+            }
+        } catch (e: Exception) {
+            ApiResult.NetworkError(e)
+        }
+    }
+
+    /**
+     * Follows another user (e.g. from the artist profile's Followers tab).
+     *
+     * Backed by the real Laravel `FollowersController::follow` route:
+     * `POST api/v1/users/{id}/follow`. This is user-to-user following, distinct from
+     * [followArtist] (`api/v1/me/follows/artists/{id}`). The endpoint returns an empty
+     * success envelope with no updated-state payload, so the caller must track the new
+     * following state optimistically.
+     */
+    suspend fun followUser(userId: Int): ApiResult<Unit> = postUserFollowAction("follow", userId)
+
+    /**
+     * Unfollows another user. Backed by `POST api/v1/users/{id}/unfollow`
+     * (`FollowersController::unfollow`).
+     */
+    suspend fun unfollowUser(userId: Int): ApiResult<Unit> = postUserFollowAction("unfollow", userId)
+
+    private suspend fun postUserFollowAction(action: String, userId: Int): ApiResult<Unit> {
+        return try {
+            val response = httpClient.post("api/v1/users/$userId/$action")
+            if (response.status.isSuccess()) {
+                ApiResult.Success(Unit)
             } else {
                 ApiResult.NetworkError(RuntimeException("Unexpected status: ${response.status}"))
             }

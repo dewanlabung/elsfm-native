@@ -34,17 +34,19 @@ internal const val DISCOVERY_CONTENT_LIST_TEST_TAG = "discoveryContentList"
 fun DiscoveryScreen(
     onTrackClicked: (Track, List<Track>) -> Unit,
     viewModel: DiscoveryViewModel = hiltViewModel(),
-    onSeeAllFeatured: () -> Unit = {},
-    onSeeAllPopular: () -> Unit = {},
+    onSeeAllKidsZone: () -> Unit = {},
+    onSeeAllExploreMoreChannel: () -> Unit = {},
     onSeeAllNewReleases: () -> Unit = {},
+    onSeeAllMostlyPlayedSongs: () -> Unit = {},
     onSeeAllRecentlyPlayed: () -> Unit = {},
     onPlaylistClicked: (Playlist) -> Unit = {},
     onAlbumClicked: (Album) -> Unit = {},
     onTrackMoreClicked: (Track) -> Unit = {},
+    onChannelClicked: (channelId: Int) -> Unit = {},
 ) {
     val state by viewModel.state.collectAsState()
 
-    BlurredBackground(imageUrl = state.featured.firstOrNull()?.image) {
+    BlurredBackground(imageUrl = state.kidsZone.firstOrNull()?.image) {
         Crossfade(
             targetState = state.isLoading,
             animationSpec = tween(durationMillis = CROSSFADE_DURATION_MS),
@@ -56,13 +58,15 @@ fun DiscoveryScreen(
                 else -> DiscoveryContent(
                     state = state,
                     onTrackClicked = onTrackClicked,
-                    onSeeAllFeatured = onSeeAllFeatured,
-                    onSeeAllPopular = onSeeAllPopular,
+                    onSeeAllKidsZone = onSeeAllKidsZone,
+                    onSeeAllExploreMoreChannel = onSeeAllExploreMoreChannel,
                     onSeeAllNewReleases = onSeeAllNewReleases,
+                    onSeeAllMostlyPlayedSongs = onSeeAllMostlyPlayedSongs,
                     onSeeAllRecentlyPlayed = onSeeAllRecentlyPlayed,
                     onPlaylistClicked = onPlaylistClicked,
                     onAlbumClicked = onAlbumClicked,
                     onTrackMoreClicked = onTrackMoreClicked,
+                    onChannelClicked = onChannelClicked,
                 )
             }
         }
@@ -70,7 +74,11 @@ fun DiscoveryScreen(
 }
 
 private fun DiscoveryUiState.isEmpty(): Boolean {
-    return featured.isEmpty() && popular.isEmpty() && newReleases.isEmpty() && recentlyPlayed.isEmpty()
+    return kidsZone.isEmpty() &&
+        exploreMoreChannel.isEmpty() &&
+        newReleases.isEmpty() &&
+        mostlyPlayedSongs.isEmpty() &&
+        recentlyPlayed.isEmpty()
 }
 
 @Composable
@@ -100,13 +108,15 @@ private fun DiscoveryError(error: String?, modifier: Modifier = Modifier) {
 internal fun DiscoveryContent(
     state: DiscoveryUiState,
     onTrackClicked: (Track, List<Track>) -> Unit,
-    onSeeAllFeatured: () -> Unit,
-    onSeeAllPopular: () -> Unit,
+    onSeeAllKidsZone: () -> Unit,
+    onSeeAllExploreMoreChannel: () -> Unit,
     onSeeAllNewReleases: () -> Unit,
+    onSeeAllMostlyPlayedSongs: () -> Unit,
     onSeeAllRecentlyPlayed: () -> Unit,
     onPlaylistClicked: (Playlist) -> Unit,
     onAlbumClicked: (Album) -> Unit,
     onTrackMoreClicked: (Track) -> Unit,
+    onChannelClicked: (channelId: Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
@@ -115,31 +125,46 @@ internal fun DiscoveryContent(
             .padding(vertical = 16.dp)
             .testTag(DISCOVERY_CONTENT_LIST_TEST_TAG),
     ) {
-        if (state.featured.isNotEmpty()) {
+        if (state.kidsZone.isNotEmpty()) {
             item {
-                SectionHeader(title = "Featured Playlists", onSeeAllClick = onSeeAllFeatured)
+                SectionHeader(title = state.kidsZoneTitle, onSeeAllClick = onSeeAllKidsZone)
                 FeaturedPlaylistsSection(
-                    playlists = state.featured,
+                    playlists = state.kidsZone,
                     onPlaylistClick = onPlaylistClicked,
                 )
             }
         }
-        if (state.popular.isNotEmpty()) {
+        if (state.exploreMoreChannel.isNotEmpty()) {
             item {
-                SectionHeader(title = "Popular Songs", onSeeAllClick = onSeeAllPopular)
-                TrackListSection(
-                    tracks = state.popular,
-                    onTrackClick = { track -> onTrackClicked(track, state.popular) },
-                    onTrackMoreClick = onTrackMoreClicked,
+                SectionHeader(
+                    title = state.exploreMoreChannelTitle,
+                    onSeeAllClick = {
+                        state.exploreMoreChannelId?.let(onChannelClicked)
+                        onSeeAllExploreMoreChannel()
+                    },
+                )
+                FeaturedPlaylistsSection(
+                    playlists = state.exploreMoreChannel,
+                    onPlaylistClick = onPlaylistClicked,
                 )
             }
         }
         if (state.newReleases.isNotEmpty()) {
             item {
-                SectionHeader(title = "New Releases", onSeeAllClick = onSeeAllNewReleases)
+                SectionHeader(title = state.newReleasesTitle, onSeeAllClick = onSeeAllNewReleases)
                 NewReleasesSection(
                     albums = state.newReleases,
                     onAlbumClick = onAlbumClicked,
+                )
+            }
+        }
+        if (state.mostlyPlayedSongs.isNotEmpty()) {
+            item {
+                SectionHeader(title = state.mostlyPlayedSongsTitle, onSeeAllClick = onSeeAllMostlyPlayedSongs)
+                TrackListSection(
+                    tracks = state.mostlyPlayedSongs,
+                    onTrackClick = { track -> onTrackClicked(track, state.mostlyPlayedSongs) },
+                    onTrackMoreClick = onTrackMoreClicked,
                 )
             }
         }

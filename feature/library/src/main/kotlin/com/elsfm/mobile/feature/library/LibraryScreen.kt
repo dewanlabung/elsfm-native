@@ -43,6 +43,12 @@ fun LibraryScreen(
     onPlaylistTap: (Playlist) -> Unit = {},
     onAlbumTap: (Album) -> Unit = {},
     onChannelTap: (Channel) -> Unit = {},
+    // Not yet wired to a tap target in this screen's current grid+tabs layout
+    // (there is no "Songs"/"Play history" row here to attach these to). Added
+    // ahead of time so LikedSongsScreen/ListeningHistoryScreen navigation can be
+    // hooked up without another signature change once an entry point exists.
+    onSongsClicked: () -> Unit = {},
+    onPlayHistoryClicked: () -> Unit = {},
     libraryViewModel: LibraryViewModel = hiltViewModel(),
 ) {
     val state by libraryViewModel.state.collectAsState()

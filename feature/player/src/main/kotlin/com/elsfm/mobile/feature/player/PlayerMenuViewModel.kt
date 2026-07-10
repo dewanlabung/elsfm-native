@@ -30,11 +30,68 @@ class PlayerMenuViewModel @Inject constructor(
             PlayerMenuEvent.HideMenu -> {
                 _state.value = _state.value.copy(isMenuVisible = false)
             }
+            is PlayerMenuEvent.AddToQueue -> {
+                // Not actionable here: this ViewModel has no PlayerController dependency and
+                // is currently unused by PlayerScreen (see PlayerViewModel.onMenuEvent, which
+                // is the live wiring and owns queue mutation via PlayerController.addToQueue).
+            }
+            is PlayerMenuEvent.AddToLibrary -> {
+                addTrackToLibrary(event.trackId)
+            }
             is PlayerMenuEvent.AddToPlaylist -> {
                 addTrackToPlaylist(event.trackId, event.playlistId)
             }
             is PlayerMenuEvent.ShareTrack -> {
                 shareTrack(event.trackId)
+            }
+            is PlayerMenuEvent.Repost -> {
+                repostTrack(event.trackId)
+            }
+        }
+    }
+
+    private fun addTrackToLibrary(trackId: Int) {
+        viewModelScope.launch {
+            _state.value = _state.value.copy(addToLibraryLoading = true)
+            when (menuRepository.addTrackToLibrary(trackId)) {
+                is ApiResult.Success -> {
+                    _state.value = _state.value.copy(addToLibraryLoading = false, error = null)
+                }
+                is ApiResult.NetworkError -> {
+                    _state.value = _state.value.copy(
+                        addToLibraryLoading = false,
+                        error = "Failed to add track to library"
+                    )
+                }
+                is ApiResult.ValidationError -> {
+                    _state.value = _state.value.copy(addToLibraryLoading = false, error = "Invalid request")
+                }
+                is ApiResult.Unauthorized -> {
+                    _state.value = _state.value.copy(addToLibraryLoading = false, error = "Authentication required")
+                }
+            }
+        }
+    }
+
+    private fun repostTrack(trackId: Int) {
+        viewModelScope.launch {
+            _state.value = _state.value.copy(repostLoading = true)
+            when (menuRepository.repostTrack(trackId)) {
+                is ApiResult.Success -> {
+                    _state.value = _state.value.copy(repostLoading = false, error = null)
+                }
+                is ApiResult.NetworkError -> {
+                    _state.value = _state.value.copy(
+                        repostLoading = false,
+                        error = "Failed to repost track"
+                    )
+                }
+                is ApiResult.ValidationError -> {
+                    _state.value = _state.value.copy(repostLoading = false, error = "Invalid request")
+                }
+                is ApiResult.Unauthorized -> {
+                    _state.value = _state.value.copy(repostLoading = false, error = "Authentication required")
+                }
             }
         }
     }

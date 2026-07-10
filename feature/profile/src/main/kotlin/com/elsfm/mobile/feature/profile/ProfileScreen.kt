@@ -11,6 +11,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -24,11 +25,17 @@ import com.elsfm.mobile.core.model.UserProfile
 fun ProfileScreen(
     viewModel: ProfileViewModel = hiltViewModel(),
     themeViewModel: ThemeViewModel = hiltViewModel(),
+    accountViewModel: AccountViewModel = hiltViewModel(),
     onTrackClicked: (Track) -> Unit,
     onLogout: () -> Unit,
 ) {
     val state by viewModel.state.collectAsState()
     val isDarkMode by themeViewModel.isDarkMode.collectAsState()
+    val accountState by accountViewModel.state.collectAsState()
+
+    LaunchedEffect(Unit) {
+        accountViewModel.loadSessions()
+    }
 
     Column(modifier = Modifier.fillMaxSize()) {
         when {
@@ -67,6 +74,27 @@ fun ProfileScreen(
                             isDarkMode = isDarkMode,
                             onToggleDarkMode = { themeViewModel.setDarkMode(it) },
                             onLogout = onLogout,
+                        )
+                    }
+                    item {
+                        AccountDetailsPanel(
+                            profile = profile,
+                            isSavingName = accountState.isSavingName,
+                            isUploadingAvatar = accountState.isUploadingAvatar,
+                            accountError = accountState.accountError,
+                            onAvatarSelected = { bytes, filename, mimeType ->
+                                accountViewModel.uploadAvatar(profile.id, bytes, filename, mimeType)
+                            },
+                            onRemoveAvatar = { accountViewModel.removeAvatar(profile.id) },
+                            onSaveName = { name -> accountViewModel.updateName(profile.id, name) },
+                        )
+                    }
+                    item { HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp)) }
+                    item {
+                        SessionsPanel(
+                            sessions = accountState.sessions,
+                            isLoading = accountState.isLoadingSessions,
+                            error = accountState.sessionsError,
                         )
                     }
                     item {

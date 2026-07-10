@@ -12,4 +12,18 @@ data class Track(
     val src: String? = null,
     val plays: String? = null,
     val artists: List<Artist>,
+    /**
+     * Present when the backend track resource has the `album` relation loaded
+     * (`TrackLoader::toApiResource` sets `resource['album']`, nullable). Not every track
+     * list endpoint eager-loads it, so callers must treat this as optional and hide/disable
+     * "Go to album" navigation when it is null rather than guessing an album id.
+     */
+    val album: TrackAlbum? = null,
+)
+
+@Serializable
+data class TrackAlbum(
+    val id: Int,
+    val name: String,
+    val image: String? = null,
 )
