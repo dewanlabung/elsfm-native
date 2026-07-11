@@ -13,6 +13,7 @@ import kotlinx.serialization.Serializable
 import javax.inject.Inject
 
 private const val REPOSTABLE_TYPE_TRACK = "track"
+private const val REPOSTABLE_TYPE_ALBUM = "album"
 
 @Serializable
 data class RepostToggleResponse(
@@ -33,14 +34,20 @@ private data class RepostToggleRequest(
 class RepostApi @Inject constructor(
     private val httpClient: HttpClient,
 ) {
-    suspend fun toggleTrackRepost(trackId: Int): ApiResult<RepostToggleResponse> {
+    suspend fun toggleTrackRepost(trackId: Int): ApiResult<RepostToggleResponse> =
+        toggleRepost(REPOSTABLE_TYPE_TRACK, trackId)
+
+    suspend fun toggleAlbumRepost(albumId: Int): ApiResult<RepostToggleResponse> =
+        toggleRepost(REPOSTABLE_TYPE_ALBUM, albumId)
+
+    private suspend fun toggleRepost(repostableType: String, repostableId: Int): ApiResult<RepostToggleResponse> {
         return try {
             val response = httpClient.post("api/v1/reposts/toggle") {
                 contentType(ContentType.Application.Json)
                 setBody(
                     RepostToggleRequest(
-                        repostableType = REPOSTABLE_TYPE_TRACK,
-                        repostableId = trackId,
+                        repostableType = repostableType,
+                        repostableId = repostableId,
                     ),
                 )
             }

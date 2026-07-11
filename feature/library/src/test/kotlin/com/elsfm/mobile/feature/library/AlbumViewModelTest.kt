@@ -2,6 +2,8 @@ package com.elsfm.mobile.feature.library
 
 import androidx.lifecycle.SavedStateHandle
 import com.elsfm.mobile.core.network.api.AlbumApi
+import com.elsfm.mobile.core.network.api.CommentApi
+import com.elsfm.mobile.core.network.api.RepostApi
 import com.elsfm.mobile.core.network.api.UserApi
 import com.elsfm.mobile.core.network.elsfmJson
 import com.elsfm.mobile.feature.library.data.TrackLikeController
@@ -83,6 +85,36 @@ class AlbumViewModelTest {
         return UserApi(httpClient)
     }
 
+    private fun mockRepostApi(): RepostApi {
+        val mockEngine = MockEngine.create {
+            dispatcher = testDispatcher
+            addHandler { _ ->
+                respond("""{"action": "added"}""", HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
+            }
+        }
+        val httpClient = HttpClient(mockEngine) {
+            install(ContentNegotiation) { json(elsfmJson()) }
+        }
+        return RepostApi(httpClient)
+    }
+
+    private fun mockCommentApi(): CommentApi {
+        val mockEngine = MockEngine.create {
+            dispatcher = testDispatcher
+            addHandler { _ ->
+                respond(
+                    """{"pagination": {"data": []}}""",
+                    HttpStatusCode.OK,
+                    headersOf(HttpHeaders.ContentType, "application/json"),
+                )
+            }
+        }
+        val httpClient = HttpClient(mockEngine) {
+            install(ContentNegotiation) { json(elsfmJson()) }
+        }
+        return CommentApi(httpClient)
+    }
+
     private fun viewModel(
         status: HttpStatusCode = HttpStatusCode.OK,
         likeStatus: HttpStatusCode = HttpStatusCode.OK,
@@ -90,6 +122,9 @@ class AlbumViewModelTest {
         SavedStateHandle(mapOf(ALBUM_ID_ARG to 7)),
         mockAlbumApi(status),
         TrackLikeController(mockUserApi(likeStatus)),
+        mockUserApi(likeStatus),
+        mockRepostApi(),
+        mockCommentApi(),
         FakeDispatcherProvider(testDispatcher),
     )
 

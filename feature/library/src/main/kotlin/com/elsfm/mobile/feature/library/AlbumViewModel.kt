@@ -5,9 +5,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.elsfm.mobile.core.common.DispatcherProvider
 import com.elsfm.mobile.core.model.Album
+import com.elsfm.mobile.core.model.Comment
 import com.elsfm.mobile.core.model.Track
 import com.elsfm.mobile.core.network.ApiResult
 import com.elsfm.mobile.core.network.api.AlbumApi
+import com.elsfm.mobile.core.network.api.CommentApi
+import com.elsfm.mobile.core.network.api.RepostApi
+import com.elsfm.mobile.core.network.api.UserApi
 import com.elsfm.mobile.feature.library.data.TrackLikeController
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,12 +21,18 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 internal const val ALBUM_ID_ARG = "albumId"
+private const val COMMENTABLE_TYPE_ALBUM = "album"
 
 /**
  * Immutable, hoisted UI state for [AlbumScreen]. Both [album] and [tracks]
  * come from the single real `GET /albums/{id}` call ([AlbumApi.getAlbum]) —
  * the backend has no separate tracks endpoint, it nests tracks in the album
  * response.
+ *
+ * There is no "is this album already liked/reposted" lookup endpoint (same
+ * simplification already used for tracks), so [isAlbumLiked]/[isAlbumReposted]
+ * start `false` each time the album loads and only reflect toggles made this
+ * session.
  */
 data class AlbumDetailState(
     val album: Album? = null,
@@ -31,6 +41,14 @@ data class AlbumDetailState(
     val error: String? = null,
     val likedTrackIds: Set<Int> = emptySet(),
     val likeLoadingTrackIds: Set<Int> = emptySet(),
+    val isAlbumLiked: Boolean = false,
+    val isAlbumLikeLoading: Boolean = false,
+    val isAlbumReposted: Boolean = false,
+    val isAlbumRepostLoading: Boolean = false,
+    val comments: List<Comment> = emptyList(),
+    val isLoadingComments: Boolean = false,
+    val commentInput: String = "",
+    val isPostingComment: Boolean = false,
 )
 
 @HiltViewModel
@@ -38,6 +56,9 @@ class AlbumViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val albumApi: AlbumApi,
     private val trackLikeController: TrackLikeController,
+    private val userApi: UserApi,
+    private val repostApi: RepostApi,
+    private val commentApi: CommentApi,
     private val dispatcherProvider: DispatcherProvider,
 ) : ViewModel() {
     private val albumId: Int = checkNotNull(savedStateHandle[ALBUM_ID_ARG]) {
@@ -49,6 +70,7 @@ class AlbumViewModel @Inject constructor(
 
     init {
         loadAlbum()
+        loadComments()
     }
 
     private fun loadAlbum() {
@@ -93,5 +115,119 @@ class AlbumViewModel @Inject constructor(
                 error = if (newLikedState == null) "Failed to update library" else _state.value.error,
             )
         }
+    }
+
+    fun toggleAlbumLike() {
+        val currentlyLiked = _state.value.isAlbumLiked
+        _state.value = _state.value.copy(isAlbumLikeLoading = true)
+
+        viewModelScope.launch(dispatcherProvider.io) {
+            val result = if (currentlyLiked) {
+                userApi.removeAlbumFromLibrary(albumId)
+            } else {
+                userApi.addAlbumToLibrary(albumId)
+            }
+            when (result) {
+                is ApiResult.Success -> {
+                    _state.value = _state.value.copy(isAlbumLiked = result.data, isAlbumLikeLoading = false)
+                }
+                is ApiResult.NetworkError,
+                is ApiResult.ValidationError,
+                is ApiResult.Unauthorized -> {
+                    _state.value = _state.value.copy(
+                        isAlbumLikeLoading = false,
+                        error = "Failed to update library",
+                    )
+                }
+            }
+        }
+    }
+
+    fun toggleAlbumRepost() {
+        _state.value = _state.value.copy(isAlbumRepostLoading = true)
+
+        viewModelScope.launch(dispatcherProvider.io) {
+            when (val result = repostApi.toggleAlbumRepost(albumId)) {
+                is ApiResult.Success -> {
+                    _state.value = _state.value.copy(
+                        isAlbumReposted = result.data.action == "added",
+                        isAlbumRepostLoading = false,
+                    )
+                }
+                is ApiResult.NetworkError,
+                is ApiResult.ValidationError,
+                is ApiResult.Unauthorized -> {
+                    _state.value = _state.value.copy(
+                        isAlbumRepostLoading = false,
+                        error = "Failed to update repost",
+                    )
+                }
+            }
+        }
+    }
+
+    private fun loadComments() {
+        _state.value = _state.value.copy(isLoadingComments = true)
+
+        viewModelScope.launch(dispatcherProvider.io) {
+            when (val result = commentApi.getComments(COMMENTABLE_TYPE_ALBUM, albumId)) {
+                is ApiResult.Success -> {
+                    _state.value = _state.value.copy(comments = result.data, isLoadingComments = false)
+                }
+                is ApiResult.NetworkError,
+                is ApiResult.ValidationError,
+                is ApiResult.Unauthorized -> {
+                    _state.value = _state.value.copy(isLoadingComments = false)
+                }
+            }
+        }
+    }
+
+    fun onCommentInputChanged(input: String) {
+        _state.value = _state.value.copy(commentInput = input)
+    }
+
+    fun postComment() {
+        val content = _state.value.commentInput.trim()
+        if (content.isEmpty()) return
+        _state.value = _state.value.copy(isPostingComment = true)
+
+        viewModelScope.launch(dispatcherProvider.io) {
+            when (val result = commentApi.postComment(COMMENTABLE_TYPE_ALBUM, albumId, content)) {
+                is ApiResult.Success -> {
+                    _state.value = _state.value.copy(
+                        comments = listOf(result.data) + _state.value.comments,
+                        commentInput = "",
+                        isPostingComment = false,
+                    )
+                }
+                is ApiResult.NetworkError,
+                is ApiResult.ValidationError,
+                is ApiResult.Unauthorized -> {
+                    _state.value = _state.value.copy(
+                        isPostingComment = false,
+                        error = "Failed to post comment",
+                    )
+                }
+            }
+        }
+    }
+
+    /**
+     * Builds the shareable album URL client-side, mirroring the real web client's link
+     * pattern (same approach as [com.elsfm.mobile.feature.artist.ArtistDetailViewModel]'s
+     * `buildArtistShareUrl` — no backend "share" endpoint exists for albums either).
+     */
+    fun buildAlbumShareUrl(): String? {
+        val album = _state.value.album ?: return null
+        return "https://www.elsfm.com/album/${album.id}/${slugify(album.name)}"
+    }
+
+    private fun slugify(input: String): String {
+        return input
+            .lowercase()
+            .replace(Regex("[^a-z0-9\\s-]"), "")
+            .trim()
+            .replace(Regex("\\s+"), "-")
     }
 }

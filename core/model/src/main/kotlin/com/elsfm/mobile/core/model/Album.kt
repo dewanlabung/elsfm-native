@@ -15,4 +15,11 @@ data class Album(
      * tracks endpoint. Empty for every other endpoint that returns an Album.
      */
     val tracks: List<Track> = emptyList(),
+    /** Only populated by the `albumPage` loader (`AlbumApi.getAlbum`). */
+    val description: String? = null,
+    val tags: List<Tag> = emptyList(),
+    val plays: String? = null,
+    @SerialName("likes_count") val likesCount: Int? = null,
+    @SerialName("reposts_count") val repostsCount: Int? = null,
+    @SerialName("comments_count") val commentsCount: Int? = null,
 )

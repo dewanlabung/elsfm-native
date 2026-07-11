@@ -1,5 +1,6 @@
 package com.elsfm.mobile.feature.library
 
+import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,14 +10,23 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -26,12 +36,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.elsfm.mobile.core.designsystem.LikeButton
 import com.elsfm.mobile.core.designsystem.TrackContextMenu
 import com.elsfm.mobile.core.model.Album
+import com.elsfm.mobile.core.model.Comment
 import com.elsfm.mobile.core.model.Track
 import com.elsfm.mobile.feature.library.composables.BlurredBackground
 import com.elsfm.mobile.feature.library.composables.TrackListItem
@@ -46,6 +59,7 @@ fun AlbumScreen(
     viewModel: AlbumViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
+    val context = LocalContext.current
 
     AlbumDetailContent(
         state = state,
@@ -53,6 +67,13 @@ fun AlbumScreen(
         onTrackTap = onTrackTap,
         onAddToQueue = onAddToQueue,
         onToggleTrackLike = viewModel::toggleTrackLike,
+        onToggleAlbumLike = viewModel::toggleAlbumLike,
+        onToggleAlbumRepost = viewModel::toggleAlbumRepost,
+        onShare = {
+            viewModel.buildAlbumShareUrl()?.let { url -> shareAlbumUrl(context, state.album?.name.orEmpty(), url) }
+        },
+        onCommentInputChanged = viewModel::onCommentInputChanged,
+        onPostComment = viewModel::postComment,
     )
 }
 
@@ -63,6 +84,11 @@ internal fun AlbumDetailContent(
     onTrackTap: (Track, List<Track>) -> Unit,
     onAddToQueue: (Track) -> Unit,
     onToggleTrackLike: (Int) -> Unit = {},
+    onToggleAlbumLike: () -> Unit = {},
+    onToggleAlbumRepost: () -> Unit = {},
+    onShare: () -> Unit = {},
+    onCommentInputChanged: (String) -> Unit = {},
+    onPostComment: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val album = state.album
@@ -89,6 +115,13 @@ internal fun AlbumDetailContent(
                             album = album,
                             trackCount = state.tracks.size,
                             onPlayAll = onPlayAll,
+                            isLiked = state.isAlbumLiked,
+                            isLikeLoading = state.isAlbumLikeLoading,
+                            onToggleLike = onToggleAlbumLike,
+                            isReposted = state.isAlbumReposted,
+                            isRepostLoading = state.isAlbumRepostLoading,
+                            onToggleRepost = onToggleAlbumRepost,
+                            onShare = onShare,
                         )
                     }
                     items(state.tracks, key = { it.id }) { track ->
@@ -111,6 +144,16 @@ internal fun AlbumDetailContent(
                             )
                         }
                     }
+                    item {
+                        CommentsSection(
+                            comments = state.comments,
+                            isLoading = state.isLoadingComments,
+                            commentInput = state.commentInput,
+                            isPosting = state.isPostingComment,
+                            onCommentInputChanged = onCommentInputChanged,
+                            onPostComment = onPostComment,
+                        )
+                    }
                 }
             }
         }
@@ -122,6 +165,13 @@ private fun AlbumHeader(
     album: Album,
     trackCount: Int,
     onPlayAll: () -> Unit,
+    isLiked: Boolean,
+    isLikeLoading: Boolean,
+    onToggleLike: () -> Unit,
+    isReposted: Boolean,
+    isRepostLoading: Boolean,
+    onToggleRepost: () -> Unit,
+    onShare: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.fillMaxWidth().padding(16.dp)) {
@@ -147,12 +197,171 @@ private fun AlbumHeader(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+            StatCounter(icon = Icons.Filled.PlayArrow, count = album.plays)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                LikeButton(isLiked = isLiked, isLoading = isLikeLoading, onClick = onToggleLike)
+                Text(
+                    text = ((album.likesCount ?: 0) + if (isLiked) 1 else 0).toString(),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(
+                    onClick = onToggleRepost,
+                    enabled = !isRepostLoading,
+                    modifier = Modifier.testTag("album_repost_button"),
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Refresh,
+                        contentDescription = if (isReposted) "Remove repost" else "Repost",
+                        tint = if (isReposted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Text(
+                    text = ((album.repostsCount ?: 0) + if (isReposted) 1 else 0).toString(),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+
         Spacer(modifier = Modifier.height(16.dp))
 
-        Button(onClick = onPlayAll) {
-            Icon(imageVector = Icons.Filled.PlayArrow, contentDescription = null)
-            Text(text = "Play All", modifier = Modifier.padding(start = 8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(onClick = onPlayAll) {
+                Icon(imageVector = Icons.Filled.PlayArrow, contentDescription = null)
+                Text(text = "Play All", modifier = Modifier.padding(start = 8.dp))
+            }
+            IconButton(onClick = onShare, modifier = Modifier.testTag("album_share_button")) {
+                Icon(imageVector = Icons.Filled.Share, contentDescription = "Share album")
+            }
         }
+
+        album.description?.takeIf { it.isNotBlank() }?.let { description ->
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = description,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.85f),
+            )
+        }
+
+        if (album.tags.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(12.dp))
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(album.tags, key = { it.id }) { tag ->
+                    Surface(
+                        shape = RoundedCornerShape(50),
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                    ) {
+                        Text(
+                            text = "#${tag.displayName ?: tag.name}",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun StatCounter(icon: androidx.compose.ui.graphics.vector.ImageVector, count: String?) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(18.dp),
+        )
+        Text(
+            text = count ?: "0",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+private fun CommentsSection(
+    comments: List<Comment>,
+    isLoading: Boolean,
+    commentInput: String,
+    isPosting: Boolean,
+    onCommentInputChanged: (String) -> Unit,
+    onPostComment: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier.fillMaxWidth().padding(16.dp)) {
+        Text(
+            text = if (comments.isEmpty()) "Comments" else "Comments (${comments.size})",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedTextField(
+                value = commentInput,
+                onValueChange = onCommentInputChanged,
+                modifier = Modifier.weight(1f).testTag("album_comment_input"),
+                placeholder = { Text("Leave a comment") },
+                singleLine = true,
+                enabled = !isPosting,
+            )
+            IconButton(
+                onClick = onPostComment,
+                enabled = !isPosting && commentInput.isNotBlank(),
+                modifier = Modifier.testTag("album_comment_send"),
+            ) {
+                Icon(imageVector = Icons.Filled.Send, contentDescription = "Post comment")
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        when {
+            isLoading -> {
+                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                }
+            }
+            comments.isEmpty() -> {
+                Text(
+                    text = "Seems a little quiet over here — be the first to comment",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            else -> {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    comments.forEach { comment -> CommentRow(comment) }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CommentRow(comment: Comment, modifier: Modifier = Modifier) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        Text(
+            text = comment.user?.name ?: "User",
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        Text(
+            text = comment.content ?: "[deleted]",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 
@@ -200,4 +409,13 @@ private fun AlbumTrackRow(
             )
         }
     }
+}
+
+private fun shareAlbumUrl(context: android.content.Context, albumName: String, url: String) {
+    val intent = Intent(Intent.ACTION_SEND).apply {
+        type = "text/plain"
+        putExtra(Intent.EXTRA_TEXT, url)
+        putExtra(Intent.EXTRA_SUBJECT, albumName)
+    }
+    context.startActivity(Intent.createChooser(intent, "Share album"))
 }

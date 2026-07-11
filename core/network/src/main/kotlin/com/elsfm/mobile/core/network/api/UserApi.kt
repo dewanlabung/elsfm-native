@@ -44,6 +44,7 @@ private data class LikedTracksPagination(val data: List<Track>)
 private data class LikedTracksResponse(val pagination: LikedTracksPagination)
 
 private const val LIKEABLE_TYPE_TRACK = "track"
+private const val LIKEABLE_TYPE_ALBUM = "album"
 
 class UserApi @Inject constructor(
     private val httpClient: HttpClient,
@@ -142,6 +143,18 @@ class UserApi @Inject constructor(
         postLikeable("api/v1/users/me/remove-from-library", trackId, likedResult = false)
 
     /**
+     * Same generic `likeables`-array endpoints as [addTrackToLibrary]/[removeTrackFromLibrary]
+     * (`UserLibraryTracksController::addToLibrary`/`removeFromLibrary` accept
+     * `likeable_type: track|album|artist` - confirmed via `removeFromLibrary`'s validation
+     * rule), just with `likeable_type: "album"`.
+     */
+    suspend fun addAlbumToLibrary(albumId: Int): ApiResult<Boolean> =
+        postLikeable("api/v1/users/me/add-to-library", albumId, likedResult = true, likeableType = LIKEABLE_TYPE_ALBUM)
+
+    suspend fun removeAlbumFromLibrary(albumId: Int): ApiResult<Boolean> =
+        postLikeable("api/v1/users/me/remove-from-library", albumId, likedResult = false, likeableType = LIKEABLE_TYPE_ALBUM)
+
+    /**
      * Fetches the full list of tracks the given user has liked ("liked songs").
      *
      * Backed by `GET api/v1/users/{user}/liked-tracks` (`UserLibraryTracksController::index`),
@@ -167,6 +180,7 @@ class UserApi @Inject constructor(
         path: String,
         trackId: Int,
         likedResult: Boolean,
+        likeableType: String = LIKEABLE_TYPE_TRACK,
     ): ApiResult<Boolean> {
         return try {
             val response = httpClient.post(path) {
@@ -174,7 +188,7 @@ class UserApi @Inject constructor(
                 setBody(
                     LikeablesRequest(
                         likeables = listOf(
-                            LikeableRequestItem(likeableId = trackId, likeableType = LIKEABLE_TYPE_TRACK),
+                            LikeableRequestItem(likeableId = trackId, likeableType = likeableType),
                         ),
                     ),
                 )
