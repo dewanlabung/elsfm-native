@@ -1,5 +1,7 @@
 package com.elsfm.mobile.feature.player
 
+import com.elsfm.mobile.core.network.api.PlaylistInfo
+
 data class PlayerMenuState(
     val isMenuVisible: Boolean = false,
     val selectedTrackId: Int? = null,
@@ -8,6 +10,9 @@ data class PlayerMenuState(
     val repostLoading: Boolean = false,
     val isLiked: Boolean = false,
     val isLikeLoading: Boolean = false,
+    val isPlaylistPickerVisible: Boolean = false,
+    val isLoadingPlaylists: Boolean = false,
+    val userPlaylists: List<PlaylistInfo> = emptyList(),
     val error: String? = null,
 )
 
@@ -18,6 +23,8 @@ sealed class PlayerMenuEvent {
     /** Purely local: appends the track to the in-memory playback queue. No API call. */
     data class AddToQueue(val trackId: Int) : PlayerMenuEvent()
     data class AddToLibrary(val trackId: Int) : PlayerMenuEvent()
+    data class ShowPlaylistPicker(val trackId: Int) : PlayerMenuEvent()
+    data object HidePlaylistPicker : PlayerMenuEvent()
     data class AddToPlaylist(val trackId: Int, val playlistId: Int) : PlayerMenuEvent()
     data class Repost(val trackId: Int) : PlayerMenuEvent()
 }

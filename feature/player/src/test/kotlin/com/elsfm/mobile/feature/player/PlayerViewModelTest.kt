@@ -1,6 +1,8 @@
 package com.elsfm.mobile.feature.player
 
 import app.cash.turbine.test
+import com.elsfm.mobile.core.database.UserDao
+import com.elsfm.mobile.core.database.UserEntity
 import com.elsfm.mobile.core.media.PlayHistoryApi
 import com.elsfm.mobile.core.model.Artist
 import com.elsfm.mobile.core.model.Track
@@ -96,6 +98,13 @@ private fun fakeUserApi(responseBody: String = "true"): UserApi {
     return UserApi(httpClient)
 }
 
+private class FakeUserDao : UserDao {
+    override suspend fun upsert(user: UserEntity) {}
+    override suspend fun get(): UserEntity? =
+        UserEntity(id = 1, username = null, name = null, email = "test@example.com", avatarUrl = null)
+    override suspend fun clear() {}
+}
+
 @OptIn(ExperimentalCoroutinesApi::class)
 class PlayerViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
@@ -134,7 +143,7 @@ class PlayerViewModelTest {
         val controller = FakePlayerController()
         val playHistoryApi = playHistoryApiReturning(HttpStatusCode.OK)
         val menuRepository = fakePlayerMenuRepository()
-        val viewModel = PlayerViewModel(controller, playHistoryApi, menuRepository, fakeUserApi())
+        val viewModel = PlayerViewModel(controller, playHistoryApi, menuRepository, fakeUserApi(), FakeUserDao())
 
         viewModel.play(track, listOf(track))
 
@@ -151,7 +160,7 @@ class PlayerViewModelTest {
         val controller = FakePlayerController()
         val playHistoryApi = playHistoryApiReturning(HttpStatusCode.OK)
         val menuRepository = fakePlayerMenuRepository()
-        val viewModel = PlayerViewModel(controller, playHistoryApi, menuRepository, fakeUserApi())
+        val viewModel = PlayerViewModel(controller, playHistoryApi, menuRepository, fakeUserApi(), FakeUserDao())
         viewModel.play(track, listOf(track))
 
         viewModel.togglePlayPause()
@@ -166,7 +175,7 @@ class PlayerViewModelTest {
         val controller = FakePlayerController()
         val playHistoryApi = playHistoryApiReturning(HttpStatusCode.OK)
         val menuRepository = fakePlayerMenuRepository()
-        val viewModel = PlayerViewModel(controller, playHistoryApi, menuRepository, fakeUserApi())
+        val viewModel = PlayerViewModel(controller, playHistoryApi, menuRepository, fakeUserApi(), FakeUserDao())
         val secondTrack = track.copy(id = 2001, name = "Second Track")
         viewModel.play(track, listOf(track, secondTrack))
 
@@ -183,7 +192,7 @@ class PlayerViewModelTest {
         val controller = FakePlayerController()
         val playHistoryApi = playHistoryApiReturning(HttpStatusCode.OK)
         val menuRepository = fakePlayerMenuRepository()
-        val viewModel = PlayerViewModel(controller, playHistoryApi, menuRepository, fakeUserApi())
+        val viewModel = PlayerViewModel(controller, playHistoryApi, menuRepository, fakeUserApi(), FakeUserDao())
         viewModel.play(track, listOf(track))
 
         viewModel.onMenuEvent(PlayerMenuEvent.AddToQueue(track.id))
@@ -199,7 +208,7 @@ class PlayerViewModelTest {
         val controller = FakePlayerController()
         val playHistoryApi = playHistoryApiReturning(HttpStatusCode.OK)
         val menuRepository = fakePlayerMenuRepository()
-        val viewModel = PlayerViewModel(controller, playHistoryApi, menuRepository, fakeUserApi())
+        val viewModel = PlayerViewModel(controller, playHistoryApi, menuRepository, fakeUserApi(), FakeUserDao())
 
         viewModel.onMenuEvent(PlayerMenuEvent.AddToLibrary(track.id))
 
@@ -213,7 +222,7 @@ class PlayerViewModelTest {
         val controller = FakePlayerController()
         val playHistoryApi = playHistoryApiReturning(HttpStatusCode.OK)
         val menuRepository = fakePlayerMenuRepository("""{"action": "added"}""")
-        val viewModel = PlayerViewModel(controller, playHistoryApi, menuRepository, fakeUserApi())
+        val viewModel = PlayerViewModel(controller, playHistoryApi, menuRepository, fakeUserApi(), FakeUserDao())
 
         viewModel.onMenuEvent(PlayerMenuEvent.Repost(track.id))
 

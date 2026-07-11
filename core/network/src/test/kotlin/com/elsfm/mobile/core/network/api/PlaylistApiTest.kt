@@ -25,8 +25,19 @@ class PlaylistApiTest {
                 "name": "Chill Vibes",
                 "description": "Relaxing music",
                 "image": "https://example.com/image.jpg",
-                "track_count": 42,
-                "created_at": "2024-01-15"
+                "tracks_count": 42,
+                "updated_at": "2024-01-15"
+            }
+        }
+    """.trimIndent()
+
+    private val userPlaylistsJson = """
+        {
+            "pagination": {
+                "data": [
+                    {"id": 1, "name": "Chill Vibes", "image": "https://example.com/image.jpg"},
+                    {"id": 2, "name": "Workout Mix", "image": null}
+                ]
             }
         }
     """.trimIndent()
@@ -120,6 +131,28 @@ class PlaylistApiTest {
         val api = PlaylistApi(clientReturning(HttpStatusCode.InternalServerError, "{}"))
 
         val result = api.getPlaylistTracks(1)
+
+        assertTrue(result is ApiResult.NetworkError)
+    }
+
+    @Test
+    fun `getUserPlaylists returns playlists from the real users-playlists endpoint`() = runTest {
+        val api = PlaylistApi(clientReturning(HttpStatusCode.OK, userPlaylistsJson))
+
+        val result = api.getUserPlaylists(userId = 5)
+
+        assertTrue(result is ApiResult.Success)
+        val playlists = (result as ApiResult.Success).data
+        assertEquals(2, playlists.size)
+        assertEquals("Chill Vibes", playlists[0].name)
+        assertEquals("Workout Mix", playlists[1].name)
+    }
+
+    @Test
+    fun `getUserPlaylists returns NetworkError on failure`() = runTest {
+        val api = PlaylistApi(clientReturning(HttpStatusCode.InternalServerError, "{}"))
+
+        val result = api.getUserPlaylists(userId = 5)
 
         assertTrue(result is ApiResult.NetworkError)
     }

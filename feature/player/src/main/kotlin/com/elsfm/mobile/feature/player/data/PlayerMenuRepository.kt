@@ -2,6 +2,7 @@ package com.elsfm.mobile.feature.player.data
 
 import com.elsfm.mobile.core.network.ApiResult
 import com.elsfm.mobile.core.network.api.PlaylistApi
+import com.elsfm.mobile.core.network.api.PlaylistInfo
 import com.elsfm.mobile.core.network.api.RepostApi
 import com.elsfm.mobile.core.network.api.RepostToggleResponse
 import com.elsfm.mobile.core.network.api.UserApi
@@ -14,6 +15,10 @@ class PlayerMenuRepository @Inject constructor(
 ) {
     suspend fun addTrackToPlaylist(playlistId: Int, trackId: Int): ApiResult<Unit> {
         return playlistApi.addTrackToPlaylist(playlistId, trackId)
+    }
+
+    suspend fun getUserPlaylists(userId: Int): ApiResult<List<PlaylistInfo>> {
+        return playlistApi.getUserPlaylists(userId)
     }
 
     suspend fun addTrackToLibrary(trackId: Int): ApiResult<Boolean> {

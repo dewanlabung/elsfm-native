@@ -32,6 +32,7 @@ import androidx.compose.material.icons.filled.RepeatOne
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -68,6 +69,7 @@ import coil.compose.AsyncImage
 import com.elsfm.mobile.core.designsystem.LikeButton
 import com.elsfm.mobile.core.designsystem.TrackContextMenu
 import com.elsfm.mobile.core.model.Track
+import com.elsfm.mobile.core.network.api.PlaylistInfo
 import kotlin.math.max
 
 /**
@@ -267,8 +269,7 @@ fun PlayerScreen(
                         viewModel.onMenuEvent(PlayerMenuEvent.AddToLibrary(trackId))
                     },
                     onAddToPlaylist = { trackId ->
-                        // TODO: Show playlist selection dialog, then call:
-                        // viewModel.onMenuEvent(PlayerMenuEvent.AddToPlaylist(trackId, selectedPlaylistId))
+                        viewModel.onMenuEvent(PlayerMenuEvent.ShowPlaylistPicker(trackId))
                     },
                     onGoToArtist = onGoToArtist,
                     onGoToAlbum = onGoToAlbum,
@@ -455,6 +456,19 @@ fun PlayerScreen(
             onDismiss = { isQueueVisible = false },
         )
     }
+
+    if (menuState.isPlaylistPickerVisible) {
+        AddToPlaylistBottomSheet(
+            playlists = menuState.userPlaylists,
+            isLoading = menuState.isLoadingPlaylists,
+            isAdding = menuState.addToPlaylistLoading,
+            onPlaylistTap = { playlistId ->
+                val trackId = menuState.selectedTrackId ?: return@AddToPlaylistBottomSheet
+                viewModel.onMenuEvent(PlayerMenuEvent.AddToPlaylist(trackId, playlistId))
+            },
+            onDismiss = { viewModel.onMenuEvent(PlayerMenuEvent.HidePlaylistPicker) },
+        )
+    }
 }
 
 private fun slugify(input: String): String {
@@ -561,4 +575,85 @@ private fun formatDuration(ms: Long): String {
     val minutes = seconds / 60
     val remainingSeconds = seconds % 60
     return String.format("%d:%02d", minutes, remainingSeconds)
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AddToPlaylistBottomSheet(
+    playlists: List<PlaylistInfo>,
+    isLoading: Boolean,
+    isAdding: Boolean,
+    onPlaylistTap: (Int) -> Unit,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val sheetState = rememberModalBottomSheetState()
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        modifier = modifier.testTag("add_to_playlist_sheet"),
+    ) {
+        Text(
+            text = "Add to playlist",
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+        )
+
+        when {
+            isLoading -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(32.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
+            playlists.isEmpty() -> {
+                Text(
+                    text = "You don't have any playlists yet",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(16.dp),
+                )
+            }
+            else -> {
+                LazyColumn(modifier = Modifier.testTag("add_to_playlist_list")) {
+                    items(playlists, key = { it.id }) { playlist ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable(enabled = !isAdding) { onPlaylistTap(playlist.id) }
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Surface(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .clip(RoundedCornerShape(4.dp)),
+                                color = MaterialTheme.colorScheme.surfaceVariant,
+                            ) {
+                                AsyncImage(
+                                    model = playlist.image,
+                                    contentDescription = playlist.name,
+                                    modifier = Modifier.size(40.dp),
+                                    contentScale = ContentScale.Crop,
+                                )
+                            }
+                            Text(
+                                text = playlist.name,
+                                style = MaterialTheme.typography.bodyMedium,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
 }

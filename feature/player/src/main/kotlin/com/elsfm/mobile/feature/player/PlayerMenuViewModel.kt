@@ -38,6 +38,13 @@ class PlayerMenuViewModel @Inject constructor(
             is PlayerMenuEvent.AddToLibrary -> {
                 addTrackToLibrary(event.trackId)
             }
+            is PlayerMenuEvent.ShowPlaylistPicker -> {
+                // Not actionable here: see the AddToQueue comment above - this
+                // ViewModel is unused by PlayerScreen.
+            }
+            PlayerMenuEvent.HidePlaylistPicker -> {
+                _state.value = _state.value.copy(isPlaylistPickerVisible = false)
+            }
             is PlayerMenuEvent.AddToPlaylist -> {
                 addTrackToPlaylist(event.trackId, event.playlistId)
             }

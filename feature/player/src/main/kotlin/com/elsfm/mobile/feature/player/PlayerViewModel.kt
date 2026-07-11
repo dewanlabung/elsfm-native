@@ -2,6 +2,7 @@ package com.elsfm.mobile.feature.player
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.elsfm.mobile.core.database.UserDao
 import com.elsfm.mobile.core.media.PlayHistoryApi
 import com.elsfm.mobile.core.model.Track
 import com.elsfm.mobile.core.network.ApiResult
@@ -20,6 +21,7 @@ class PlayerViewModel @Inject constructor(
     private val playHistoryApi: PlayHistoryApi,
     private val menuRepository: PlayerMenuRepository,
     private val userApi: UserApi,
+    private val userDao: UserDao,
 ) : ViewModel() {
 
     private val _menuState = MutableStateFlow(PlayerMenuState())
@@ -112,6 +114,41 @@ class PlayerViewModel @Inject constructor(
                     }
                 }
             }
+            is PlayerMenuEvent.ShowPlaylistPicker -> {
+                _menuState.value = _menuState.value.copy(
+                    isMenuVisible = false,
+                    isPlaylistPickerVisible = true,
+                    selectedTrackId = event.trackId,
+                )
+                viewModelScope.launch {
+                    _menuState.value = _menuState.value.copy(isLoadingPlaylists = true)
+                    val userId = userDao.get()?.id
+                    if (userId == null) {
+                        _menuState.value = _menuState.value.copy(
+                            isLoadingPlaylists = false,
+                            error = "Not signed in",
+                        )
+                        return@launch
+                    }
+                    when (val result = menuRepository.getUserPlaylists(userId)) {
+                        is ApiResult.Success -> {
+                            _menuState.value = _menuState.value.copy(
+                                isLoadingPlaylists = false,
+                                userPlaylists = result.data,
+                            )
+                        }
+                        else -> {
+                            _menuState.value = _menuState.value.copy(
+                                isLoadingPlaylists = false,
+                                error = "Failed to load playlists",
+                            )
+                        }
+                    }
+                }
+            }
+            PlayerMenuEvent.HidePlaylistPicker -> {
+                _menuState.value = _menuState.value.copy(isPlaylistPickerVisible = false)
+            }
             is PlayerMenuEvent.AddToPlaylist -> {
                 viewModelScope.launch {
                     _menuState.value = _menuState.value.copy(addToPlaylistLoading = true)
@@ -119,6 +156,7 @@ class PlayerViewModel @Inject constructor(
                         is ApiResult.Success -> {
                             _menuState.value = _menuState.value.copy(
                                 addToPlaylistLoading = false,
+                                isPlaylistPickerVisible = false,
                                 error = null
                             )
                         }

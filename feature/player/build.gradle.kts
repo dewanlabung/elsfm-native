@@ -32,6 +32,7 @@ dependencies {
     implementation(project(":core:common"))
     implementation(project(":core:media"))
     implementation(project(":core:network"))
+    implementation(project(":core:database"))
     implementation(project(":core:designsystem"))
 
     implementation(libs.androidx.media3.session)

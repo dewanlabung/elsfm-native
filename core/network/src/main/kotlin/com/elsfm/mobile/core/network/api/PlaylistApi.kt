@@ -15,20 +15,33 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import javax.inject.Inject
 
+/**
+ * Matches `PlaylistLoader::toApiResource` - `description` and `updated_at` are only
+ * present with the `playlistPage`/`editPlaylistPage` loader (present for [getPlaylist],
+ * absent for [getUserPlaylists]'s plain list items); `tracks_count` is only present
+ * when the caller ran `loadCount('tracks')` first, which neither endpoint used here does.
+ * All three are therefore optional.
+ */
 @Serializable
 data class PlaylistInfo(
     val id: Int,
     val name: String,
-    val description: String?,
-    val image: String?,
-    @SerialName("track_count")
-    val trackCount: Int,
-    @SerialName("created_at")
-    val createdAt: String,
+    val description: String? = null,
+    val image: String? = null,
+    @SerialName("tracks_count")
+    val trackCount: Int? = null,
+    @SerialName("updated_at")
+    val updatedAt: String? = null,
 )
 
 @Serializable
 private data class PlaylistInfoDetail(val playlist: PlaylistInfo)
+
+@Serializable
+private data class PlaylistInfoPagination(val data: List<PlaylistInfo>)
+
+@Serializable
+private data class UserPlaylistsResponse(val pagination: PlaylistInfoPagination)
 
 @Serializable
 data class PaginatedTracks(
@@ -73,6 +86,25 @@ class PlaylistApi @Inject constructor(
             if (response.status.isSuccess()) {
                 val tracks = response.body<PaginatedTracksResponse>().pagination
                 ApiResult.Success(tracks)
+            } else {
+                ApiResult.NetworkError(RuntimeException("Unexpected status: ${response.status}"))
+            }
+        } catch (e: Exception) {
+            ApiResult.NetworkError(e)
+        }
+    }
+
+    /**
+     * Real endpoint (`UserPlaylistsController::index`): `GET api/v1/users/{id}/playlists`.
+     * When `id` is the signed-in user, this returns all of their playlists (public and
+     * private); for any other user it's filtered to public ones. Used for the
+     * "Add to playlist" picker.
+     */
+    suspend fun getUserPlaylists(userId: Int): ApiResult<List<PlaylistInfo>> {
+        return try {
+            val response = httpClient.get("api/v1/users/$userId/playlists")
+            if (response.status.isSuccess()) {
+                ApiResult.Success(response.body<UserPlaylistsResponse>().pagination.data)
             } else {
                 ApiResult.NetworkError(RuntimeException("Unexpected status: ${response.status}"))
             }
