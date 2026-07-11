@@ -81,11 +81,16 @@ class PlaylistApi @Inject constructor(
         }
     }
 
+    /**
+     * Real endpoint is `POST api/v1/playlists/{id}/tracks/add`
+     * (`PlaylistTracksController::add`), which reads track ids from an `ids` array,
+     * not a singular `trackId` field.
+     */
     suspend fun addTrackToPlaylist(playlistId: Int, trackId: Int): ApiResult<Unit> {
         return try {
-            val response = httpClient.post("api/v1/playlists/$playlistId/tracks") {
+            val response = httpClient.post("api/v1/playlists/$playlistId/tracks/add") {
                 contentType(ContentType.Application.Json)
-                setBody(mapOf("trackId" to trackId))
+                setBody(mapOf("ids" to listOf(trackId)))
             }
             if (response.status.isSuccess()) {
                 ApiResult.Success(Unit)
