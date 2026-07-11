@@ -21,7 +21,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -42,20 +41,16 @@ internal const val ALBUM_TRACK_LIST_TEST_TAG = "albumTrackList"
 
 @Composable
 fun AlbumScreen(
-    album: Album,
     onTrackTap: (Track, List<Track>) -> Unit = { _, _ -> },
     onAddToQueue: (Track) -> Unit = {},
+    onPlayAll: (List<Track>) -> Unit = {},
     viewModel: AlbumViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
 
-    LaunchedEffect(album.id) {
-        viewModel.loadAlbum(album)
-    }
-
     AlbumDetailContent(
         state = state,
-        onPlayAll = viewModel::playAll,
+        onPlayAll = { onPlayAll(state.tracks) },
         onTrackTap = onTrackTap,
         onAddToQueue = onAddToQueue,
         onToggleTrackLike = viewModel::toggleTrackLike,

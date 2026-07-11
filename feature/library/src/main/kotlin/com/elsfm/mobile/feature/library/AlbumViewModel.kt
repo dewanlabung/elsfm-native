@@ -1,12 +1,13 @@
 package com.elsfm.mobile.feature.library
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.elsfm.mobile.core.common.DispatcherProvider
 import com.elsfm.mobile.core.model.Album
 import com.elsfm.mobile.core.model.Track
 import com.elsfm.mobile.core.network.ApiResult
-import com.elsfm.mobile.core.network.api.TrackListApi
+import com.elsfm.mobile.core.network.api.AlbumApi
 import com.elsfm.mobile.feature.library.data.TrackLikeController
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,20 +16,18 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+internal const val ALBUM_ID_ARG = "albumId"
+
 /**
- * Immutable, hoisted UI state for [AlbumScreen].
- *
- * `core:network` has no `GET /albums/{id}` or `GET /albums/{id}/tracks`
- * endpoint. Album metadata comes from the navigation argument passed into
- * [AlbumViewModel.loadAlbum]; the same [TrackListApi.getPlaylistTracks] call
- * used for playlists is reused here since the backend models an album's
- * tracks the same way a playlist's tracks are exposed (both are just track
- * collections keyed by an id in this API).
+ * Immutable, hoisted UI state for [AlbumScreen]. Both [album] and [tracks]
+ * come from the single real `GET /albums/{id}` call ([AlbumApi.getAlbum]) —
+ * the backend has no separate tracks endpoint, it nests tracks in the album
+ * response.
  */
 data class AlbumDetailState(
     val album: Album? = null,
     val tracks: List<Track> = emptyList(),
-    val isLoading: Boolean = false,
+    val isLoading: Boolean = true,
     val error: String? = null,
     val likedTrackIds: Set<Int> = emptySet(),
     val likeLoadingTrackIds: Set<Int> = emptySet(),
@@ -36,37 +35,44 @@ data class AlbumDetailState(
 
 @HiltViewModel
 class AlbumViewModel @Inject constructor(
-    private val trackListApi: TrackListApi,
+    savedStateHandle: SavedStateHandle,
+    private val albumApi: AlbumApi,
     private val trackLikeController: TrackLikeController,
     private val dispatcherProvider: DispatcherProvider,
 ) : ViewModel() {
+    private val albumId: Int = checkNotNull(savedStateHandle[ALBUM_ID_ARG]) {
+        "AlbumViewModel requires an albumId argument"
+    }
+
     private val _state = MutableStateFlow(AlbumDetailState())
     val state: StateFlow<AlbumDetailState> = _state.asStateFlow()
 
-    fun loadAlbum(album: Album) {
-        _state.value = _state.value.copy(album = album, isLoading = true, error = null)
+    init {
+        loadAlbum()
+    }
+
+    private fun loadAlbum() {
+        _state.value = _state.value.copy(isLoading = true, error = null)
 
         viewModelScope.launch(dispatcherProvider.io) {
-            when (val result = trackListApi.getPlaylistTracks(album.id)) {
+            when (val result = albumApi.getAlbum(albumId)) {
                 is ApiResult.Success -> {
-                    _state.value = _state.value.copy(tracks = result.data, isLoading = false)
+                    _state.value = _state.value.copy(
+                        album = result.data,
+                        tracks = result.data.tracks,
+                        isLoading = false,
+                    )
                 }
                 is ApiResult.NetworkError,
                 is ApiResult.ValidationError,
                 is ApiResult.Unauthorized -> {
                     _state.value = _state.value.copy(
                         isLoading = false,
-                        error = "Failed to load album tracks",
+                        error = "Failed to load album",
                     )
                 }
             }
         }
-    }
-
-    fun playAll() {
-        // Playback wiring happens in Task 9 (navigation/player integration).
-        // No-op placeholder retained so the "Play All" button has a stable
-        // action to hoist and callers can observe intent via onPlayAll callback.
     }
 
     fun toggleTrackLike(trackId: Int) {

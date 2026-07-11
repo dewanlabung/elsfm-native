@@ -1,7 +1,7 @@
 package com.elsfm.mobile.feature.library
 
-import com.elsfm.mobile.core.model.Album
-import com.elsfm.mobile.core.network.api.TrackListApi
+import androidx.lifecycle.SavedStateHandle
+import com.elsfm.mobile.core.network.api.AlbumApi
 import com.elsfm.mobile.core.network.api.UserApi
 import com.elsfm.mobile.core.network.elsfmJson
 import com.elsfm.mobile.feature.library.data.TrackLikeController
@@ -44,14 +44,18 @@ class AlbumViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private fun mockTrackListApi(status: HttpStatusCode = HttpStatusCode.OK): TrackListApi {
+    private fun mockAlbumApi(status: HttpStatusCode = HttpStatusCode.OK): AlbumApi {
         val mockEngine = MockEngine.create {
             dispatcher = testDispatcher
             addHandler { _ ->
                 val body = """
                     {
-                      "pagination": {
-                        "data": [
+                      "album": {
+                        "id": 7,
+                        "name": "Test Album",
+                        "image": null,
+                        "release_date": "2026-01-01",
+                        "tracks": [
                           {"id": 1, "name": "Track 1", "image": null, "duration": 180000, "plays": "12", "artists": []}
                         ]
                       }
@@ -63,7 +67,7 @@ class AlbumViewModelTest {
         val httpClient = HttpClient(mockEngine) {
             install(ContentNegotiation) { json(elsfmJson()) }
         }
-        return TrackListApi(httpClient)
+        return AlbumApi(httpClient)
     }
 
     private fun mockUserApi(status: HttpStatusCode = HttpStatusCode.OK): UserApi {
@@ -83,7 +87,8 @@ class AlbumViewModelTest {
         status: HttpStatusCode = HttpStatusCode.OK,
         likeStatus: HttpStatusCode = HttpStatusCode.OK,
     ) = AlbumViewModel(
-        mockTrackListApi(status),
+        SavedStateHandle(mapOf(ALBUM_ID_ARG to 7)),
+        mockAlbumApi(status),
         TrackLikeController(mockUserApi(likeStatus)),
         FakeDispatcherProvider(testDispatcher),
     )
@@ -91,13 +96,10 @@ class AlbumViewModelTest {
     @Test
     fun `loadAlbum populates album and tracks on success`() = runTest(testDispatcher) {
         val viewModel = viewModel()
-        val album = Album(id = 7, name = "Test Album", image = null, releaseDate = "2026-01-01")
-
-        viewModel.loadAlbum(album)
         advanceUntilIdle()
 
         val state = viewModel.state.value
-        assertEquals(album, state.album)
+        assertEquals(7, state.album?.id)
         assertEquals(1, state.tracks.size)
         assertFalse(state.isLoading)
         assertNull(state.error)
@@ -106,13 +108,10 @@ class AlbumViewModelTest {
     @Test
     fun `loadAlbum sets error when request fails`() = runTest(testDispatcher) {
         val viewModel = viewModel(status = HttpStatusCode.InternalServerError)
-        val album = Album(id = 7, name = "Test Album", image = null, releaseDate = "2026-01-01")
-
-        viewModel.loadAlbum(album)
         advanceUntilIdle()
 
         val state = viewModel.state.value
-        assertEquals(album, state.album)
+        assertNull(state.album)
         assertEquals(0, state.tracks.size)
         assertFalse(state.isLoading)
         assertNotNull(state.error)
@@ -121,8 +120,6 @@ class AlbumViewModelTest {
     @Test
     fun `toggleTrackLike adds track to likedTrackIds on success`() = runTest(testDispatcher) {
         val viewModel = viewModel()
-        val album = Album(id = 7, name = "Test Album", image = null, releaseDate = "2026-01-01")
-        viewModel.loadAlbum(album)
         advanceUntilIdle()
 
         viewModel.toggleTrackLike(1)
@@ -136,8 +133,6 @@ class AlbumViewModelTest {
     @Test
     fun `toggleTrackLike sets error on failure without changing liked state`() = runTest(testDispatcher) {
         val viewModel = viewModel(likeStatus = HttpStatusCode.InternalServerError)
-        val album = Album(id = 7, name = "Test Album", image = null, releaseDate = "2026-01-01")
-        viewModel.loadAlbum(album)
         advanceUntilIdle()
 
         viewModel.toggleTrackLike(1)

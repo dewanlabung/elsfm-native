@@ -40,6 +40,7 @@ import com.elsfm.mobile.feature.auth.SignupScreen
 import com.elsfm.mobile.feature.discovery.ChannelDetailScreen
 import com.elsfm.mobile.feature.discovery.DiscoveryScreen
 import com.elsfm.mobile.feature.downloads.DownloadsScreen
+import com.elsfm.mobile.feature.library.AlbumScreen
 import com.elsfm.mobile.feature.library.LibraryScreen
 import com.elsfm.mobile.feature.library.LikedSongsScreen
 import com.elsfm.mobile.feature.library.ListeningHistoryScreen
@@ -83,6 +84,13 @@ private const val PLAYLIST_NAME_ARG = "playlistName"
 private fun NavHostController.navigateToPlaylist(playlist: Playlist) {
     val encodedName = URLEncoder.encode(playlist.name, "UTF-8")
     navigate("playlist/${playlist.id}/$encodedName")
+}
+
+private const val ROUTE_ALBUM = "album/{albumId}"
+private const val ALBUM_ID_ARG = "albumId"
+
+private fun NavHostController.navigateToAlbum(albumId: Int) {
+    navigate("album/$albumId")
 }
 
 private data class BottomTab(
@@ -206,7 +214,7 @@ fun ElsfmNavHost(
                             PlayerScreen(
                                 onCollapse = { navController.popBackStack() },
                                 onGoToArtist = { artistId -> navController.navigate("artist/$artistId") },
-                                onGoToAlbum = { /* TODO: navigate to album detail */ },
+                                onGoToAlbum = { albumId -> navController.navigateToAlbum(albumId) },
                                 onGoToTrack = { /* TODO: no track-detail screen yet */ },
                                 onViewLyrics = { /* TODO: no lyrics screen yet - LyricsApi exists, UI not built */ },
                             )
@@ -214,7 +222,7 @@ fun ElsfmNavHost(
                         composable(ROUTE_LIBRARY) {
                             LibraryScreen(
                                 onPlaylistTap = { playlist -> navController.navigateToPlaylist(playlist) },
-                                onAlbumTap = { /* TODO: navigate to album detail */ },
+                                onAlbumTap = { album -> navController.navigateToAlbum(album.id) },
                                 onChannelTap = { channel -> navController.navigate("channel/${channel.id}") },
                                 onSongsClicked = { navController.navigate(ROUTE_LIKED_SONGS) },
                                 onPlayHistoryClicked = { navController.navigate(ROUTE_LISTENING_HISTORY) },
@@ -236,6 +244,16 @@ fun ElsfmNavHost(
                             NotificationsScreen(onBack = { navController.popBackStack() })
                         }
                         composable(
+                            route = ROUTE_ALBUM,
+                            arguments = listOf(navArgument(ALBUM_ID_ARG) { type = NavType.IntType }),
+                        ) {
+                            val playerViewModel: PlayerViewModel = hiltViewModel()
+                            AlbumScreen(
+                                onTrackTap = { track, queue -> playerViewModel.play(track, queue) },
+                                onPlayAll = { tracks -> tracks.firstOrNull()?.let { playerViewModel.play(it, tracks) } },
+                            )
+                        }
+                        composable(
                             route = ROUTE_PLAYLIST,
                             arguments = listOf(
                                 navArgument(PLAYLIST_ID_ARG) { type = NavType.IntType },
@@ -251,6 +269,7 @@ fun ElsfmNavHost(
                             PlaylistScreen(
                                 playlist = Playlist(id = playlistId, name = playlistName, image = null, channelId = null),
                                 onTrackTap = { track, queue -> playerViewModel.play(track, queue) },
+                                onPlayAll = { tracks -> tracks.firstOrNull()?.let { playerViewModel.play(it, tracks) } },
                             )
                         }
                         composable(
@@ -261,7 +280,7 @@ fun ElsfmNavHost(
                             ChannelDetailScreen(
                                 onTrackClicked = { track, queue -> playerViewModel.play(track, queue) },
                                 onPlaylistClicked = { playlist -> navController.navigateToPlaylist(playlist) },
-                                onAlbumClicked = { /* TODO: navigate to album detail */ },
+                                onAlbumClicked = { album -> navController.navigateToAlbum(album.id) },
                                 onChannelClicked = { channelId -> navController.navigate("channel/$channelId") },
                             )
                         }
@@ -269,7 +288,7 @@ fun ElsfmNavHost(
                             val playerViewModel: PlayerViewModel = hiltViewModel()
                             SearchScreen(
                                 onTrackTap = { track, queue -> playerViewModel.play(track, queue) },
-                                onAlbumTap = { /* TODO: navigate to album detail */ },
+                                onAlbumTap = { album -> navController.navigateToAlbum(album.id) },
                                 onArtistTap = { artist -> navController.navigate("artist/${artist.id}") },
                                 onPlaylistTap = { playlist -> navController.navigateToPlaylist(playlist) },
                             )
@@ -284,7 +303,7 @@ fun ElsfmNavHost(
                             ArtistDetailScreen(
                                 artistId = artistId,
                                 onTrackClicked = { track, queue -> playerViewModel.play(track, queue) },
-                                onAlbumClicked = { /* TODO: navigate to album detail */ },
+                                onAlbumClicked = { albumId -> navController.navigateToAlbum(albumId) },
                                 onArtistClicked = { otherArtistId -> navController.navigate("artist/$otherArtistId") },
                             )
                         }
@@ -295,6 +314,7 @@ fun ElsfmNavHost(
                                     playerViewModel.play(track, queue)
                                 },
                                 onPlaylistClicked = { playlist -> navController.navigateToPlaylist(playlist) },
+                                onAlbumClicked = { album -> navController.navigateToAlbum(album.id) },
                                 onChannelClicked = { channelId -> navController.navigate("channel/$channelId") },
                             )
                         }

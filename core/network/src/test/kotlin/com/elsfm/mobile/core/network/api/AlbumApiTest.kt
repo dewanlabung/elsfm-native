@@ -24,15 +24,8 @@ class AlbumApiTest {
             "id": 1,
             "name": "Dark Side",
             "image": "https://example.com/album.jpg",
-            "release_date": "2024-01-15"
-          }
-        }
-    """.trimIndent()
-
-    private val tracksResponseBody = """
-        {
-          "pagination": {
-            "data": [
+            "release_date": "2024-01-15",
+            "tracks": [
               {
                 "id": 101,
                 "name": "Track 1",
@@ -62,7 +55,7 @@ class AlbumApiTest {
     }
 
     @Test
-    fun `getAlbum returns album with all fields`() = runTest {
+    fun `getAlbum returns album and nested tracks with all fields`() = runTest {
         val api = AlbumApi(clientReturning(HttpStatusCode.OK, albumResponseBody))
 
         val result = api.getAlbum(1)
@@ -73,6 +66,15 @@ class AlbumApiTest {
         assertEquals("Dark Side", album.name)
         assertEquals("https://example.com/album.jpg", album.image)
         assertEquals("2024-01-15", album.releaseDate)
+
+        assertEquals(2, album.tracks.size)
+        assertEquals(101, album.tracks[0].id)
+        assertEquals("Track 1", album.tracks[0].name)
+        assertEquals(180000L, album.tracks[0].durationMs)
+        assertNotNull(album.tracks[0].image)
+        assertEquals(102, album.tracks[1].id)
+        assertEquals("Track 2", album.tracks[1].name)
+        assertEquals(240000L, album.tracks[1].durationMs)
     }
 
     @Test
@@ -80,33 +82,6 @@ class AlbumApiTest {
         val api = AlbumApi(clientReturning(HttpStatusCode.InternalServerError, "{}"))
 
         val result = api.getAlbum(1)
-
-        assertTrue(result is ApiResult.NetworkError)
-    }
-
-    @Test
-    fun `getAlbumTracks returns PaginatedTracks with correct structure`() = runTest {
-        val api = AlbumApi(clientReturning(HttpStatusCode.OK, tracksResponseBody))
-
-        val result = api.getAlbumTracks(1)
-
-        assertTrue(result is ApiResult.Success)
-        val tracks = (result as ApiResult.Success).data
-        assertEquals(2, tracks.size)
-        assertEquals(101, tracks[0].id)
-        assertEquals("Track 1", tracks[0].name)
-        assertEquals(180000L, tracks[0].durationMs)
-        assertNotNull(tracks[0].image)
-        assertEquals(102, tracks[1].id)
-        assertEquals("Track 2", tracks[1].name)
-        assertEquals(240000L, tracks[1].durationMs)
-    }
-
-    @Test
-    fun `getAlbumTracks returns NetworkError on failure`() = runTest {
-        val api = AlbumApi(clientReturning(HttpStatusCode.InternalServerError, "{}"))
-
-        val result = api.getAlbumTracks(1)
 
         assertTrue(result is ApiResult.NetworkError)
     }

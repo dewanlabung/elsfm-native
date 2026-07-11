@@ -45,6 +45,7 @@ fun PlaylistScreen(
     playlist: Playlist,
     onTrackTap: (Track, List<Track>) -> Unit = { _, _ -> },
     onAddToQueue: (Track) -> Unit = {},
+    onPlayAll: (List<Track>) -> Unit = {},
     viewModel: PlaylistViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -55,7 +56,7 @@ fun PlaylistScreen(
 
     PlaylistDetailContent(
         state = state,
-        onPlayAll = viewModel::playAll,
+        onPlayAll = { onPlayAll(state.tracks) },
         onTrackTap = onTrackTap,
         onAddToQueue = onAddToQueue,
         onDeleteTrack = viewModel::deleteTrack,

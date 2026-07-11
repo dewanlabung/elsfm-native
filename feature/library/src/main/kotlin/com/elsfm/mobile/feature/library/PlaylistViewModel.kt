@@ -62,12 +62,6 @@ class PlaylistViewModel @Inject constructor(
         }
     }
 
-    fun playAll() {
-        // Playback wiring happens in Task 9 (navigation/player integration).
-        // No-op placeholder retained so the "Play All" button has a stable
-        // action to hoist and callers can observe intent via onPlayAll callback.
-    }
-
     fun deleteTrack(trackId: Int) {
         _state.value = _state.value.copy(
             tracks = _state.value.tracks.filterNot { it.id == trackId },
