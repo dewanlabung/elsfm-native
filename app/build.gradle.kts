@@ -4,7 +4,6 @@ plugins {
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
-    id("com.google.gms.google-services")
 }
 
 android {
@@ -114,11 +113,6 @@ dependencies {
     implementation(libs.androidx.security.crypto)
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services.auth)
-
-    // Firebase
-    implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.auth)
-    implementation(libs.firebase.auth.playservices)
 
     // Testing
     testImplementation(libs.junit)
