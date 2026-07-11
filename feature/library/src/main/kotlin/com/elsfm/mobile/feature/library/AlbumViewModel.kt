@@ -238,11 +238,12 @@ class AlbumViewModel @Inject constructor(
 
     /** "Make available offline" for a single track. */
     fun downloadTrack(track: Track) {
+        val album = _state.value.album
         viewModelScope.launch(dispatcherProvider.io) {
             _state.value = _state.value.copy(
                 downloadingTrackIds = _state.value.downloadingTrackIds + track.id,
             )
-            val result = downloadRepository.downloadTrack(track)
+            val result = downloadRepository.downloadTrack(track, albumId = album?.id, albumName = album?.name)
             _state.value = _state.value.copy(
                 downloadingTrackIds = _state.value.downloadingTrackIds - track.id,
                 downloadedTrackIds = if (result.isSuccess) {
@@ -263,6 +264,7 @@ class AlbumViewModel @Inject constructor(
     fun downloadAlbum() {
         val tracks = _state.value.tracks
         if (tracks.isEmpty()) return
+        val album = _state.value.album
 
         viewModelScope.launch(dispatcherProvider.io) {
             _state.value = _state.value.copy(isDownloadingAlbum = true)
@@ -270,7 +272,7 @@ class AlbumViewModel @Inject constructor(
                 _state.value = _state.value.copy(
                     downloadingTrackIds = _state.value.downloadingTrackIds + track.id,
                 )
-                val result = downloadRepository.downloadTrack(track)
+                val result = downloadRepository.downloadTrack(track, albumId = album?.id, albumName = album?.name)
                 _state.value = _state.value.copy(
                     downloadingTrackIds = _state.value.downloadingTrackIds - track.id,
                     downloadedTrackIds = if (result.isSuccess) {

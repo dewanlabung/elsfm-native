@@ -95,11 +95,16 @@ class PlaylistViewModel @Inject constructor(
 
     /** "Make available offline" for a single track. */
     fun downloadTrack(track: Track) {
+        val playlist = _state.value.playlist
         viewModelScope.launch(dispatcherProvider.io) {
             _state.value = _state.value.copy(
                 downloadingTrackIds = _state.value.downloadingTrackIds + track.id,
             )
-            val result = downloadRepository.downloadTrack(track)
+            val result = downloadRepository.downloadTrack(
+                track,
+                playlistId = playlist?.id,
+                playlistName = playlist?.name,
+            )
             _state.value = _state.value.copy(
                 downloadingTrackIds = _state.value.downloadingTrackIds - track.id,
                 downloadedTrackIds = if (result.isSuccess) {
@@ -120,6 +125,7 @@ class PlaylistViewModel @Inject constructor(
     fun downloadPlaylist() {
         val tracks = _state.value.tracks
         if (tracks.isEmpty()) return
+        val playlist = _state.value.playlist
 
         viewModelScope.launch(dispatcherProvider.io) {
             _state.value = _state.value.copy(isDownloadingPlaylist = true)
@@ -127,7 +133,11 @@ class PlaylistViewModel @Inject constructor(
                 _state.value = _state.value.copy(
                     downloadingTrackIds = _state.value.downloadingTrackIds + track.id,
                 )
-                val result = downloadRepository.downloadTrack(track)
+                val result = downloadRepository.downloadTrack(
+                    track,
+                    playlistId = playlist?.id,
+                    playlistName = playlist?.name,
+                )
                 _state.value = _state.value.copy(
                     downloadingTrackIds = _state.value.downloadingTrackIds - track.id,
                     downloadedTrackIds = if (result.isSuccess) {

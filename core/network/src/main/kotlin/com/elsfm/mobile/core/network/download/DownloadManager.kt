@@ -72,6 +72,11 @@ open class DownloadManager @Inject constructor(
             downloadDir?.listFiles()?.find { it.name.startsWith("${trackId}_") }
                 ?.delete() ?: false
         }
+
+    /** The local on-disk file for a completed download, for offline playback. */
+    open fun getFile(fileName: String): File? {
+        return downloadDir?.let { File(it, fileName) }
+    }
 }
 
 private fun String.slugify(): String =

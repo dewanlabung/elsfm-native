@@ -12,9 +12,13 @@ fun Track.toMediaItem(baseUrl: String = "https://www.elsfm.com/"): MediaItem {
         .apply { image?.let { setArtworkUri(Uri.parse(baseUrl + it)) } }
         .build()
 
+    // A locally downloaded track's src is already a full file:// URI - unlike streamed
+    // tracks, it must not be prefixed with baseUrl.
+    val uri = if (src.orEmpty().startsWith("file://")) src else baseUrl + src
+
     return MediaItem.Builder()
         .setMediaId(id.toString())
-        .setUri(baseUrl + src)
+        .setUri(uri)
         .setMediaMetadata(metadata)
         .build()
 }

@@ -2,23 +2,27 @@ package com.elsfm.mobile.feature.downloads
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.elsfm.mobile.core.database.entity.DownloadedTrack
 import com.elsfm.mobile.core.database.repository.DownloadRepository
+import com.elsfm.mobile.core.model.Artist
+import com.elsfm.mobile.core.model.Track
+import com.elsfm.mobile.feature.player.PlayerController
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 @HiltViewModel
 class DownloadsViewModel @Inject constructor(
-    private val downloadRepository: DownloadRepository
+    private val downloadRepository: DownloadRepository,
+    private val playerController: PlayerController,
 ) : ViewModel() {
     private val _state = MutableStateFlow(DownloadsState())
     val state = _state.asStateFlow()
+
+    private var allDownloads: List<DownloadedTrack> = emptyList()
 
     init {
         loadDownloads()
@@ -27,18 +31,8 @@ class DownloadsViewModel @Inject constructor(
     private fun loadDownloads() {
         viewModelScope.launch {
             downloadRepository.getCompletedDownloads().collectLatest { downloads ->
-                val tracks = downloads.map { download ->
-                    DownloadedTrackUI(
-                        trackId = download.trackId,
-                        title = download.title,
-                        artist = download.artist,
-                        artworkUrl = download.artworkUrl,
-                        fileSize = formatFileSize(download.fileSizeBytes),
-                        downloadedAt = download.downloadedAt,
-                        isOffline = true
-                    )
-                }
-                updateDownloadsList(tracks)
+                allDownloads = downloads
+                updateDownloadsList()
             }
         }
     }
@@ -50,9 +44,11 @@ class DownloadsViewModel @Inject constructor(
             }
             is DownloadsEvent.SearchQueryChanged -> {
                 _state.value = _state.value.copy(searchQuery = event.query)
+                updateDownloadsList()
             }
             is DownloadsEvent.SortChanged -> {
                 _state.value = _state.value.copy(sortBy = event.sortBy)
+                updateDownloadsList()
             }
             is DownloadsEvent.DeleteDownload -> {
                 deleteDownload(event.trackId)
@@ -60,14 +56,19 @@ class DownloadsViewModel @Inject constructor(
             is DownloadsEvent.ShareDownload -> {
                 shareDownload(event.trackId)
             }
+            is DownloadsEvent.PlayAlbum -> {
+                playGroup(allDownloads.filter { it.albumId == event.albumId })
+            }
+            is DownloadsEvent.PlayPlaylist -> {
+                playGroup(allDownloads.filter { it.playlistId == event.playlistId })
+            }
         }
     }
 
-    private fun updateDownloadsList(tracks: List<DownloadedTrackUI>) {
+    private fun updateDownloadsList() {
         val currentState = _state.value
-        var filtered = tracks
+        var filtered = allDownloads
 
-        // Filter by search query
         if (currentState.searchQuery.isNotBlank()) {
             filtered = filtered.filter {
                 it.title.contains(currentState.searchQuery, ignoreCase = true) ||
@@ -75,14 +76,55 @@ class DownloadsViewModel @Inject constructor(
             }
         }
 
-        // Sort
         filtered = when (currentState.sortBy) {
             SortBy.RECENTLY_ADDED -> filtered.sortedByDescending { it.downloadedAt }
             SortBy.A_TO_Z -> filtered.sortedBy { it.title }
             SortBy.RELEASE_DATE -> filtered.sortedByDescending { it.downloadedAt }
         }
 
-        _state.value = currentState.copy(downloadedTracks = filtered)
+        val tracks = filtered.map { download ->
+            DownloadedTrackUI(
+                trackId = download.trackId,
+                title = download.title,
+                artist = download.artist,
+                artworkUrl = download.artworkUrl,
+                fileSize = formatFileSize(download.fileSizeBytes),
+                downloadedAt = download.downloadedAt,
+                isOffline = true,
+            )
+        }
+
+        val albums = filtered
+            .filter { it.albumId != null }
+            .groupBy { it.albumId }
+            .map { (albumId, tracksInAlbum) ->
+                DownloadedAlbumUI(
+                    albumId = albumId!!,
+                    name = tracksInAlbum.first().albumName ?: "Unknown album",
+                    artworkUrl = tracksInAlbum.first().artworkUrl,
+                    trackCount = tracksInAlbum.size,
+                    trackIds = tracksInAlbum.map { it.trackId },
+                )
+            }
+
+        val playlists = filtered
+            .filter { it.playlistId != null }
+            .groupBy { it.playlistId }
+            .map { (playlistId, tracksInPlaylist) ->
+                DownloadedPlaylistUI(
+                    playlistId = playlistId!!,
+                    name = tracksInPlaylist.first().playlistName ?: "Unknown playlist",
+                    artworkUrl = tracksInPlaylist.first().artworkUrl,
+                    trackCount = tracksInPlaylist.size,
+                    trackIds = tracksInPlaylist.map { it.trackId },
+                )
+            }
+
+        _state.value = currentState.copy(
+            downloadedTracks = tracks,
+            downloadedAlbums = albums,
+            downloadedPlaylists = playlists,
+        )
     }
 
     private fun deleteDownload(trackId: Int) {
@@ -93,6 +135,24 @@ class DownloadsViewModel @Inject constructor(
 
     private fun shareDownload(trackId: Int) {
         // Share logic will be implemented with actual sharing API
+    }
+
+    /** Plays a downloaded album/playlist's tracks from their local files, fully offline. */
+    private fun playGroup(downloads: List<DownloadedTrack>) {
+        if (downloads.isEmpty()) return
+        val queue = downloads.mapNotNull { download ->
+            val file = downloadRepository.getLocalFile(download.fileName) ?: return@mapNotNull null
+            Track(
+                id = download.trackId,
+                name = download.title,
+                image = download.artworkUrl,
+                durationMs = 0L,
+                src = "file://${file.absolutePath}",
+                artists = listOf(Artist(id = 0, name = download.artist)),
+            )
+        }
+        if (queue.isEmpty()) return
+        playerController.play(queue.first(), queue)
     }
 
     private fun formatFileSize(bytes: Long): String {

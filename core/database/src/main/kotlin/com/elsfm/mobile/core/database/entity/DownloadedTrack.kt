@@ -14,4 +14,8 @@ data class DownloadedTrack(
     @ColumnInfo(name = "downloaded_at")
     val downloadedAt: Long = System.currentTimeMillis(),
     val artworkUrl: String? = null,
+    val albumId: Int? = null,
+    val albumName: String? = null,
+    val playlistId: Int? = null,
+    val playlistName: String? = null,
 )

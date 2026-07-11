@@ -4,6 +4,7 @@ import com.elsfm.mobile.core.database.dao.DownloadedTrackDao
 import com.elsfm.mobile.core.database.entity.DownloadedTrack
 import com.elsfm.mobile.core.model.Track
 import com.elsfm.mobile.core.network.download.DownloadManager
+import java.io.File
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
@@ -25,7 +26,14 @@ open class DownloadRepository @Inject constructor(
         return downloadedTrackDao.getById(trackId) != null
     }
 
-    open suspend fun downloadTrack(track: Track, onProgress: (Float) -> Unit = {}): Result<Unit> {
+    open suspend fun downloadTrack(
+        track: Track,
+        albumId: Int? = null,
+        albumName: String? = null,
+        playlistId: Int? = null,
+        playlistName: String? = null,
+        onProgress: (Float) -> Unit = {},
+    ): Result<Unit> {
         return downloadManager.downloadTrack(track, onProgress).map { file ->
             downloadedTrackDao.insert(
                 DownloadedTrack(
@@ -35,6 +43,10 @@ open class DownloadRepository @Inject constructor(
                     fileName = file.name,
                     fileSizeBytes = file.length(),
                     artworkUrl = track.image,
+                    albumId = albumId,
+                    albumName = albumName,
+                    playlistId = playlistId,
+                    playlistName = playlistName,
                 ),
             )
         }
@@ -47,5 +59,10 @@ open class DownloadRepository @Inject constructor(
 
     fun getTotalDownloadSize(): Flow<Long?> {
         return downloadedTrackDao.getTotalSizeBytes()
+    }
+
+    /** The local on-disk file for a completed download, for offline playback. */
+    open fun getLocalFile(fileName: String): File? {
+        return downloadManager.getFile(fileName)
     }
 }

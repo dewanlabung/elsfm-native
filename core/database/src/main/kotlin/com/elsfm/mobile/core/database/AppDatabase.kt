@@ -11,7 +11,7 @@ import com.elsfm.mobile.core.database.entity.TokenEntity
 
 @Database(
     entities = [UserEntity::class, DownloadedTrack::class, FollowedArtistEntity::class, TokenEntity::class],
-    version = 3,
+    version = 4,
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
