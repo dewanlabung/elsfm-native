@@ -347,15 +347,6 @@ private fun ArtistHeader(
                 }
             }
         }
-
-        artist.profile?.description?.takeIf { it.isNotBlank() }?.let { bio ->
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = bio,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.85f),
-            )
-        }
     }
 }
 
