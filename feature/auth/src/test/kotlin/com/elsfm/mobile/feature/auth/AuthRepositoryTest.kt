@@ -93,5 +93,6 @@ class AuthRepositoryTest {
 
     private class FakeAuthApi(private val result: ApiResult<User>) : AuthApiLike {
         override suspend fun login(email: String, password: String, tokenName: String): ApiResult<User> = result
+        override suspend fun loginWithGoogle(googleAccessToken: String, tokenName: String): ApiResult<User> = result
     }
 }

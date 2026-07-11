@@ -29,6 +29,20 @@ class AuthRepository @Inject constructor(
         return result
     }
 
+    /** Same session-storage flow as [login], just backed by a Google OAuth access token. */
+    suspend fun loginWithGoogle(googleAccessToken: String): ApiResult<User> {
+        val tokenName = "android-${UUID.randomUUID()}"
+        val result = authApi.loginWithGoogle(googleAccessToken, tokenName)
+        if (result is ApiResult.Success) {
+            val token = result.data.accessToken
+            if (token != null) {
+                sessionManager.saveToken(token)
+                userDao.upsert(result.data.toEntity())
+            }
+        }
+        return result
+    }
+
     suspend fun logout() {
         sessionManager.clear()
         userDao.clear()

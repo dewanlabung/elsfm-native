@@ -30,6 +30,7 @@ private class LoginFakeUserDao : UserDao {
 
 private class LoginFakeAuthApi(private val result: ApiResult<User>) : AuthApiLike {
     override suspend fun login(email: String, password: String, tokenName: String) = result
+    override suspend fun loginWithGoogle(googleAccessToken: String, tokenName: String) = result
 }
 
 class LoginViewModelTest {

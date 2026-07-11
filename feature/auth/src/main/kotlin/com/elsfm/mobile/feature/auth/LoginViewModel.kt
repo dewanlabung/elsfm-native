@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.elsfm.mobile.core.network.ApiResult
 import com.elsfm.mobile.feature.auth.data.AuthRepository
+import com.elsfm.mobile.feature.auth.data.GoogleSignInService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -24,14 +25,19 @@ sealed class LoginEvent {
     data class PasswordChanged(val password: String) : LoginEvent()
     data class RememberMeChanged(val remember: Boolean) : LoginEvent()
     object LoginClicked : LoginEvent()
+    data class GoogleSignInSucceeded(val accountEmail: String) : LoginEvent()
+    data class GoogleSignInFailed(val message: String) : LoginEvent()
 }
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val googleSignInService: GoogleSignInService,
 ) : ViewModel() {
     private val _state = MutableStateFlow(LoginState())
     val state = _state.asStateFlow()
+
+    fun googleSignInClient() = googleSignInService.signInClient
 
     fun onEvent(event: LoginEvent) {
         when (event) {
@@ -46,6 +52,12 @@ class LoginViewModel @Inject constructor(
             }
             LoginEvent.LoginClicked -> {
                 login()
+            }
+            is LoginEvent.GoogleSignInSucceeded -> {
+                loginWithGoogle(event.accountEmail)
+            }
+            is LoginEvent.GoogleSignInFailed -> {
+                _state.value = _state.value.copy(isLoading = false, error = event.message)
             }
         }
     }
@@ -79,6 +91,44 @@ class LoginViewModel @Inject constructor(
                     _state.value = _state.value.copy(
                         isLoading = false,
                         error = "Network error. Please check your connection."
+                    )
+                }
+            }
+        }
+    }
+
+    private fun loginWithGoogle(accountEmail: String) {
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isLoading = true, error = null)
+
+            val result = try {
+                val accessToken = googleSignInService.fetchAccessToken(accountEmail)
+                authRepository.loginWithGoogle(accessToken)
+            } catch (e: Exception) {
+                ApiResult.NetworkError(e)
+            }
+
+            when (result) {
+                is ApiResult.Success -> {
+                    _state.value = _state.value.copy(isLoading = false, isLoggedIn = true)
+                }
+                is ApiResult.Unauthorized -> {
+                    _state.value = _state.value.copy(
+                        isLoading = false,
+                        error = "Google sign-in failed"
+                    )
+                }
+                is ApiResult.ValidationError -> {
+                    val errorMessages = result.fields.values.flatten().joinToString(", ")
+                    _state.value = _state.value.copy(
+                        isLoading = false,
+                        error = errorMessages.ifEmpty { "Google sign-in failed" }
+                    )
+                }
+                is ApiResult.NetworkError -> {
+                    _state.value = _state.value.copy(
+                        isLoading = false,
+                        error = "Google sign-in failed: ${result.cause.message ?: "network error"}"
                     )
                 }
             }

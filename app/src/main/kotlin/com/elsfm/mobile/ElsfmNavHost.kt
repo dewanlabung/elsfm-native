@@ -210,13 +210,14 @@ fun ElsfmNavHost(
                     ) {
                         composable(ROUTE_LOGIN) {
                             LoginScreen(
+                                onLoginSuccess = { navController.navigate(ROUTE_DISCOVERY) { popUpTo(0) } },
                                 onForgotPasswordClick = { navController.navigate(ROUTE_PASSWORD_RESET) },
                                 onSignupClick = { navController.navigate(ROUTE_SIGNUP) },
                             )
                         }
                         composable(ROUTE_SIGNUP) {
                             SignupScreen(
-                                onSignupSuccess = { navController.navigate(ROUTE_HOME) { popUpTo(0) } },
+                                onSignupSuccess = { navController.navigate(ROUTE_DISCOVERY) { popUpTo(0) } },
                                 onSigninClick = { navController.popBackStack() },
                             )
                         }

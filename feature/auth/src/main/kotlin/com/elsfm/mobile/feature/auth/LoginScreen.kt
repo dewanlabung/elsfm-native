@@ -1,5 +1,8 @@
 package com.elsfm.mobile.feature.auth
 
+import android.app.Activity.RESULT_OK
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,12 +18,16 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.common.api.ApiException
 
 @Composable
 fun LoginScreen(
@@ -30,9 +37,31 @@ fun LoginScreen(
     onSignupClick: () -> Unit = {},
 ) {
     val state = viewModel.state.collectAsState().value
+    val googleSignInClient = remember { viewModel.googleSignInClient() }
+    val googleSignInLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult(),
+    ) { result ->
+        if (result.resultCode != RESULT_OK) {
+            viewModel.onEvent(LoginEvent.GoogleSignInFailed("Google sign-in was cancelled"))
+            return@rememberLauncherForActivityResult
+        }
+        try {
+            val account = GoogleSignIn.getSignedInAccountFromIntent(result.data).getResult(ApiException::class.java)
+            val email = account?.email
+            if (email != null) {
+                viewModel.onEvent(LoginEvent.GoogleSignInSucceeded(email))
+            } else {
+                viewModel.onEvent(LoginEvent.GoogleSignInFailed("Google account has no email"))
+            }
+        } catch (e: ApiException) {
+            viewModel.onEvent(LoginEvent.GoogleSignInFailed(e.message ?: "Google sign-in failed"))
+        }
+    }
 
-    if (state.isLoggedIn) {
-        onLoginSuccess()
+    LaunchedEffect(state.isLoggedIn) {
+        if (state.isLoggedIn) {
+            onLoginSuccess()
+        }
     }
 
     Column(
@@ -113,7 +142,8 @@ fun LoginScreen(
         }
 
         OutlinedButton(
-            onClick = { /* TODO: wire real Google Sign-In SDK - not yet integrated */ },
+            onClick = { googleSignInLauncher.launch(googleSignInClient.signInIntent) },
+            enabled = !state.isLoading,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 12.dp)

@@ -63,4 +63,26 @@ class AuthApiTest {
 
         assertTrue(result is ApiResult.Unauthorized)
     }
+
+    @Test
+    fun `loginWithGoogle success returns user with access token`() = runTest {
+        val body = """
+            {"status":"success","user":{"id":207,"email":"test.elsfm@gmail.com","access_token":"1|abc"}}
+        """.trimIndent()
+        val authApi = AuthApi(clientReturning(HttpStatusCode.OK, body))
+
+        val result = authApi.loginWithGoogle("ya29.google-access-token", "android-uuid-1")
+
+        assertTrue(result is ApiResult.Success)
+        assertEquals("1|abc", (result as ApiResult.Success).data.accessToken)
+    }
+
+    @Test
+    fun `loginWithGoogle with 401 response returns Unauthorized`() = runTest {
+        val authApi = AuthApi(clientReturning(HttpStatusCode.Unauthorized, "{}"))
+
+        val result = authApi.loginWithGoogle("ya29.google-access-token", "android-uuid-1")
+
+        assertTrue(result is ApiResult.Unauthorized)
+    }
 }
