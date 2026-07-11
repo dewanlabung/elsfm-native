@@ -17,7 +17,7 @@ import javax.inject.Inject
 /**
  * Immutable, hoisted UI state for [ListeningHistoryScreen].
  *
- * Backed by the real `GET api/v1/me/recently-played` endpoint
+ * Backed by the real `GET api/v1/tracks/plays/me` endpoint
  * ([ProfileApi.getRecentlyPlayed]), the same call already used by Discovery
  * and Profile for "recently played" data.
  */

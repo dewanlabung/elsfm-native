@@ -55,4 +55,35 @@ class ProfileApiTest {
 
         assertTrue(result is ApiResult.NetworkError)
     }
+
+    private val recentlyPlayedResponseBody = """
+        {
+          "pagination": {
+            "data": [
+              {"id": 1, "name": "Track 1", "image": null, "duration": 180000, "plays": "12", "artists": []}
+            ]
+          }
+        }
+    """.trimIndent()
+
+    @Test
+    fun `getRecentlyPlayed returns tracks from the real tracks-plays-me endpoint`() = runTest {
+        val api = ProfileApi(clientReturning(HttpStatusCode.OK, recentlyPlayedResponseBody))
+
+        val result = api.getRecentlyPlayed()
+
+        assertTrue(result is ApiResult.Success)
+        val tracks = (result as ApiResult.Success).data
+        assertEquals(1, tracks.size)
+        assertEquals("Track 1", tracks[0].name)
+    }
+
+    @Test
+    fun `getRecentlyPlayed returns NetworkError on failure`() = runTest {
+        val api = ProfileApi(clientReturning(HttpStatusCode.InternalServerError, "{}"))
+
+        val result = api.getRecentlyPlayed()
+
+        assertTrue(result is ApiResult.NetworkError)
+    }
 }

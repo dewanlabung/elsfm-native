@@ -56,9 +56,11 @@ class DiscoveryViewModelTest {
             addHandler { _ ->
                 val body = """
                     {
-                      "data": [
-                        {"id": 3, "name": "Track 3", "image": null, "duration": 210000, "plays": "5", "artists": []}
-                      ]
+                      "pagination": {
+                        "data": [
+                          {"id": 3, "name": "Track 3", "image": null, "duration": 210000, "plays": "5", "artists": []}
+                        ]
+                      }
                     }
                 """.trimIndent()
                 respond(

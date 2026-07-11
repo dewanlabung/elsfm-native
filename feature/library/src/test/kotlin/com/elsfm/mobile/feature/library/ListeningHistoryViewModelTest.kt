@@ -45,10 +45,12 @@ class ListeningHistoryViewModelTest {
 
     private val historyBody = """
         {
-          "data": [
-            {"id": 1, "name": "History Track 1", "image": null, "duration": 180000, "plays": "12", "artists": [{"id": 9, "name": "Artist One"}]},
-            {"id": 2, "name": "History Track 2", "image": null, "duration": 200000, "plays": "34", "artists": [{"id": 10, "name": "Artist Two"}]}
-          ]
+          "pagination": {
+            "data": [
+              {"id": 1, "name": "History Track 1", "image": null, "duration": 180000, "plays": "12", "artists": [{"id": 9, "name": "Artist One"}]},
+              {"id": 2, "name": "History Track 2", "image": null, "duration": 200000, "plays": "34", "artists": [{"id": 10, "name": "Artist Two"}]}
+            ]
+          }
         }
     """.trimIndent()
 
