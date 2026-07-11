@@ -4,6 +4,7 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -57,7 +58,6 @@ import com.elsfm.mobile.core.model.Artist
 import com.elsfm.mobile.core.model.ArtistFollower
 import com.elsfm.mobile.core.model.Track
 import com.elsfm.mobile.feature.library.composables.AlbumCard
-import com.elsfm.mobile.feature.library.composables.BlurredBackground
 import com.elsfm.mobile.feature.library.composables.SectionHeader
 import com.elsfm.mobile.feature.library.composables.TrackListItem
 
@@ -72,7 +72,11 @@ fun ArtistDetailScreen(
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
 
-    BlurredBackground(imageUrl = state.artist?.image) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background),
+    ) {
         when {
             state.isLoading -> {
                 Box(

@@ -2,6 +2,7 @@ package com.elsfm.mobile.feature.discovery
 
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -24,7 +25,6 @@ import com.elsfm.mobile.core.model.Track
 import com.elsfm.mobile.feature.discovery.sections.FeaturedPlaylistsSection
 import com.elsfm.mobile.feature.discovery.sections.NewReleasesSection
 import com.elsfm.mobile.feature.discovery.sections.TrackListSection
-import com.elsfm.mobile.feature.library.composables.BlurredBackground
 import com.elsfm.mobile.feature.library.composables.SectionHeader
 
 private const val CROSSFADE_DURATION_MS = 300
@@ -38,7 +38,6 @@ fun DiscoveryScreen(
     onSeeAllExploreMoreChannel: () -> Unit = {},
     onSeeAllNewReleases: () -> Unit = {},
     onSeeAllMostlyPlayedSongs: () -> Unit = {},
-    onSeeAllRecentlyPlayed: () -> Unit = {},
     onPlaylistClicked: (Playlist) -> Unit = {},
     onAlbumClicked: (Album) -> Unit = {},
     onTrackMoreClicked: (Track) -> Unit = {},
@@ -46,7 +45,11 @@ fun DiscoveryScreen(
 ) {
     val state by viewModel.state.collectAsState()
 
-    BlurredBackground(imageUrl = state.kidsZone.firstOrNull()?.image) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background),
+    ) {
         Crossfade(
             targetState = state.isLoading,
             animationSpec = tween(durationMillis = CROSSFADE_DURATION_MS),
@@ -62,7 +65,6 @@ fun DiscoveryScreen(
                     onSeeAllExploreMoreChannel = onSeeAllExploreMoreChannel,
                     onSeeAllNewReleases = onSeeAllNewReleases,
                     onSeeAllMostlyPlayedSongs = onSeeAllMostlyPlayedSongs,
-                    onSeeAllRecentlyPlayed = onSeeAllRecentlyPlayed,
                     onPlaylistClicked = onPlaylistClicked,
                     onAlbumClicked = onAlbumClicked,
                     onTrackMoreClicked = onTrackMoreClicked,
@@ -112,7 +114,6 @@ internal fun DiscoveryContent(
     onSeeAllExploreMoreChannel: () -> Unit,
     onSeeAllNewReleases: () -> Unit,
     onSeeAllMostlyPlayedSongs: () -> Unit,
-    onSeeAllRecentlyPlayed: () -> Unit,
     onPlaylistClicked: (Playlist) -> Unit,
     onAlbumClicked: (Album) -> Unit,
     onTrackMoreClicked: (Track) -> Unit,
@@ -164,16 +165,6 @@ internal fun DiscoveryContent(
                 TrackListSection(
                     tracks = state.mostlyPlayedSongs,
                     onTrackClick = { track -> onTrackClicked(track, state.mostlyPlayedSongs) },
-                    onTrackMoreClick = onTrackMoreClicked,
-                )
-            }
-        }
-        if (state.recentlyPlayed.isNotEmpty()) {
-            item {
-                SectionHeader(title = "Recently Played", onSeeAllClick = onSeeAllRecentlyPlayed)
-                TrackListSection(
-                    tracks = state.recentlyPlayed,
-                    onTrackClick = { track -> onTrackClicked(track, state.recentlyPlayed) },
                     onTrackMoreClick = onTrackMoreClicked,
                 )
             }

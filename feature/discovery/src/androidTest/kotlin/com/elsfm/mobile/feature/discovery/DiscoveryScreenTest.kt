@@ -45,7 +45,6 @@ class DiscoveryScreenTest {
         onSeeAllExploreMoreChannel: () -> Unit = {},
         onSeeAllNewReleases: () -> Unit = {},
         onSeeAllMostlyPlayedSongs: () -> Unit = {},
-        onSeeAllRecentlyPlayed: () -> Unit = {},
         onChannelClicked: (Int) -> Unit = {},
     ) {
         composeRule.setContent {
@@ -56,7 +55,6 @@ class DiscoveryScreenTest {
                 onSeeAllExploreMoreChannel = onSeeAllExploreMoreChannel,
                 onSeeAllNewReleases = onSeeAllNewReleases,
                 onSeeAllMostlyPlayedSongs = onSeeAllMostlyPlayedSongs,
-                onSeeAllRecentlyPlayed = onSeeAllRecentlyPlayed,
                 onPlaylistClicked = {},
                 onAlbumClicked = {},
                 onTrackMoreClicked = {},
@@ -71,7 +69,7 @@ class DiscoveryScreenTest {
     }
 
     @Test
-    fun rendersAllFiveSectionTitles() {
+    fun rendersAllFourSectionTitles() {
         setContentWithData()
 
         composeRule.onNodeWithText("Kids Zone").assertExists()
@@ -81,8 +79,6 @@ class DiscoveryScreenTest {
         composeRule.onNodeWithText("New Release Nepali Christian songs").assertExists()
         scrollToSection(3)
         composeRule.onNodeWithText("Mostly Played Songs").assertExists()
-        scrollToSection(4)
-        composeRule.onNodeWithText("Recently Played").assertExists()
     }
 
     @Test
@@ -126,16 +122,5 @@ class DiscoveryScreenTest {
         composeRule.onNodeWithText("Mostly Played Songs").performClick()
 
         assert(invoked) { "onSeeAllMostlyPlayedSongs was not invoked" }
-    }
-
-    @Test
-    fun seeAllRecentlyPlayedInvokesCallback() {
-        var invoked = false
-        setContentWithData(onSeeAllRecentlyPlayed = { invoked = true })
-
-        scrollToSection(4)
-        composeRule.onNodeWithText("Recently Played").performClick()
-
-        assert(invoked) { "onSeeAllRecentlyPlayed was not invoked" }
     }
 }
