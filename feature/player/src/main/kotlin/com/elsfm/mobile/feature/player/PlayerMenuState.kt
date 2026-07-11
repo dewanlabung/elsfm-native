@@ -7,6 +7,8 @@ data class PlayerMenuState(
     val addToLibraryLoading: Boolean = false,
     val repostLoading: Boolean = false,
     val shareLoading: Boolean = false,
+    val isLiked: Boolean = false,
+    val isLikeLoading: Boolean = false,
     val error: String? = null,
 )
 

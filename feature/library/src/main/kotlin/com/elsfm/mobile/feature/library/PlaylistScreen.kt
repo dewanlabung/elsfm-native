@@ -15,8 +15,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -33,6 +31,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.elsfm.mobile.core.designsystem.TrackContextMenu
 import com.elsfm.mobile.core.model.Playlist
 import com.elsfm.mobile.core.model.Track
 import com.elsfm.mobile.feature.library.composables.BlurredBackground
@@ -191,22 +190,19 @@ private fun PlaylistTrackRow(
         )
 
         Box {
-            DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
-                DropdownMenuItem(
-                    text = { Text("Add to queue") },
-                    onClick = {
-                        menuExpanded = false
-                        onAddToQueue()
-                    },
-                )
-                DropdownMenuItem(
-                    text = { Text("Remove from playlist") },
-                    onClick = {
-                        menuExpanded = false
-                        onDelete()
-                    },
-                )
-            }
+            TrackContextMenu(
+                trackId = track.id,
+                artistId = track.artists.firstOrNull()?.id,
+                albumId = track.album?.id,
+                isVisible = menuExpanded,
+                onDismiss = { menuExpanded = false },
+                onAddToQueue = { onAddToQueue() },
+                onAddToLibrary = { onToggleLike() },
+                onAddToPlaylist = {},
+                onShare = {},
+                onRepost = {},
+                onRemoveFromPlaylist = onDelete,
+            )
         }
     }
 }

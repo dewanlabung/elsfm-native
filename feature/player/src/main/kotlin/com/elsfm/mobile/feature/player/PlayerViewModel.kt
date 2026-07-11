@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.elsfm.mobile.core.media.PlayHistoryApi
 import com.elsfm.mobile.core.model.Track
 import com.elsfm.mobile.core.network.ApiResult
+import com.elsfm.mobile.core.network.api.UserApi
 import com.elsfm.mobile.feature.player.data.PlayerMenuRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,6 +19,7 @@ class PlayerViewModel @Inject constructor(
     private val playerController: PlayerController,
     private val playHistoryApi: PlayHistoryApi,
     private val menuRepository: PlayerMenuRepository,
+    private val userApi: UserApi,
 ) : ViewModel() {
 
     private val _menuState = MutableStateFlow(PlayerMenuState())
@@ -26,6 +28,10 @@ class PlayerViewModel @Inject constructor(
     val state: StateFlow<PlayerState> = playerController.state
 
     fun play(track: Track, queue: List<Track>) {
+        // A new track starts unliked until the user toggles it this session -
+        // there is no "is this track already liked" lookup endpoint, matching
+        // the same simplification used by Album/Playlist track rows.
+        _menuState.value = _menuState.value.copy(isLiked = false, isLikeLoading = false)
         playerController.play(track, queue)
         viewModelScope.launch { playHistoryApi.recordPlay(track.id) }
     }
@@ -35,6 +41,38 @@ class PlayerViewModel @Inject constructor(
     fun skipNext() = playerController.skipNext()
     fun skipPrevious() = playerController.skipPrevious()
     fun jumpToQueueItem(track: Track) = playerController.jumpToQueueItem(track)
+    fun toggleShuffle() = playerController.toggleShuffle()
+    fun cycleRepeatMode() = playerController.cycleRepeatMode()
+
+    fun toggleLike() {
+        val track = state.value.currentTrack ?: return
+        val currentlyLiked = menuState.value.isLiked
+        _menuState.value = _menuState.value.copy(isLikeLoading = true)
+
+        viewModelScope.launch {
+            val result = if (currentlyLiked) {
+                userApi.removeTrackFromLibrary(track.id)
+            } else {
+                userApi.addTrackToLibrary(track.id)
+            }
+            when (result) {
+                is ApiResult.Success -> {
+                    _menuState.value = _menuState.value.copy(
+                        isLiked = result.data,
+                        isLikeLoading = false,
+                    )
+                }
+                is ApiResult.NetworkError,
+                is ApiResult.ValidationError,
+                is ApiResult.Unauthorized -> {
+                    _menuState.value = _menuState.value.copy(
+                        isLikeLoading = false,
+                        error = "Failed to update library",
+                    )
+                }
+            }
+        }
+    }
 
     fun onMenuEvent(event: PlayerMenuEvent) {
         when (event) {

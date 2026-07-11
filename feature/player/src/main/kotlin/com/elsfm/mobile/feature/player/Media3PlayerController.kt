@@ -11,10 +11,17 @@ import com.elsfm.mobile.core.media.toMediaItem
 import com.elsfm.mobile.core.model.Track
 import com.google.common.util.concurrent.MoreExecutors
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
+
+private const val POSITION_POLL_INTERVAL_MS = 500L
 
 @Singleton
 class Media3PlayerController @Inject constructor(
@@ -27,6 +34,10 @@ class Media3PlayerController @Inject constructor(
     private var mediaController: MediaController? = null
     private var currentQueue: List<Track> = emptyList()
 
+    // Application-lifetime scope: this controller is a @Singleton with no natural
+    // cancellation point, so the ticker below runs for the process's lifetime.
+    private val scope = CoroutineScope(Dispatchers.Main.immediate + SupervisorJob())
+
     init {
         val sessionToken = SessionToken(context, ComponentName(context, PlaybackService::class.java))
         val controllerFuture = MediaController.Builder(context, sessionToken).buildAsync()
@@ -37,6 +48,7 @@ class Media3PlayerController @Inject constructor(
             },
             MoreExecutors.directExecutor(),
         )
+        startPositionTicker()
     }
 
     private fun attachListener() {
@@ -58,6 +70,25 @@ class Media3PlayerController @Inject constructor(
                 _state.value = _state.value.copy(error = error.message)
             }
         })
+    }
+
+    /**
+     * ExoPlayer only pushes position updates via listener callbacks on seeks/track
+     * changes, never on a timer — without this, the player screen's elapsed-time
+     * text and seek bar freeze at 0 while a track plays. Polls current position on
+     * a fixed interval instead.
+     */
+    private fun startPositionTicker() {
+        scope.launch {
+            while (true) {
+                delay(POSITION_POLL_INTERVAL_MS)
+                mediaController?.let { controller ->
+                    if (controller.isPlaying) {
+                        _state.value = _state.value.copy(positionMs = controller.currentPosition.coerceAtLeast(0))
+                    }
+                }
+            }
+        }
     }
 
     override fun play(track: Track, queue: List<Track>) {
@@ -102,5 +133,25 @@ class Media3PlayerController @Inject constructor(
         currentQueue = currentQueue + track
         _state.value = _state.value.copy(queue = currentQueue)
         mediaController?.addMediaItem(track.toMediaItem())
+    }
+
+    override fun toggleShuffle() {
+        val newValue = !_state.value.shuffleEnabled
+        mediaController?.shuffleModeEnabled = newValue
+        _state.value = _state.value.copy(shuffleEnabled = newValue)
+    }
+
+    override fun cycleRepeatMode() {
+        val nextMode = when (_state.value.repeatMode) {
+            PlayerRepeatMode.OFF -> PlayerRepeatMode.ALL
+            PlayerRepeatMode.ALL -> PlayerRepeatMode.ONE
+            PlayerRepeatMode.ONE -> PlayerRepeatMode.OFF
+        }
+        mediaController?.repeatMode = when (nextMode) {
+            PlayerRepeatMode.OFF -> Player.REPEAT_MODE_OFF
+            PlayerRepeatMode.ALL -> Player.REPEAT_MODE_ALL
+            PlayerRepeatMode.ONE -> Player.REPEAT_MODE_ONE
+        }
+        _state.value = _state.value.copy(repeatMode = nextMode)
     }
 }

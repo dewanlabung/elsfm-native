@@ -16,4 +16,9 @@ interface PlayerController {
 
     /** Appends [track] to the end of the current playback queue. Purely local, no API call. */
     fun addToQueue(track: Track)
+
+    fun toggleShuffle()
+
+    /** Cycles OFF -> ALL -> ONE -> OFF. */
+    fun cycleRepeatMode()
 }

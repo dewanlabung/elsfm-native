@@ -26,10 +26,11 @@ import androidx.compose.material.icons.automirrored.filled.QueueMusic
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Repeat
+import androidx.compose.material.icons.filled.RepeatOne
+import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -62,6 +63,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import com.elsfm.mobile.core.designsystem.LikeButton
+import com.elsfm.mobile.core.designsystem.TrackContextMenu
 import com.elsfm.mobile.core.model.Track
 import kotlin.math.max
 
@@ -235,6 +238,18 @@ fun PlayerScreen(
                     )
                 }
 
+                // Like/save toggle
+                if (state.currentTrack != null) {
+                    LikeButton(
+                        isLiked = menuState.isLiked,
+                        isLoading = menuState.isLikeLoading,
+                        onClick = viewModel::toggleLike,
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd)
+                            .testTag("player_like_button"),
+                    )
+                }
+
                 // Track context menu
                 TrackContextMenu(
                     trackId = state.currentTrack?.id ?: -1,
@@ -260,6 +275,9 @@ fun PlayerScreen(
                         state.currentTrack?.let {
                             viewModel.onMenuEvent(PlayerMenuEvent.ShareTrack(it.id))
                         }
+                    },
+                    onMakeAvailableOffline = { trackId ->
+                        // TODO: wire to a real offline-download flow once one exists.
                     },
                     onRepost = { trackId ->
                         viewModel.onMenuEvent(PlayerMenuEvent.Repost(trackId))
@@ -323,6 +341,21 @@ fun PlayerScreen(
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
+                // Shuffle toggle
+                IconButton(
+                    onClick = viewModel::toggleShuffle,
+                    modifier = Modifier.testTag("player_shuffle"),
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Shuffle,
+                        contentDescription = if (state.shuffleEnabled) "Disable shuffle" else "Enable shuffle",
+                        tint = if (state.shuffleEnabled) MaterialTheme.colorScheme.primary else Color.White,
+                        modifier = Modifier.size(24.dp),
+                    )
+                }
+
+                Spacer(modifier = Modifier.size(16.dp))
+
                 // Previous button
                 IconButton(
                     onClick = viewModel::skipPrevious,
@@ -377,6 +410,25 @@ fun PlayerScreen(
                         contentDescription = "Next track",
                         tint = Color.White,
                         modifier = Modifier.size(32.dp),
+                    )
+                }
+
+                Spacer(modifier = Modifier.size(16.dp))
+
+                // Repeat mode cycle: off -> all -> one -> off
+                IconButton(
+                    onClick = viewModel::cycleRepeatMode,
+                    modifier = Modifier.testTag("player_repeat"),
+                ) {
+                    Icon(
+                        imageVector = if (state.repeatMode == PlayerRepeatMode.ONE) {
+                            Icons.Filled.RepeatOne
+                        } else {
+                            Icons.Filled.Repeat
+                        },
+                        contentDescription = "Repeat mode: ${state.repeatMode}",
+                        tint = if (state.repeatMode == PlayerRepeatMode.OFF) Color.White else MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(24.dp),
                     )
                 }
             }
@@ -482,85 +534,6 @@ private fun QueueRow(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-            )
-        }
-    }
-}
-
-/**
- * Track context menu matching the real elsfm.com PWA's item order and set:
- * Add to queue, Add to library, Add to playlist, Go to artist, Go to album, Go to track,
- * View lyrics, Share, Repost.
- *
- * [artistId] and [albumId] are nullable because the currently playing [Track] may not carry
- * that information (a [Track] always has an artist per its API contract in practice, but
- * `album` is only populated when the backend eager-loads that relation — see
- * [com.elsfm.mobile.core.model.TrackAlbum]). The corresponding menu items are hidden rather
- * than firing a callback with a fabricated id.
- */
-@Composable
-fun TrackContextMenu(
-    trackId: Int,
-    isVisible: Boolean,
-    onDismiss: () -> Unit,
-    onAddToQueue: (Int) -> Unit,
-    onAddToLibrary: (Int) -> Unit,
-    onAddToPlaylist: (Int) -> Unit,
-    onShare: () -> Unit,
-    onRepost: (Int) -> Unit,
-    artistId: Int? = null,
-    albumId: Int? = null,
-    onGoToArtist: (Int) -> Unit = {},
-    onGoToAlbum: (Int) -> Unit = {},
-    onGoToTrack: (Int) -> Unit = {},
-    onViewLyrics: (Int) -> Unit = {},
-    modifier: Modifier = Modifier
-) {
-    if (isVisible) {
-        DropdownMenu(
-            expanded = true,
-            onDismissRequest = onDismiss,
-            modifier = modifier
-        ) {
-            DropdownMenuItem(
-                text = { Text("Add to queue") },
-                onClick = { onAddToQueue(trackId); onDismiss() }
-            )
-            DropdownMenuItem(
-                text = { Text("Add to library") },
-                onClick = { onAddToLibrary(trackId); onDismiss() }
-            )
-            DropdownMenuItem(
-                text = { Text("Add to playlist") },
-                onClick = { onAddToPlaylist(trackId); onDismiss() }
-            )
-            if (artistId != null) {
-                DropdownMenuItem(
-                    text = { Text("Go to artist") },
-                    onClick = { onGoToArtist(artistId); onDismiss() }
-                )
-            }
-            if (albumId != null) {
-                DropdownMenuItem(
-                    text = { Text("Go to album") },
-                    onClick = { onGoToAlbum(albumId); onDismiss() }
-                )
-            }
-            DropdownMenuItem(
-                text = { Text("Go to track") },
-                onClick = { onGoToTrack(trackId); onDismiss() }
-            )
-            DropdownMenuItem(
-                text = { Text("View lyrics") },
-                onClick = { onViewLyrics(trackId); onDismiss() }
-            )
-            DropdownMenuItem(
-                text = { Text("Share") },
-                onClick = { onShare(); onDismiss() }
-            )
-            DropdownMenuItem(
-                text = { Text("Repost") },
-                onClick = { onRepost(trackId); onDismiss() }
             )
         }
     }

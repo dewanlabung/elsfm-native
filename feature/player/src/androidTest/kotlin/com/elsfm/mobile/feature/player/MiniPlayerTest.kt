@@ -6,6 +6,10 @@ import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.elsfm.mobile.core.designsystem.ElsfmTheme
 import com.elsfm.mobile.core.media.PlayHistoryApi
+import com.elsfm.mobile.core.network.api.PlaylistApi
+import com.elsfm.mobile.core.network.api.RepostApi
+import com.elsfm.mobile.core.network.api.UserApi
+import com.elsfm.mobile.feature.player.data.PlayerMenuRepository
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
@@ -34,6 +38,9 @@ private class FakePlayerController : PlayerController {
     override fun skipNext() = Unit
     override fun skipPrevious() = Unit
     override fun jumpToQueueItem(track: com.elsfm.mobile.core.model.Track) = Unit
+    override fun addToQueue(track: com.elsfm.mobile.core.model.Track) = Unit
+    override fun toggleShuffle() = Unit
+    override fun cycleRepeatMode() = Unit
 }
 
 @RunWith(AndroidJUnit4::class)
@@ -51,9 +58,28 @@ class MiniPlayerTest {
         return PlayHistoryApi(httpClient)
     }
 
+    private fun fakeHttpClient(): HttpClient {
+        val mockEngine = MockEngine { _ ->
+            respond("{}", HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
+        }
+        return HttpClient(mockEngine) {
+            install(ContentNegotiation) { json() }
+        }
+    }
+
+    private fun fakePlayerMenuRepository(): PlayerMenuRepository {
+        val httpClient = fakeHttpClient()
+        return PlayerMenuRepository(PlaylistApi(httpClient), UserApi(httpClient), RepostApi(httpClient))
+    }
+
     @Test
     fun miniPlayerIsAbsentWhenNothingIsPlaying() {
-        val viewModel = PlayerViewModel(FakePlayerController(), fakePlayHistoryApi())
+        val viewModel = PlayerViewModel(
+            FakePlayerController(),
+            fakePlayHistoryApi(),
+            fakePlayerMenuRepository(),
+            UserApi(fakeHttpClient()),
+        )
 
         composeTestRule.setContent {
             ElsfmTheme {

@@ -61,6 +61,19 @@ private class FakePlayerController : PlayerController {
         lastQueuedTrack = track
         _state.value = _state.value.copy(queue = _state.value.queue + track)
     }
+
+    override fun toggleShuffle() {
+        _state.value = _state.value.copy(shuffleEnabled = !_state.value.shuffleEnabled)
+    }
+
+    override fun cycleRepeatMode() {
+        val next = when (_state.value.repeatMode) {
+            PlayerRepeatMode.OFF -> PlayerRepeatMode.ALL
+            PlayerRepeatMode.ALL -> PlayerRepeatMode.ONE
+            PlayerRepeatMode.ONE -> PlayerRepeatMode.OFF
+        }
+        _state.value = _state.value.copy(repeatMode = next)
+    }
 }
 
 private fun fakePlayerMenuRepository(responseBody: String = "{}"): PlayerMenuRepository {
@@ -71,6 +84,16 @@ private fun fakePlayerMenuRepository(responseBody: String = "{}"): PlayerMenuRep
         install(ContentNegotiation) { json() }
     }
     return PlayerMenuRepository(PlaylistApi(httpClient), UserApi(httpClient), RepostApi(httpClient))
+}
+
+private fun fakeUserApi(responseBody: String = "true"): UserApi {
+    val mockEngine = MockEngine { _ ->
+        respond(responseBody, HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
+    }
+    val httpClient = HttpClient(mockEngine) {
+        install(ContentNegotiation) { json() }
+    }
+    return UserApi(httpClient)
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -111,7 +134,7 @@ class PlayerViewModelTest {
         val controller = FakePlayerController()
         val playHistoryApi = playHistoryApiReturning(HttpStatusCode.OK)
         val menuRepository = fakePlayerMenuRepository()
-        val viewModel = PlayerViewModel(controller, playHistoryApi, menuRepository)
+        val viewModel = PlayerViewModel(controller, playHistoryApi, menuRepository, fakeUserApi())
 
         viewModel.play(track, listOf(track))
 
@@ -128,7 +151,7 @@ class PlayerViewModelTest {
         val controller = FakePlayerController()
         val playHistoryApi = playHistoryApiReturning(HttpStatusCode.OK)
         val menuRepository = fakePlayerMenuRepository()
-        val viewModel = PlayerViewModel(controller, playHistoryApi, menuRepository)
+        val viewModel = PlayerViewModel(controller, playHistoryApi, menuRepository, fakeUserApi())
         viewModel.play(track, listOf(track))
 
         viewModel.togglePlayPause()
@@ -143,7 +166,7 @@ class PlayerViewModelTest {
         val controller = FakePlayerController()
         val playHistoryApi = playHistoryApiReturning(HttpStatusCode.OK)
         val menuRepository = fakePlayerMenuRepository()
-        val viewModel = PlayerViewModel(controller, playHistoryApi, menuRepository)
+        val viewModel = PlayerViewModel(controller, playHistoryApi, menuRepository, fakeUserApi())
         val secondTrack = track.copy(id = 2001, name = "Second Track")
         viewModel.play(track, listOf(track, secondTrack))
 
@@ -160,7 +183,7 @@ class PlayerViewModelTest {
         val controller = FakePlayerController()
         val playHistoryApi = playHistoryApiReturning(HttpStatusCode.OK)
         val menuRepository = fakePlayerMenuRepository()
-        val viewModel = PlayerViewModel(controller, playHistoryApi, menuRepository)
+        val viewModel = PlayerViewModel(controller, playHistoryApi, menuRepository, fakeUserApi())
         viewModel.play(track, listOf(track))
 
         viewModel.onMenuEvent(PlayerMenuEvent.AddToQueue(track.id))
@@ -176,7 +199,7 @@ class PlayerViewModelTest {
         val controller = FakePlayerController()
         val playHistoryApi = playHistoryApiReturning(HttpStatusCode.OK)
         val menuRepository = fakePlayerMenuRepository()
-        val viewModel = PlayerViewModel(controller, playHistoryApi, menuRepository)
+        val viewModel = PlayerViewModel(controller, playHistoryApi, menuRepository, fakeUserApi())
 
         viewModel.onMenuEvent(PlayerMenuEvent.AddToLibrary(track.id))
 
@@ -190,7 +213,7 @@ class PlayerViewModelTest {
         val controller = FakePlayerController()
         val playHistoryApi = playHistoryApiReturning(HttpStatusCode.OK)
         val menuRepository = fakePlayerMenuRepository("""{"action": "added"}""")
-        val viewModel = PlayerViewModel(controller, playHistoryApi, menuRepository)
+        val viewModel = PlayerViewModel(controller, playHistoryApi, menuRepository, fakeUserApi())
 
         viewModel.onMenuEvent(PlayerMenuEvent.Repost(track.id))
 
