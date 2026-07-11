@@ -1,11 +1,9 @@
 package com.elsfm.mobile.core.network.api
 
-import com.elsfm.mobile.core.model.FollowState
 import com.elsfm.mobile.core.model.Track
 import com.elsfm.mobile.core.network.ApiResult
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
-import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
@@ -15,18 +13,6 @@ import io.ktor.http.isSuccess
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import javax.inject.Inject
-
-@Serializable
-private data class FollowResponse(
-    val following: Boolean,
-    val timestamp: String,
-)
-
-@Serializable
-data class ShareTrackResponse(
-    @kotlinx.serialization.SerialName("share_url")
-    val shareUrl: String,
-)
 
 @Serializable
 private data class LikeableRequestItem(
@@ -45,80 +31,23 @@ private data class LikedTracksResponse(val pagination: LikedTracksPagination)
 
 private const val LIKEABLE_TYPE_TRACK = "track"
 private const val LIKEABLE_TYPE_ALBUM = "album"
+private const val LIKEABLE_TYPE_ARTIST = "artist"
 
 class UserApi @Inject constructor(
     private val httpClient: HttpClient,
 ) : UserApiLike {
-    override suspend fun isArtistFollowed(artistId: Int): ApiResult<FollowState> {
-        return try {
-            val response = httpClient.get("api/v1/me/follows/artists/$artistId")
-            if (response.status.isSuccess()) {
-                val followResponse = response.body<FollowResponse>()
-                ApiResult.Success(
-                    FollowState(
-                        following = followResponse.following,
-                        timestamp = followResponse.timestamp,
-                    )
-                )
-            } else {
-                ApiResult.NetworkError(RuntimeException("Unexpected status: ${response.status}"))
-            }
-        } catch (e: Exception) {
-            ApiResult.NetworkError(e)
-        }
-    }
+    /**
+     * "Following" an artist has no dedicated backend concept - there is no
+     * `follows/artists` endpoint. The real mechanism is the same generic
+     * likeable library used for track/album likes
+     * (`UserLibraryTracksController::addToLibrary`, which accepts
+     * `likeable_type: artist` per its validation rule).
+     */
+    override suspend fun followArtist(artistId: Int): ApiResult<Boolean> =
+        postLikeable("api/v1/users/me/add-to-library", artistId, likedResult = true, likeableType = LIKEABLE_TYPE_ARTIST)
 
-    override suspend fun followArtist(artistId: Int): ApiResult<FollowState> {
-        return try {
-            val response = httpClient.post("api/v1/me/follows/artists/$artistId")
-            if (response.status.isSuccess()) {
-                val followResponse = response.body<FollowResponse>()
-                ApiResult.Success(
-                    FollowState(
-                        following = followResponse.following,
-                        timestamp = followResponse.timestamp,
-                    )
-                )
-            } else {
-                ApiResult.NetworkError(RuntimeException("Unexpected status: ${response.status}"))
-            }
-        } catch (e: Exception) {
-            ApiResult.NetworkError(e)
-        }
-    }
-
-    override suspend fun unfollowArtist(artistId: Int): ApiResult<FollowState> {
-        return try {
-            val response = httpClient.delete("api/v1/me/follows/artists/$artistId")
-            if (response.status.isSuccess()) {
-                val followResponse = response.body<FollowResponse>()
-                ApiResult.Success(
-                    FollowState(
-                        following = followResponse.following,
-                        timestamp = followResponse.timestamp,
-                    )
-                )
-            } else {
-                ApiResult.NetworkError(RuntimeException("Unexpected status: ${response.status}"))
-            }
-        } catch (e: Exception) {
-            ApiResult.NetworkError(e)
-        }
-    }
-
-    suspend fun shareTrack(trackId: Int): ApiResult<ShareTrackResponse> {
-        return try {
-            val response = httpClient.post("api/v1/tracks/$trackId/share")
-            if (response.status.isSuccess()) {
-                val shareResponse = response.body<ShareTrackResponse>()
-                ApiResult.Success(shareResponse)
-            } else {
-                ApiResult.NetworkError(RuntimeException("Unexpected status: ${response.status}"))
-            }
-        } catch (e: Exception) {
-            ApiResult.NetworkError(e)
-        }
-    }
+    override suspend fun unfollowArtist(artistId: Int): ApiResult<Boolean> =
+        postLikeable("api/v1/users/me/remove-from-library", artistId, likedResult = false, likeableType = LIKEABLE_TYPE_ARTIST)
 
     /**
      * Adds the given track to the current user's library ("like" a track).

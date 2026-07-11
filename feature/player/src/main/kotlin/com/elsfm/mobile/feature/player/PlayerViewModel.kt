@@ -132,26 +132,6 @@ class PlayerViewModel @Inject constructor(
                     }
                 }
             }
-            is PlayerMenuEvent.ShareTrack -> {
-                viewModelScope.launch {
-                    _menuState.value = _menuState.value.copy(shareLoading = true)
-                    when (menuRepository.shareTrack(event.trackId)) {
-                        is ApiResult.Success -> {
-                            _menuState.value = _menuState.value.copy(
-                                shareLoading = false,
-                                error = null
-                            )
-                        }
-                        is ApiResult.NetworkError -> {
-                            _menuState.value = _menuState.value.copy(
-                                shareLoading = false,
-                                error = "Failed to share track"
-                            )
-                        }
-                        else -> {}
-                    }
-                }
-            }
             is PlayerMenuEvent.Repost -> {
                 viewModelScope.launch {
                     _menuState.value = _menuState.value.copy(repostLoading = true)

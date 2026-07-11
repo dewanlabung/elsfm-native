@@ -6,7 +6,6 @@ data class PlayerMenuState(
     val addToPlaylistLoading: Boolean = false,
     val addToLibraryLoading: Boolean = false,
     val repostLoading: Boolean = false,
-    val shareLoading: Boolean = false,
     val isLiked: Boolean = false,
     val isLikeLoading: Boolean = false,
     val error: String? = null,
@@ -20,6 +19,5 @@ sealed class PlayerMenuEvent {
     data class AddToQueue(val trackId: Int) : PlayerMenuEvent()
     data class AddToLibrary(val trackId: Int) : PlayerMenuEvent()
     data class AddToPlaylist(val trackId: Int, val playlistId: Int) : PlayerMenuEvent()
-    data class ShareTrack(val trackId: Int) : PlayerMenuEvent()
     data class Repost(val trackId: Int) : PlayerMenuEvent()
 }

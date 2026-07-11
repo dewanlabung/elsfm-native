@@ -4,7 +4,6 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.elsfm.mobile.core.database.AppDatabase
 import com.elsfm.mobile.core.database.dao.FollowStateDao
-import com.elsfm.mobile.core.model.FollowState
 import com.elsfm.mobile.core.network.ApiResult
 import com.elsfm.mobile.core.network.api.UserApiLike
 import kotlinx.coroutines.test.runTest
@@ -42,7 +41,7 @@ class FollowStateRepositoryTest {
     @Test
     fun follow_insertEntityAndCallApi() = runTest {
         userApi.setFollowResult(
-            ApiResult.Success(FollowState(following = true, timestamp = "2024-01-15T10:00:00Z"))
+            ApiResult.Success(true)
         )
 
         followStateRepository.follow(1)
@@ -53,12 +52,12 @@ class FollowStateRepositoryTest {
     @Test
     fun unfollow_deleteEntityAndCallApi() = runTest {
         userApi.setFollowResult(
-            ApiResult.Success(FollowState(following = true, timestamp = "2024-01-15T10:00:00Z"))
+            ApiResult.Success(true)
         )
         followStateRepository.follow(1)
 
         userApi.setUnfollowResult(
-            ApiResult.Success(FollowState(following = false, timestamp = "2024-01-15T11:00:00Z"))
+            ApiResult.Success(false)
         )
         followStateRepository.unfollow(1)
 
@@ -82,7 +81,7 @@ class FollowStateRepositoryTest {
     @Test
     fun unfollow_rollsBackOnApiError() = runTest {
         userApi.setFollowResult(
-            ApiResult.Success(FollowState(following = true, timestamp = "2024-01-15T10:00:00Z"))
+            ApiResult.Success(true)
         )
         followStateRepository.follow(1)
 
@@ -106,7 +105,7 @@ class FollowStateRepositoryTest {
     @Test
     fun isFollowing_returnsTrueWhenFollowing() = runTest {
         userApi.setFollowResult(
-            ApiResult.Success(FollowState(following = true, timestamp = "2024-01-15T10:00:00Z"))
+            ApiResult.Success(true)
         )
         followStateRepository.follow(1)
 
@@ -118,21 +117,18 @@ class FollowStateRepositoryTest {
  * Fake implementation of UserApiLike for testing
  */
 internal class FakeUserApi : UserApiLike {
-    private var followResult: ApiResult<FollowState> = ApiResult.NetworkError(Exception("Not set"))
-    private var unfollowResult: ApiResult<FollowState> = ApiResult.NetworkError(Exception("Not set"))
+    private var followResult: ApiResult<Boolean> = ApiResult.NetworkError(Exception("Not set"))
+    private var unfollowResult: ApiResult<Boolean> = ApiResult.NetworkError(Exception("Not set"))
 
-    fun setFollowResult(result: ApiResult<FollowState>) {
+    fun setFollowResult(result: ApiResult<Boolean>) {
         this.followResult = result
     }
 
-    fun setUnfollowResult(result: ApiResult<FollowState>) {
+    fun setUnfollowResult(result: ApiResult<Boolean>) {
         this.unfollowResult = result
     }
 
-    override suspend fun isArtistFollowed(artistId: Int): ApiResult<FollowState> =
-        ApiResult.Success(FollowState(following = false))
+    override suspend fun followArtist(artistId: Int): ApiResult<Boolean> = followResult
 
-    override suspend fun followArtist(artistId: Int): ApiResult<FollowState> = followResult
-
-    override suspend fun unfollowArtist(artistId: Int): ApiResult<FollowState> = unfollowResult
+    override suspend fun unfollowArtist(artistId: Int): ApiResult<Boolean> = unfollowResult
 }

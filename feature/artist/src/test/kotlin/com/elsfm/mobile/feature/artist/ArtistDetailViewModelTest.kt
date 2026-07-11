@@ -8,7 +8,6 @@ import com.elsfm.mobile.core.database.repository.FollowStateRepository
 import com.elsfm.mobile.core.model.Album
 import com.elsfm.mobile.core.model.Artist
 import com.elsfm.mobile.core.model.ArtistFollower
-import com.elsfm.mobile.core.model.FollowState
 import com.elsfm.mobile.core.model.Track
 import com.elsfm.mobile.core.network.ApiResult
 import com.elsfm.mobile.core.network.api.ArtistApi
@@ -75,20 +74,16 @@ private class FakeUserApi(
     var followCalled = false
     var unfollowCalled = false
 
-    override suspend fun followArtist(artistId: Int): ApiResult<FollowState> {
+    override suspend fun followArtist(artistId: Int): ApiResult<Boolean> {
         followCalled = true
         if (followError != null) return ApiResult.NetworkError(followError)
-        return ApiResult.Success(FollowState(following = true, timestamp = ""))
+        return ApiResult.Success(true)
     }
 
-    override suspend fun unfollowArtist(artistId: Int): ApiResult<FollowState> {
+    override suspend fun unfollowArtist(artistId: Int): ApiResult<Boolean> {
         unfollowCalled = true
         if (unfollowError != null) return ApiResult.NetworkError(unfollowError)
-        return ApiResult.Success(FollowState(following = false, timestamp = ""))
-    }
-
-    override suspend fun isArtistFollowed(artistId: Int): ApiResult<FollowState> {
-        return ApiResult.Success(FollowState(following = false, timestamp = ""))
+        return ApiResult.Success(false)
     }
 }
 

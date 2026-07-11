@@ -134,7 +134,7 @@ fun AccountDetailsPanel(
                     }
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(profile.email, style = MaterialTheme.typography.bodySmall)
+                    Text(profile.email.orEmpty(), style = MaterialTheme.typography.bodySmall)
                 }
             }
         }

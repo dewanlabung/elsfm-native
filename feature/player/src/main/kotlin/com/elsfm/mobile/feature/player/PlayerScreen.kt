@@ -1,5 +1,6 @@
 package com.elsfm.mobile.feature.player
 
+import android.content.Intent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -57,6 +58,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -92,6 +94,7 @@ fun PlayerScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val menuState by viewModel.menuState.collectAsState()
+    val context = LocalContext.current
     var menuAnchorX by remember { mutableFloatStateOf(0f) }
     var menuAnchorY by remember { mutableFloatStateOf(0f) }
     var isQueueVisible by remember { mutableStateOf(false) }
@@ -272,8 +275,14 @@ fun PlayerScreen(
                     onGoToTrack = onGoToTrack,
                     onViewLyrics = onViewLyrics,
                     onShare = {
-                        state.currentTrack?.let {
-                            viewModel.onMenuEvent(PlayerMenuEvent.ShareTrack(it.id))
+                        state.currentTrack?.let { track ->
+                            val url = "https://www.elsfm.com/track/${track.id}/${slugify(track.name)}"
+                            val intent = Intent(Intent.ACTION_SEND).apply {
+                                type = "text/plain"
+                                putExtra(Intent.EXTRA_TEXT, url)
+                                putExtra(Intent.EXTRA_SUBJECT, track.name)
+                            }
+                            context.startActivity(Intent.createChooser(intent, "Share track"))
                         }
                     },
                     onMakeAvailableOffline = { trackId ->
@@ -446,6 +455,14 @@ fun PlayerScreen(
             onDismiss = { isQueueVisible = false },
         )
     }
+}
+
+private fun slugify(input: String): String {
+    return input
+        .lowercase()
+        .replace(Regex("[^a-z0-9\\s-]"), "")
+        .trim()
+        .replace(Regex("\\s+"), "-")
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

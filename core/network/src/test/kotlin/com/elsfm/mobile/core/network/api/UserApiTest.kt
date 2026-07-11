@@ -1,6 +1,5 @@
 package com.elsfm.mobile.core.network.api
 
-import com.elsfm.mobile.core.model.FollowState
 import com.elsfm.mobile.core.network.ApiResult
 import com.elsfm.mobile.core.network.elsfmJson
 import io.ktor.client.HttpClient
@@ -19,20 +18,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class UserApiTest {
-
-    private val followResponseBody = """
-        {
-          "following": true,
-          "timestamp": "2024-01-15T10:30:00Z"
-        }
-    """.trimIndent()
-
-    private val unfollowResponseBody = """
-        {
-          "following": false,
-          "timestamp": "2024-01-15T10:30:00Z"
-        }
-    """.trimIndent()
 
     private fun clientReturning(status: HttpStatusCode, body: String): HttpClient {
         val mockEngine = MockEngine { _ ->
@@ -58,54 +43,39 @@ class UserApiTest {
     }
 
     @Test
-    fun `isArtistFollowed returns success with following true`() = runTest {
-        val api = UserApi(clientReturning(HttpStatusCode.OK, followResponseBody))
-
-        val result = api.isArtistFollowed(1)
-
-        assertTrue(result is ApiResult.Success)
-        val followState = (result as ApiResult.Success).data
-        assertEquals(true, followState.following)
-        assertEquals("2024-01-15T10:30:00Z", followState.timestamp)
-    }
-
-    @Test
-    fun `followArtist returns success with following true`() = runTest {
-        val api = UserApi(clientReturning(HttpStatusCode.OK, followResponseBody))
+    fun `followArtist posts likeables payload to add-to-library endpoint`() = runTest {
+        var capturedPath: String? = null
+        var capturedBody: String? = null
+        val api = UserApi(
+            clientCapturingRequest(HttpStatusCode.OK, successBody) { request ->
+                capturedPath = request.url.encodedPath
+                capturedBody = (request.body as? TextContent)?.text
+            },
+        )
 
         val result = api.followArtist(1)
 
         assertTrue(result is ApiResult.Success)
-        val followState = (result as ApiResult.Success).data
-        assertEquals(true, followState.following)
-        assertEquals("2024-01-15T10:30:00Z", followState.timestamp)
+        assertEquals(true, (result as ApiResult.Success).data)
+        assertEquals("/api/v1/users/me/add-to-library", capturedPath)
+        assertTrue(capturedBody?.contains("\"likeable_id\":1") == true)
+        assertTrue(capturedBody?.contains("\"likeable_type\":\"artist\"") == true)
     }
 
     @Test
-    fun `unfollowArtist returns success with following false`() = runTest {
-        val api = UserApi(clientReturning(HttpStatusCode.OK, unfollowResponseBody))
+    fun `unfollowArtist posts likeables payload to remove-from-library endpoint`() = runTest {
+        var capturedPath: String? = null
+        val api = UserApi(
+            clientCapturingRequest(HttpStatusCode.OK, successBody) { request ->
+                capturedPath = request.url.encodedPath
+            },
+        )
 
         val result = api.unfollowArtist(1)
 
         assertTrue(result is ApiResult.Success)
-        val followState = (result as ApiResult.Success).data
-        assertEquals(false, followState.following)
-        assertEquals("2024-01-15T10:30:00Z", followState.timestamp)
-    }
-
-    @Test
-    fun `isArtistFollowed returns NetworkError on exception`() = runTest {
-        val mockEngine = MockEngine { _ ->
-            throw RuntimeException("Network error")
-        }
-        val client = HttpClient(mockEngine) {
-            install(ContentNegotiation) { json(elsfmJson()) }
-        }
-        val api = UserApi(client)
-
-        val result = api.isArtistFollowed(1)
-
-        assertTrue(result is ApiResult.NetworkError)
+        assertEquals(false, (result as ApiResult.Success).data)
+        assertEquals("/api/v1/users/me/remove-from-library", capturedPath)
     }
 
     @Test
@@ -134,15 +104,6 @@ class UserApiTest {
         val api = UserApi(client)
 
         val result = api.unfollowArtist(1)
-
-        assertTrue(result is ApiResult.NetworkError)
-    }
-
-    @Test
-    fun `isArtistFollowed returns NetworkError on server error`() = runTest {
-        val api = UserApi(clientReturning(HttpStatusCode.InternalServerError, ""))
-
-        val result = api.isArtistFollowed(1)
 
         assertTrue(result is ApiResult.NetworkError)
     }

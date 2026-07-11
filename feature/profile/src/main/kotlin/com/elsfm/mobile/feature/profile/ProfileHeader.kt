@@ -64,12 +64,15 @@ fun ProfileHeader(profile: UserProfile, onEditProfileClicked: () -> Unit) {
             style = MaterialTheme.typography.headlineSmall
         )
 
-        // Email
-        Text(
-            profile.email,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        // Only rendered when present - the public profile endpoint never returns an
+        // email address, so this is effectively account-settings-only content.
+        profile.email?.let {
+            Text(
+                it,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
 

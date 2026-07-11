@@ -18,13 +18,17 @@ class ProfileApiTest {
 
     private val responseBody = """
         {
-            "id": 1,
-            "name": "Jane Doe",
-            "email": "jane@example.com",
-            "image": null,
-            "bio": "Music lover",
-            "followers_count": 5,
-            "followed_count": 3
+            "user": {
+                "id": 1,
+                "name": "Jane Doe",
+                "username": "janedoe",
+                "image": null,
+                "profile": {
+                    "description": "Music lover"
+                },
+                "followers_count": 5,
+                "followed_users_count": 3
+            }
         }
     """.trimIndent()
 
@@ -41,17 +45,66 @@ class ProfileApiTest {
     fun `getProfile returns user profile`() = runTest {
         val api = ProfileApi(clientReturning(HttpStatusCode.OK, responseBody))
 
-        val result = api.getProfile()
+        val result = api.getProfile(userId = 1)
 
         assertTrue(result is ApiResult.Success)
-        assertEquals("Jane Doe", (result as ApiResult.Success).data.name)
+        val profile = (result as ApiResult.Success).data
+        assertEquals("Jane Doe", profile.name)
+        assertEquals("Music lover", profile.bio)
+        assertEquals(5, profile.followersCount)
+        assertEquals(3, profile.followedCount)
+    }
+
+    @Test
+    fun `getProfile requests the real user-profile endpoint`() = runTest {
+        var capturedPath: String? = null
+        val mockEngine = MockEngine { request ->
+            capturedPath = request.url.encodedPath
+            respond(responseBody, HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
+        }
+        val api = ProfileApi(HttpClient(mockEngine) { install(ContentNegotiation) { json() } })
+
+        api.getProfile(userId = 1)
+
+        assertEquals("/api/v1/user-profile/1", capturedPath)
     }
 
     @Test
     fun `getProfile returns NetworkError on failure`() = runTest {
         val api = ProfileApi(clientReturning(HttpStatusCode.InternalServerError, "{}"))
 
-        val result = api.getProfile()
+        val result = api.getProfile(userId = 1)
+
+        assertTrue(result is ApiResult.NetworkError)
+    }
+
+    @Test
+    fun `updateProfile puts to real endpoint then re-fetches the profile`() = runTest {
+        var putPath: String? = null
+        var getPath: String? = null
+        val mockEngine = MockEngine { request ->
+            if (request.method == io.ktor.http.HttpMethod.Put) {
+                putPath = request.url.encodedPath
+                respond("""{"status":"success"}""", HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
+            } else {
+                getPath = request.url.encodedPath
+                respond(responseBody, HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
+            }
+        }
+        val api = ProfileApi(HttpClient(mockEngine) { install(ContentNegotiation) { json() } })
+
+        val result = api.updateProfile(userId = 1, name = "Jane Doe", bio = "Music lover")
+
+        assertTrue(result is ApiResult.Success)
+        assertEquals("/api/v1/users/profile/update", putPath)
+        assertEquals("/api/v1/user-profile/1", getPath)
+    }
+
+    @Test
+    fun `updateProfile returns NetworkError when the update request fails`() = runTest {
+        val api = ProfileApi(clientReturning(HttpStatusCode.InternalServerError, "{}"))
+
+        val result = api.updateProfile(userId = 1, name = "Jane", bio = null)
 
         assertTrue(result is ApiResult.NetworkError)
     }

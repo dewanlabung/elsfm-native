@@ -3,6 +3,7 @@ package com.elsfm.mobile.feature.profile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.elsfm.mobile.core.common.DispatcherProvider
+import com.elsfm.mobile.core.database.UserDao
 import com.elsfm.mobile.core.network.ApiResult
 import com.elsfm.mobile.core.network.api.ProfileApi
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -16,6 +17,7 @@ import javax.inject.Inject
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
     private val profileApi: ProfileApi,
+    private val userDao: UserDao,
     private val dispatcherProvider: DispatcherProvider,
 ) : ViewModel() {
     private val _state = MutableStateFlow(ProfileState())
@@ -28,7 +30,12 @@ class ProfileViewModel @Inject constructor(
     fun loadProfile() {
         viewModelScope.launch(dispatcherProvider.io) {
             _state.update { it.copy(isLoading = true, error = null) }
-            when (val result = profileApi.getProfile()) {
+            val userId = userDao.get()?.id
+            if (userId == null) {
+                _state.update { it.copy(isLoading = false, error = "Not signed in") }
+                return@launch
+            }
+            when (val result = profileApi.getProfile(userId)) {
                 is ApiResult.Success -> {
                     _state.update { it.copy(userProfile = result.data, isLoading = false) }
                     loadRecentlyPlayed()
@@ -66,7 +73,12 @@ class ProfileViewModel @Inject constructor(
 
     fun updateProfile(name: String, bio: String?) {
         viewModelScope.launch(dispatcherProvider.io) {
-            when (val result = profileApi.updateProfile(name, bio)) {
+            val userId = userDao.get()?.id
+            if (userId == null) {
+                _state.update { it.copy(error = "Not signed in") }
+                return@launch
+            }
+            when (val result = profileApi.updateProfile(userId, name, bio)) {
                 is ApiResult.Success -> {
                     _state.update { it.copy(userProfile = result.data, isEditMode = false) }
                 }

@@ -41,9 +41,6 @@ class PlayerMenuViewModel @Inject constructor(
             is PlayerMenuEvent.AddToPlaylist -> {
                 addTrackToPlaylist(event.trackId, event.playlistId)
             }
-            is PlayerMenuEvent.ShareTrack -> {
-                shareTrack(event.trackId)
-            }
             is PlayerMenuEvent.Repost -> {
                 repostTrack(event.trackId)
             }
@@ -129,36 +126,4 @@ class PlayerMenuViewModel @Inject constructor(
         }
     }
 
-    private fun shareTrack(trackId: Int) {
-        viewModelScope.launch {
-            _state.value = _state.value.copy(shareLoading = true)
-            when (val result = menuRepository.shareTrack(trackId)) {
-                is ApiResult.Success -> {
-                    _state.value = _state.value.copy(
-                        shareLoading = false,
-                        error = null,
-                        isMenuVisible = false
-                    )
-                }
-                is ApiResult.NetworkError -> {
-                    _state.value = _state.value.copy(
-                        shareLoading = false,
-                        error = "Failed to share track"
-                    )
-                }
-                is ApiResult.ValidationError -> {
-                    _state.value = _state.value.copy(
-                        shareLoading = false,
-                        error = "Invalid request"
-                    )
-                }
-                is ApiResult.Unauthorized -> {
-                    _state.value = _state.value.copy(
-                        shareLoading = false,
-                        error = "Authentication required"
-                    )
-                }
-            }
-        }
-    }
 }

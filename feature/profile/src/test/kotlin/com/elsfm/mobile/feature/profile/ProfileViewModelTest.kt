@@ -1,6 +1,8 @@
 package com.elsfm.mobile.feature.profile
 
 import com.elsfm.mobile.core.common.DispatcherProvider
+import com.elsfm.mobile.core.database.UserDao
+import com.elsfm.mobile.core.database.UserEntity
 import com.elsfm.mobile.core.model.Track
 import com.elsfm.mobile.core.model.UserProfile
 import com.elsfm.mobile.core.network.ApiResult
@@ -27,11 +29,18 @@ private class FakeDispatcherProvider(dispatcher: CoroutineDispatcher) : Dispatch
     override val default: CoroutineDispatcher = dispatcher
 }
 
+private class FakeUserDao(private val userId: Int? = 1) : UserDao {
+    override suspend fun upsert(user: UserEntity) {}
+    override suspend fun get(): UserEntity? =
+        userId?.let { UserEntity(id = it, username = null, name = null, email = "test@example.com", avatarUrl = null) }
+    override suspend fun clear() {}
+}
+
 private class FakeProfileApi(
     private val profile: UserProfile?,
     private val recentlyPlayed: List<Track> = emptyList(),
 ) : ProfileApi(HttpClient(MockEngine { respond("{}") })) {
-    override suspend fun getProfile(): ApiResult<UserProfile> {
+    override suspend fun getProfile(userId: Int): ApiResult<UserProfile> {
         return if (profile == null) {
             ApiResult.NetworkError(RuntimeException("Failed to load profile"))
         } else {
@@ -43,9 +52,9 @@ private class FakeProfileApi(
         return ApiResult.Success(recentlyPlayed)
     }
 
-    override suspend fun updateProfile(name: String, bio: String?): ApiResult<UserProfile> {
+    override suspend fun updateProfile(userId: Int, name: String, bio: String?): ApiResult<UserProfile> {
         return ApiResult.Success(
-            (profile ?: UserProfile(id = 1, name = name, email = "test@example.com"))
+            (profile ?: UserProfile(id = 1, name = name))
                 .copy(name = name, bio = bio)
         )
     }
@@ -54,7 +63,7 @@ private class FakeProfileApi(
 private class FakeFailingProfileApi(
     private val profile: UserProfile?,
 ) : ProfileApi(HttpClient(MockEngine { respond("{}") })) {
-    override suspend fun getProfile(): ApiResult<UserProfile> {
+    override suspend fun getProfile(userId: Int): ApiResult<UserProfile> {
         return if (profile == null) {
             ApiResult.NetworkError(RuntimeException("Failed to load profile"))
         } else {
@@ -66,7 +75,7 @@ private class FakeFailingProfileApi(
         return ApiResult.Success(emptyList())
     }
 
-    override suspend fun updateProfile(name: String, bio: String?): ApiResult<UserProfile> {
+    override suspend fun updateProfile(userId: Int, name: String, bio: String?): ApiResult<UserProfile> {
         return ApiResult.NetworkError(RuntimeException("Update failed"))
     }
 }
@@ -89,7 +98,7 @@ class ProfileViewModelTest {
     fun loadProfileSuccess() = runTest(testDispatcher) {
         val profile = UserProfile(id = 1, name = "John", email = "john@example.com")
         val api = FakeProfileApi(profile = profile)
-        val viewModel = ProfileViewModel(api, FakeDispatcherProvider(testDispatcher))
+        val viewModel = ProfileViewModel(api, FakeUserDao(), FakeDispatcherProvider(testDispatcher))
 
         delay(100) // Allow coroutines to execute
 
@@ -102,7 +111,7 @@ class ProfileViewModelTest {
     fun `setEditMode true enables edit mode`() = runTest(testDispatcher) {
         val profile = UserProfile(id = 1, name = "John", email = "john@example.com")
         val api = FakeProfileApi(profile = profile)
-        val viewModel = ProfileViewModel(api, FakeDispatcherProvider(testDispatcher))
+        val viewModel = ProfileViewModel(api, FakeUserDao(), FakeDispatcherProvider(testDispatcher))
         delay(100)
 
         viewModel.setEditMode(true)
@@ -114,7 +123,7 @@ class ProfileViewModelTest {
     fun `setEditMode false disables edit mode`() = runTest(testDispatcher) {
         val profile = UserProfile(id = 1, name = "John", email = "john@example.com")
         val api = FakeProfileApi(profile = profile)
-        val viewModel = ProfileViewModel(api, FakeDispatcherProvider(testDispatcher))
+        val viewModel = ProfileViewModel(api, FakeUserDao(), FakeDispatcherProvider(testDispatcher))
         delay(100)
         viewModel.setEditMode(true)
 
@@ -127,7 +136,7 @@ class ProfileViewModelTest {
     fun `updateProfile success updates profile and exits edit mode`() = runTest(testDispatcher) {
         val profile = UserProfile(id = 1, name = "John", email = "john@example.com", bio = "old bio")
         val api = FakeProfileApi(profile = profile)
-        val viewModel = ProfileViewModel(api, FakeDispatcherProvider(testDispatcher))
+        val viewModel = ProfileViewModel(api, FakeUserDao(), FakeDispatcherProvider(testDispatcher))
         delay(100)
         viewModel.setEditMode(true)
 
@@ -144,7 +153,7 @@ class ProfileViewModelTest {
     fun `updateProfile network error surfaces error and stays in edit mode`() = runTest(testDispatcher) {
         val profile = UserProfile(id = 1, name = "John", email = "john@example.com")
         val api = FakeFailingProfileApi(profile = profile)
-        val viewModel = ProfileViewModel(api, FakeDispatcherProvider(testDispatcher))
+        val viewModel = ProfileViewModel(api, FakeUserDao(), FakeDispatcherProvider(testDispatcher))
         delay(100)
         viewModel.setEditMode(true)
 
