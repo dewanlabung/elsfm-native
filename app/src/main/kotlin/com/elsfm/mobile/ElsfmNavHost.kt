@@ -356,6 +356,13 @@ fun ElsfmNavHost(
                         composable(ROUTE_PROFILE) {
                             val playerViewModel: PlayerViewModel = hiltViewModel()
                             ProfileScreen(
+                                // Shares the nav-host-scoped instance rather than letting
+                                // ProfileScreen create its own via a bare hiltViewModel() -
+                                // ThemeViewModel is a plain per-destination Hilt ViewModel,
+                                // not an app-wide singleton, so two separate instances would
+                                // silently go out of sync and the toggle here would appear
+                                // to do nothing to the actual app theme.
+                                themeViewModel = themeViewModel,
                                 onTrackClicked = { track, queue ->
                                     playerViewModel.play(track, queue)
                                 },

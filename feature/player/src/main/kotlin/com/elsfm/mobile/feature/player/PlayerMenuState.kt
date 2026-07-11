@@ -13,6 +13,7 @@ data class PlayerMenuState(
     val isPlaylistPickerVisible: Boolean = false,
     val isLoadingPlaylists: Boolean = false,
     val userPlaylists: List<PlaylistInfo> = emptyList(),
+    val downloadingTrackIds: Set<Int> = emptySet(),
     val error: String? = null,
 )
 
@@ -27,4 +28,5 @@ sealed class PlayerMenuEvent {
     data object HidePlaylistPicker : PlayerMenuEvent()
     data class AddToPlaylist(val trackId: Int, val playlistId: Int) : PlayerMenuEvent()
     data class Repost(val trackId: Int) : PlayerMenuEvent()
+    data class MakeAvailableOffline(val trackId: Int) : PlayerMenuEvent()
 }

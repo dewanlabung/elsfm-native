@@ -3,6 +3,7 @@ package com.elsfm.mobile.feature.library
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.elsfm.mobile.core.common.DispatcherProvider
+import com.elsfm.mobile.core.database.repository.DownloadRepository
 import com.elsfm.mobile.core.model.Playlist
 import com.elsfm.mobile.core.model.Track
 import com.elsfm.mobile.core.network.ApiResult
@@ -31,12 +32,16 @@ data class PlaylistDetailState(
     val error: String? = null,
     val likedTrackIds: Set<Int> = emptySet(),
     val likeLoadingTrackIds: Set<Int> = emptySet(),
+    val downloadingTrackIds: Set<Int> = emptySet(),
+    val downloadedTrackIds: Set<Int> = emptySet(),
+    val isDownloadingPlaylist: Boolean = false,
 )
 
 @HiltViewModel
 class PlaylistViewModel @Inject constructor(
     private val trackListApi: TrackListApi,
     private val trackLikeController: TrackLikeController,
+    private val downloadRepository: DownloadRepository,
     private val dispatcherProvider: DispatcherProvider,
 ) : ViewModel() {
     private val _state = MutableStateFlow(PlaylistDetailState())
@@ -85,6 +90,54 @@ class PlaylistViewModel @Inject constructor(
                 likeLoadingTrackIds = _state.value.likeLoadingTrackIds - trackId,
                 error = if (newLikedState == null) "Failed to update library" else _state.value.error,
             )
+        }
+    }
+
+    /** "Make available offline" for a single track. */
+    fun downloadTrack(track: Track) {
+        viewModelScope.launch(dispatcherProvider.io) {
+            _state.value = _state.value.copy(
+                downloadingTrackIds = _state.value.downloadingTrackIds + track.id,
+            )
+            val result = downloadRepository.downloadTrack(track)
+            _state.value = _state.value.copy(
+                downloadingTrackIds = _state.value.downloadingTrackIds - track.id,
+                downloadedTrackIds = if (result.isSuccess) {
+                    _state.value.downloadedTrackIds + track.id
+                } else {
+                    _state.value.downloadedTrackIds
+                },
+                error = if (result.isFailure) "Failed to download track" else _state.value.error,
+            )
+        }
+    }
+
+    /**
+     * "Make available offline" for the whole playlist - same per-track download
+     * looped client-side as [downloadTrack], matching the real PWA's own
+     * "Downloading N tracks..." behavior (there is no bulk backend endpoint).
+     */
+    fun downloadPlaylist() {
+        val tracks = _state.value.tracks
+        if (tracks.isEmpty()) return
+
+        viewModelScope.launch(dispatcherProvider.io) {
+            _state.value = _state.value.copy(isDownloadingPlaylist = true)
+            for (track in tracks) {
+                _state.value = _state.value.copy(
+                    downloadingTrackIds = _state.value.downloadingTrackIds + track.id,
+                )
+                val result = downloadRepository.downloadTrack(track)
+                _state.value = _state.value.copy(
+                    downloadingTrackIds = _state.value.downloadingTrackIds - track.id,
+                    downloadedTrackIds = if (result.isSuccess) {
+                        _state.value.downloadedTrackIds + track.id
+                    } else {
+                        _state.value.downloadedTrackIds
+                    },
+                )
+            }
+            _state.value = _state.value.copy(isDownloadingPlaylist = false)
         }
     }
 }

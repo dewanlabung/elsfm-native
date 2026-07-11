@@ -125,6 +125,7 @@ class AlbumViewModelTest {
         mockUserApi(likeStatus),
         mockRepostApi(),
         mockCommentApi(),
+        fakeDownloadRepository(),
         FakeDispatcherProvider(testDispatcher),
     )
 

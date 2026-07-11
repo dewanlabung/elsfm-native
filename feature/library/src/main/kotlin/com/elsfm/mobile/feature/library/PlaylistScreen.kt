@@ -9,11 +9,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Button
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -60,6 +63,8 @@ fun PlaylistScreen(
         onAddToQueue = onAddToQueue,
         onDeleteTrack = viewModel::deleteTrack,
         onToggleTrackLike = viewModel::toggleTrackLike,
+        onDownloadPlaylist = viewModel::downloadPlaylist,
+        onDownloadTrack = viewModel::downloadTrack,
     )
 }
 
@@ -71,6 +76,8 @@ internal fun PlaylistDetailContent(
     onAddToQueue: (Track) -> Unit,
     onDeleteTrack: (Int) -> Unit,
     onToggleTrackLike: (Int) -> Unit = {},
+    onDownloadPlaylist: () -> Unit = {},
+    onDownloadTrack: (Track) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val playlist = state.playlist
@@ -97,6 +104,8 @@ internal fun PlaylistDetailContent(
                             playlist = playlist,
                             trackCount = state.tracks.size,
                             onPlayAll = onPlayAll,
+                            isDownloading = state.isDownloadingPlaylist,
+                            onDownloadPlaylist = onDownloadPlaylist,
                         )
                     }
                     items(state.tracks, key = { it.id }) { track ->
@@ -108,6 +117,9 @@ internal fun PlaylistDetailContent(
                             isLiked = state.likedTrackIds.contains(track.id),
                             isLikeLoading = state.likeLoadingTrackIds.contains(track.id),
                             onToggleLike = { onToggleTrackLike(track.id) },
+                            isDownloading = state.downloadingTrackIds.contains(track.id),
+                            isDownloaded = state.downloadedTrackIds.contains(track.id),
+                            onDownload = { onDownloadTrack(track) },
                         )
                     }
                     if (state.error != null) {
@@ -131,6 +143,8 @@ private fun PlaylistHeader(
     playlist: Playlist,
     trackCount: Int,
     onPlayAll: () -> Unit,
+    isDownloading: Boolean = false,
+    onDownloadPlaylist: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.fillMaxWidth().padding(16.dp)) {
@@ -152,9 +166,22 @@ private fun PlaylistHeader(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Button(onClick = onPlayAll) {
-            Icon(imageVector = Icons.Filled.PlayArrow, contentDescription = null)
-            Text(text = "Play All", modifier = Modifier.padding(start = 8.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Button(onClick = onPlayAll) {
+                Icon(imageVector = Icons.Filled.PlayArrow, contentDescription = null)
+                Text(text = "Play All", modifier = Modifier.padding(start = 8.dp))
+            }
+            IconButton(
+                onClick = onDownloadPlaylist,
+                enabled = !isDownloading,
+                modifier = Modifier.testTag("playlist_download_button"),
+            ) {
+                if (isDownloading) {
+                    CircularProgressIndicator(modifier = Modifier.size(20.dp))
+                } else {
+                    Icon(imageVector = Icons.Filled.Download, contentDescription = "Make playlist available offline")
+                }
+            }
         }
     }
 }
@@ -168,6 +195,9 @@ private fun PlaylistTrackRow(
     isLiked: Boolean = false,
     isLikeLoading: Boolean = false,
     onToggleLike: () -> Unit = {},
+    isDownloading: Boolean = false,
+    isDownloaded: Boolean = false,
+    onDownload: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
@@ -202,6 +232,7 @@ private fun PlaylistTrackRow(
                 onShare = {},
                 onRepost = {},
                 onRemoveFromPlaylist = onDelete,
+                onMakeAvailableOffline = { if (!isDownloading && !isDownloaded) onDownload() },
             )
         }
     }

@@ -94,6 +94,7 @@ class PlaylistViewModelTest {
     ) = PlaylistViewModel(
         mockTrackListApi(status),
         TrackLikeController(mockUserApi(likeStatus)),
+        fakeDownloadRepository(),
         FakeDispatcherProvider(testDispatcher),
     )
 

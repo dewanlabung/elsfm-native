@@ -3,6 +3,7 @@ package com.elsfm.mobile.feature.player
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.elsfm.mobile.core.database.UserDao
+import com.elsfm.mobile.core.database.repository.DownloadRepository
 import com.elsfm.mobile.core.media.PlayHistoryApi
 import com.elsfm.mobile.core.model.Track
 import com.elsfm.mobile.core.network.ApiResult
@@ -22,6 +23,7 @@ class PlayerViewModel @Inject constructor(
     private val menuRepository: PlayerMenuRepository,
     private val userApi: UserApi,
     private val userDao: UserDao,
+    private val downloadRepository: DownloadRepository,
 ) : ViewModel() {
 
     private val _menuState = MutableStateFlow(PlayerMenuState())
@@ -187,6 +189,23 @@ class PlayerViewModel @Inject constructor(
                             )
                         }
                         else -> {}
+                    }
+                }
+            }
+            is PlayerMenuEvent.MakeAvailableOffline -> {
+                val track = state.value.currentTrack?.takeIf { it.id == event.trackId }
+                if (track != null) {
+                    viewModelScope.launch {
+                        _menuState.value = _menuState.value.copy(
+                            downloadingTrackIds = _menuState.value.downloadingTrackIds + track.id,
+                        )
+                        downloadRepository.downloadTrack(track)
+                            .onFailure {
+                                _menuState.value = _menuState.value.copy(error = "Failed to download track")
+                            }
+                        _menuState.value = _menuState.value.copy(
+                            downloadingTrackIds = _menuState.value.downloadingTrackIds - track.id,
+                        )
                     }
                 }
             }

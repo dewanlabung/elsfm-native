@@ -287,7 +287,7 @@ fun PlayerScreen(
                         }
                     },
                     onMakeAvailableOffline = { trackId ->
-                        // TODO: wire to a real offline-download flow once one exists.
+                        viewModel.onMenuEvent(PlayerMenuEvent.MakeAvailableOffline(trackId))
                     },
                     onRepost = { trackId ->
                         viewModel.onMenuEvent(PlayerMenuEvent.Repost(trackId))

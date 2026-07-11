@@ -2,13 +2,14 @@ package com.elsfm.mobile.core.database.dao
 
 import androidx.room.Dao
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.elsfm.mobile.core.database.entity.DownloadedTrack
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface DownloadedTrackDao {
-    @Insert
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(track: DownloadedTrack)
 
     @Query("SELECT * FROM downloaded_tracks ORDER BY downloaded_at DESC")

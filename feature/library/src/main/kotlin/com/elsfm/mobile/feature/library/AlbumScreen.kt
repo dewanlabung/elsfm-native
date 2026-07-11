@@ -16,6 +16,8 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Send
@@ -72,6 +74,8 @@ fun AlbumScreen(
         onShare = {
             viewModel.buildAlbumShareUrl()?.let { url -> shareAlbumUrl(context, state.album?.name.orEmpty(), url) }
         },
+        onDownloadAlbum = viewModel::downloadAlbum,
+        onDownloadTrack = viewModel::downloadTrack,
         onCommentInputChanged = viewModel::onCommentInputChanged,
         onPostComment = viewModel::postComment,
     )
@@ -87,6 +91,8 @@ internal fun AlbumDetailContent(
     onToggleAlbumLike: () -> Unit = {},
     onToggleAlbumRepost: () -> Unit = {},
     onShare: () -> Unit = {},
+    onDownloadAlbum: () -> Unit = {},
+    onDownloadTrack: (Track) -> Unit = {},
     onCommentInputChanged: (String) -> Unit = {},
     onPostComment: () -> Unit = {},
     modifier: Modifier = Modifier,
@@ -122,6 +128,8 @@ internal fun AlbumDetailContent(
                             isRepostLoading = state.isAlbumRepostLoading,
                             onToggleRepost = onToggleAlbumRepost,
                             onShare = onShare,
+                            isDownloading = state.isDownloadingAlbum,
+                            onDownloadAlbum = onDownloadAlbum,
                         )
                     }
                     items(state.tracks, key = { it.id }) { track ->
@@ -132,6 +140,9 @@ internal fun AlbumDetailContent(
                             isLiked = state.likedTrackIds.contains(track.id),
                             isLikeLoading = state.likeLoadingTrackIds.contains(track.id),
                             onToggleLike = { onToggleTrackLike(track.id) },
+                            isDownloading = state.downloadingTrackIds.contains(track.id),
+                            isDownloaded = state.downloadedTrackIds.contains(track.id),
+                            onDownload = { onDownloadTrack(track) },
                         )
                     }
                     if (state.error != null) {
@@ -172,6 +183,8 @@ private fun AlbumHeader(
     isRepostLoading: Boolean,
     onToggleRepost: () -> Unit,
     onShare: () -> Unit,
+    isDownloading: Boolean = false,
+    onDownloadAlbum: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.fillMaxWidth().padding(16.dp)) {
@@ -238,6 +251,17 @@ private fun AlbumHeader(
             }
             IconButton(onClick = onShare, modifier = Modifier.testTag("album_share_button")) {
                 Icon(imageVector = Icons.Filled.Share, contentDescription = "Share album")
+            }
+            IconButton(
+                onClick = onDownloadAlbum,
+                enabled = !isDownloading,
+                modifier = Modifier.testTag("album_download_button"),
+            ) {
+                if (isDownloading) {
+                    CircularProgressIndicator(modifier = Modifier.size(20.dp))
+                } else {
+                    Icon(imageVector = Icons.Filled.Download, contentDescription = "Make album available offline")
+                }
             }
         }
 
@@ -373,6 +397,9 @@ private fun AlbumTrackRow(
     isLiked: Boolean = false,
     isLikeLoading: Boolean = false,
     onToggleLike: () -> Unit = {},
+    isDownloading: Boolean = false,
+    isDownloaded: Boolean = false,
+    onDownload: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
@@ -406,6 +433,7 @@ private fun AlbumTrackRow(
                 onAddToPlaylist = {},
                 onShare = {},
                 onRepost = {},
+                onMakeAvailableOffline = { if (!isDownloading && !isDownloaded) onDownload() },
             )
         }
     }

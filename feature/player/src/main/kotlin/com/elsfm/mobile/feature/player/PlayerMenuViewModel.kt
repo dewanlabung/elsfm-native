@@ -51,6 +51,10 @@ class PlayerMenuViewModel @Inject constructor(
             is PlayerMenuEvent.Repost -> {
                 repostTrack(event.trackId)
             }
+            is PlayerMenuEvent.MakeAvailableOffline -> {
+                // Not actionable here: see the AddToQueue comment above - this
+                // ViewModel is unused by PlayerScreen.
+            }
         }
     }
 

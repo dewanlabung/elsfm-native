@@ -1,15 +1,22 @@
 package com.elsfm.mobile.feature.player
 
 import app.cash.turbine.test
+import com.elsfm.mobile.core.common.DispatcherProvider
 import com.elsfm.mobile.core.database.UserDao
 import com.elsfm.mobile.core.database.UserEntity
+import com.elsfm.mobile.core.database.dao.DownloadedTrackDao
+import com.elsfm.mobile.core.database.entity.DownloadedTrack
+import com.elsfm.mobile.core.database.repository.DownloadRepository
 import com.elsfm.mobile.core.media.PlayHistoryApi
 import com.elsfm.mobile.core.model.Artist
 import com.elsfm.mobile.core.model.Track
 import com.elsfm.mobile.core.network.api.PlaylistApi
 import com.elsfm.mobile.core.network.api.RepostApi
 import com.elsfm.mobile.core.network.api.UserApi
+import com.elsfm.mobile.core.network.download.DownloadManager
 import com.elsfm.mobile.feature.player.data.PlayerMenuRepository
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.asStateFlow
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
@@ -105,6 +112,30 @@ private class FakeUserDao : UserDao {
     override suspend fun clear() {}
 }
 
+private class FakeDownloadedTrackDao : DownloadedTrackDao {
+    override suspend fun insert(track: DownloadedTrack) {}
+    override fun getAll(): Flow<List<DownloadedTrack>> = MutableStateFlow(emptyList<DownloadedTrack>()).asStateFlow()
+    override suspend fun getById(trackId: Int): DownloadedTrack? = null
+    override suspend fun delete(trackId: Int) {}
+    override fun getTotalSizeBytes(): Flow<Long?> = MutableStateFlow<Long?>(null).asStateFlow()
+}
+
+private class NoopDispatcherProvider(dispatcher: kotlinx.coroutines.CoroutineDispatcher) : DispatcherProvider {
+    override val io = dispatcher
+    override val main = dispatcher
+    override val default = dispatcher
+}
+
+private fun fakeDownloadRepository(): DownloadRepository {
+    val httpClient = HttpClient(MockEngine { respond("{}") })
+    val downloadManager = DownloadManager(
+        context = null,
+        httpClient = httpClient,
+        dispatcherProvider = NoopDispatcherProvider(Dispatchers.Unconfined),
+    )
+    return DownloadRepository(FakeDownloadedTrackDao(), downloadManager)
+}
+
 @OptIn(ExperimentalCoroutinesApi::class)
 class PlayerViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
@@ -143,7 +174,7 @@ class PlayerViewModelTest {
         val controller = FakePlayerController()
         val playHistoryApi = playHistoryApiReturning(HttpStatusCode.OK)
         val menuRepository = fakePlayerMenuRepository()
-        val viewModel = PlayerViewModel(controller, playHistoryApi, menuRepository, fakeUserApi(), FakeUserDao())
+        val viewModel = PlayerViewModel(controller, playHistoryApi, menuRepository, fakeUserApi(), FakeUserDao(), fakeDownloadRepository())
 
         viewModel.play(track, listOf(track))
 
@@ -160,7 +191,7 @@ class PlayerViewModelTest {
         val controller = FakePlayerController()
         val playHistoryApi = playHistoryApiReturning(HttpStatusCode.OK)
         val menuRepository = fakePlayerMenuRepository()
-        val viewModel = PlayerViewModel(controller, playHistoryApi, menuRepository, fakeUserApi(), FakeUserDao())
+        val viewModel = PlayerViewModel(controller, playHistoryApi, menuRepository, fakeUserApi(), FakeUserDao(), fakeDownloadRepository())
         viewModel.play(track, listOf(track))
 
         viewModel.togglePlayPause()
@@ -175,7 +206,7 @@ class PlayerViewModelTest {
         val controller = FakePlayerController()
         val playHistoryApi = playHistoryApiReturning(HttpStatusCode.OK)
         val menuRepository = fakePlayerMenuRepository()
-        val viewModel = PlayerViewModel(controller, playHistoryApi, menuRepository, fakeUserApi(), FakeUserDao())
+        val viewModel = PlayerViewModel(controller, playHistoryApi, menuRepository, fakeUserApi(), FakeUserDao(), fakeDownloadRepository())
         val secondTrack = track.copy(id = 2001, name = "Second Track")
         viewModel.play(track, listOf(track, secondTrack))
 
@@ -192,7 +223,7 @@ class PlayerViewModelTest {
         val controller = FakePlayerController()
         val playHistoryApi = playHistoryApiReturning(HttpStatusCode.OK)
         val menuRepository = fakePlayerMenuRepository()
-        val viewModel = PlayerViewModel(controller, playHistoryApi, menuRepository, fakeUserApi(), FakeUserDao())
+        val viewModel = PlayerViewModel(controller, playHistoryApi, menuRepository, fakeUserApi(), FakeUserDao(), fakeDownloadRepository())
         viewModel.play(track, listOf(track))
 
         viewModel.onMenuEvent(PlayerMenuEvent.AddToQueue(track.id))
@@ -208,7 +239,7 @@ class PlayerViewModelTest {
         val controller = FakePlayerController()
         val playHistoryApi = playHistoryApiReturning(HttpStatusCode.OK)
         val menuRepository = fakePlayerMenuRepository()
-        val viewModel = PlayerViewModel(controller, playHistoryApi, menuRepository, fakeUserApi(), FakeUserDao())
+        val viewModel = PlayerViewModel(controller, playHistoryApi, menuRepository, fakeUserApi(), FakeUserDao(), fakeDownloadRepository())
 
         viewModel.onMenuEvent(PlayerMenuEvent.AddToLibrary(track.id))
 
@@ -222,7 +253,7 @@ class PlayerViewModelTest {
         val controller = FakePlayerController()
         val playHistoryApi = playHistoryApiReturning(HttpStatusCode.OK)
         val menuRepository = fakePlayerMenuRepository("""{"action": "added"}""")
-        val viewModel = PlayerViewModel(controller, playHistoryApi, menuRepository, fakeUserApi(), FakeUserDao())
+        val viewModel = PlayerViewModel(controller, playHistoryApi, menuRepository, fakeUserApi(), FakeUserDao(), fakeDownloadRepository())
 
         viewModel.onMenuEvent(PlayerMenuEvent.Repost(track.id))
 

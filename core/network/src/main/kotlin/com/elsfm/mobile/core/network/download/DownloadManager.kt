@@ -1,4 +1,4 @@
-package com.elsfm.mobile.feature.downloads
+package com.elsfm.mobile.core.network.download
 
 import android.content.Context
 import com.elsfm.mobile.core.common.DispatcherProvider
@@ -8,6 +8,7 @@ import io.ktor.client.HttpClient
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsChannel
 import io.ktor.http.contentLength
+import io.ktor.http.isSuccess
 import io.ktor.utils.io.readAvailable
 import java.io.File
 import javax.inject.Inject
@@ -17,6 +18,11 @@ import kotlinx.coroutines.withContext
 private const val DOWNLOADS_DIR = "downloads"
 private const val BUFFER_SIZE = 4096
 
+/**
+ * Downloads a track's real audio file (`GET api/v1/tracks/{id}/download`, matching the
+ * PWA's "Make available offline" - it does the same thing client-side: fetch the raw
+ * file and save it locally, one track at a time) to app-private external storage.
+ */
 @Singleton
 open class DownloadManager @Inject constructor(
     @ApplicationContext private val context: Context?,
@@ -33,7 +39,12 @@ open class DownloadManager @Inject constructor(
                 dir.mkdirs()
                 val file = File(dir, "${track.id}_${track.name.slugify()}.mp3")
 
-                val response = httpClient.get("tracks/${track.id}/download")
+                val response = httpClient.get("api/v1/tracks/${track.id}/download")
+                if (!response.status.isSuccess()) {
+                    return@withContext Result.failure(
+                        IllegalStateException("Download failed with status ${response.status}"),
+                    )
+                }
                 val contentLength = response.contentLength() ?: 0L
                 var bytesWritten = 0L
 
