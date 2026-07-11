@@ -28,6 +28,7 @@ fun ProfileScreen(
     accountViewModel: AccountViewModel = hiltViewModel(),
     onTrackClicked: (Track, List<Track>) -> Unit,
     onLogout: () -> Unit,
+    onDownloadsClicked: () -> Unit = {},
 ) {
     val state by viewModel.state.collectAsState()
     val isDarkMode by themeViewModel.isDarkMode.collectAsState()
@@ -54,16 +55,18 @@ fun ProfileScreen(
 
             state.userProfile != null -> {
                 val profile = state.userProfile!!
-                ProfileHeader(
-                    profile = profile,
-                    onEditProfileClicked = { viewModel.setEditMode(true) }
-                )
-                HorizontalDivider()
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(16.dp)
                 ) {
+                    item {
+                        ProfileHeader(
+                            profile = profile,
+                            onEditProfileClicked = { viewModel.setEditMode(true) }
+                        )
+                        HorizontalDivider()
+                    }
                     item {
                         AccountSection(
                             profile = profile,
@@ -74,6 +77,7 @@ fun ProfileScreen(
                             isDarkMode = isDarkMode,
                             onToggleDarkMode = { themeViewModel.setDarkMode(it) },
                             onLogout = onLogout,
+                            onDownloadsClicked = onDownloadsClicked,
                         )
                     }
                     item {
