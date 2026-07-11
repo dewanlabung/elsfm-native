@@ -14,6 +14,8 @@ import kotlinx.serialization.Serializable
 data class Artist(
     val id: Int,
     val name: String,
+    @SerialName("image_small")
+    @Serializable(with = ImageUrlSerializer::class)
     val image: String? = null,
     val plays: String? = null,
     val verified: Boolean = false,

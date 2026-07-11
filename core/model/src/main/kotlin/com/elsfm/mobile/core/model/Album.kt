@@ -7,6 +7,6 @@ import kotlinx.serialization.Serializable
 data class Album(
     val id: Int,
     val name: String,
-    val image: String? = null,
+    @Serializable(with = ImageUrlSerializer::class) val image: String? = null,
     @SerialName("release_date") val releaseDate: String? = null,
 )

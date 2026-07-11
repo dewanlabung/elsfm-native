@@ -7,7 +7,7 @@ import kotlinx.serialization.Serializable
 data class Track(
     val id: Int,
     val name: String,
-    val image: String?,
+    @Serializable(with = ImageUrlSerializer::class) val image: String?,
     @SerialName("duration") val durationMs: Long,
     val src: String? = null,
     val plays: String? = null,
@@ -25,5 +25,5 @@ data class Track(
 data class TrackAlbum(
     val id: Int,
     val name: String,
-    val image: String? = null,
+    @Serializable(with = ImageUrlSerializer::class) val image: String? = null,
 )

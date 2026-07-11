@@ -26,7 +26,7 @@ fun ProfileScreen(
     viewModel: ProfileViewModel = hiltViewModel(),
     themeViewModel: ThemeViewModel = hiltViewModel(),
     accountViewModel: AccountViewModel = hiltViewModel(),
-    onTrackClicked: (Track) -> Unit,
+    onTrackClicked: (Track, List<Track>) -> Unit,
     onLogout: () -> Unit,
 ) {
     val state by viewModel.state.collectAsState()
@@ -106,7 +106,7 @@ fun ProfileScreen(
                     items(state.recentlyPlayed) { track ->
                         RecentlyPlayedTrackItem(
                             track = track,
-                            onTrackClicked = { onTrackClicked(track) }
+                            onTrackClicked = { onTrackClicked(track, state.recentlyPlayed) }
                         )
                     }
                 }

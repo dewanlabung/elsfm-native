@@ -12,7 +12,7 @@ data class ArtistFollower(
     val id: Int,
     val name: String,
     val username: String? = null,
-    val image: String? = null,
+    @Serializable(with = ImageUrlSerializer::class) val image: String? = null,
     @SerialName("is_pro") val isPro: Boolean = false,
     @SerialName("followers_count") val followersCount: Int? = null,
 )

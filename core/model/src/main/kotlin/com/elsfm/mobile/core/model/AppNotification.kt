@@ -23,7 +23,7 @@ data class AppNotification(
 
 @Serializable
 data class NotificationData(
-    val image: String? = null,
+    @Serializable(with = ImageUrlSerializer::class) val image: String? = null,
     val lines: List<NotificationLine> = emptyList(),
 )
 

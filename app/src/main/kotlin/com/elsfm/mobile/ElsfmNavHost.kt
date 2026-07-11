@@ -232,16 +232,17 @@ fun ElsfmNavHost(
                         composable(ROUTE_SEARCH) {
                             val playerViewModel: PlayerViewModel = hiltViewModel()
                             SearchScreen(
-                                onTrackTap = { track -> playerViewModel.play(track, queue = emptyList()) },
+                                onTrackTap = { track, queue -> playerViewModel.play(track, queue) },
                                 onAlbumTap = { /* TODO: navigate to album detail */ },
                                 onArtistTap = { artist -> navController.navigate("artist/${artist.id}") },
                                 onPlaylistTap = { /* TODO: navigate to playlist detail */ },
                             )
                         }
-                        composable(ROUTE_ARTIST) { backStackEntry ->
-                            val artistId = backStackEntry.arguments
-                                ?.getString("artistId")
-                                ?.toIntOrNull()
+                        composable(
+                            route = ROUTE_ARTIST,
+                            arguments = listOf(navArgument("artistId") { type = NavType.IntType }),
+                        ) { backStackEntry ->
+                            val artistId = backStackEntry.arguments?.getInt("artistId")
                                 ?: return@composable
                             val playerViewModel: PlayerViewModel = hiltViewModel()
                             ArtistDetailScreen(
@@ -263,8 +264,8 @@ fun ElsfmNavHost(
                         composable(ROUTE_PROFILE) {
                             val playerViewModel: PlayerViewModel = hiltViewModel()
                             ProfileScreen(
-                                onTrackClicked = { track ->
-                                    playerViewModel.play(track, queue = emptyList())
+                                onTrackClicked = { track, queue ->
+                                    playerViewModel.play(track, queue)
                                 },
                                 onLogout = {
                                     startDestinationViewModel.logout()

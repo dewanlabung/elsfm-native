@@ -7,7 +7,7 @@ import kotlinx.serialization.Serializable
 data class Playlist(
     val id: Int,
     val name: String,
-    val image: String? = null,
+    @Serializable(with = ImageUrlSerializer::class) val image: String? = null,
     @SerialName("channel_id")
     val channelId: Int? = null
 )

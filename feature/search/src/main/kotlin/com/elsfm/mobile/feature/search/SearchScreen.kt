@@ -39,7 +39,7 @@ internal enum class SearchTab {
 
 @Composable
 fun SearchScreen(
-    onTrackTap: (Track) -> Unit,
+    onTrackTap: (Track, List<Track>) -> Unit,
     onAlbumTap: (Album) -> Unit,
     onArtistTap: (Artist) -> Unit,
     onPlaylistTap: (Playlist) -> Unit,
@@ -62,7 +62,7 @@ fun SearchScreen(
 internal fun SearchContent(
     state: SearchUiState,
     onQueryChange: (String) -> Unit,
-    onTrackTap: (Track) -> Unit,
+    onTrackTap: (Track, List<Track>) -> Unit,
     onAlbumTap: (Album) -> Unit,
     onArtistTap: (Artist) -> Unit,
     onPlaylistTap: (Playlist) -> Unit,
