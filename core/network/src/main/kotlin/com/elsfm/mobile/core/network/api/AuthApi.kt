@@ -46,13 +46,32 @@ class AuthApi @Inject constructor(
                 parameter("tokenFromApi", googleAccessToken)
                 parameter("tokenForDevice", tokenName)
             }
-            when (response.status) {
-                HttpStatusCode.OK -> ApiResult.Success(response.body<LoginResponse>().user)
-                HttpStatusCode.UnprocessableEntity -> {
+            when {
+                response.status == HttpStatusCode.OK &&
+                    response.contentType()?.match(ContentType.Application.Json) == true -> {
+                    ApiResult.Success(response.body<LoginResponse>().user)
+                }
+                // The backend's web-only account-linking flow: this Google email already has a
+                // password-based account not yet connected to Google, so it returns an HTML page
+                // meant for a browser popup (BroadcastChannel + window.close()) asking the user to
+                // confirm their password there - our API client has no way to complete that flow.
+                response.status == HttpStatusCode.OK -> {
+                    ApiResult.ValidationError(
+                        mapOf(
+                            "email" to listOf(
+                                "This email already has a password-based account. Sign in with " +
+                                    "your email and password instead.",
+                            ),
+                        ),
+                    )
+                }
+                response.status == HttpStatusCode.UnprocessableEntity -> {
                     val error = response.body<LaravelValidationError>()
                     ApiResult.ValidationError(error.errors)
                 }
-                HttpStatusCode.Unauthorized, HttpStatusCode.Forbidden -> ApiResult.Unauthorized
+                response.status == HttpStatusCode.Unauthorized || response.status == HttpStatusCode.Forbidden -> {
+                    ApiResult.Unauthorized
+                }
                 else -> ApiResult.NetworkError(IllegalStateException("Unexpected status ${response.status}"))
             }
         } catch (e: IOException) {

@@ -85,4 +85,21 @@ class AuthApiTest {
 
         assertTrue(result is ApiResult.Unauthorized)
     }
+
+    @Test
+    fun `loginWithGoogle with HTML account-linking popup returns validation error`() = runTest {
+        val mockEngine = MockEngine { _ ->
+            respond(
+                "<h1>Logging in</h1><script>let status = \"REQUEST_PASSWORD\";</script>",
+                HttpStatusCode.OK,
+                headersOf(HttpHeaders.ContentType, "text/html; charset=UTF-8"),
+            )
+        }
+        val authApi = AuthApi(HttpClient(mockEngine) { install(ContentNegotiation) { json(elsfmJson()) } })
+
+        val result = authApi.loginWithGoogle("ya29.google-access-token", "android-uuid-1")
+
+        assertTrue(result is ApiResult.ValidationError)
+        assertTrue((result as ApiResult.ValidationError).fields["email"]?.isNotEmpty() == true)
+    }
 }
