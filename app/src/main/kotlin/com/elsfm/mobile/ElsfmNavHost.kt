@@ -4,7 +4,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
@@ -13,6 +15,7 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
@@ -23,6 +26,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -50,6 +54,7 @@ import com.elsfm.mobile.feature.player.MiniPlayer
 import com.elsfm.mobile.feature.player.PlayerScreen
 import com.elsfm.mobile.feature.player.PlayerViewModel
 import com.elsfm.mobile.feature.profile.ProfileScreen
+import com.elsfm.mobile.feature.profile.ThemeViewModel
 import com.elsfm.mobile.feature.search.SearchScreen
 import com.elsfm.mobile.core.model.Playlist
 import java.net.URLDecoder
@@ -102,18 +107,28 @@ private data class BottomTab(
 private val bottomTabs = listOf(
     BottomTab(ROUTE_DISCOVERY, "Discovery", Icons.Filled.Home),
     BottomTab(ROUTE_LIBRARY, "Library", Icons.Filled.List),
-    BottomTab(ROUTE_SEARCH, "Search", Icons.Filled.Search),
     BottomTab(ROUTE_PROFILE, "Profile", Icons.Filled.Person),
     BottomTab(ROUTE_DOWNLOADS, "Downloads", Icons.Filled.Star),
 )
+
+/**
+ * Routes that show the shared top bar (app title, search, theme toggle, notifications) -
+ * the bottom nav tabs plus Search, which moved to a header icon instead of its own tab.
+ */
+private val primaryRoutesForTopBar = bottomTabs.map { it.route }.toSet() + ROUTE_SEARCH
+
+/** Routes with no bottom nav: the pre-auth flow and the full-screen Now Playing player. */
+private val routesWithoutBottomBar = setOf(ROUTE_LOGIN, ROUTE_SIGNUP, ROUTE_PASSWORD_RESET, ROUTE_HOME, ROUTE_PLAYER)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ElsfmNavHost(
     navController: NavHostController = rememberNavController(),
     startDestinationViewModel: StartDestinationViewModel = hiltViewModel(),
+    themeViewModel: ThemeViewModel = hiltViewModel(),
 ) {
     val startState by startDestinationViewModel.state.collectAsState()
+    val isDarkMode by themeViewModel.isDarkMode.collectAsState()
 
     LaunchedEffect(Unit) {
         startDestinationViewModel.sessionEvents.collect { event ->
@@ -130,16 +145,32 @@ fun ElsfmNavHost(
         is StartDestinationState.Resolved -> {
             val backStackEntry by navController.currentBackStackEntryAsState()
             val currentRoute = backStackEntry?.destination
-            val showBottomBar = currentRoute?.hierarchy?.any { destination ->
-                bottomTabs.any { it.route == destination.route }
+            val showTopBar = currentRoute?.hierarchy?.any { destination ->
+                destination.route in primaryRoutesForTopBar
             } == true
+            val showBottomBar = currentRoute?.route !in routesWithoutBottomBar
 
             Scaffold(
                 topBar = {
-                    if (showBottomBar) {
+                    if (showTopBar) {
                         TopAppBar(
-                            title = {},
+                            title = {
+                                Text(
+                                    text = "ELSFM",
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary,
+                                )
+                            },
                             actions = {
+                                IconButton(onClick = { navController.navigate(ROUTE_SEARCH) }) {
+                                    Icon(Icons.Filled.Search, contentDescription = "Search")
+                                }
+                                IconButton(onClick = { themeViewModel.toggleTheme() }) {
+                                    Icon(
+                                        imageVector = if (isDarkMode) Icons.Filled.LightMode else Icons.Filled.DarkMode,
+                                        contentDescription = if (isDarkMode) "Switch to light mode" else "Switch to dark mode",
+                                    )
+                                }
                                 IconButton(onClick = { navController.navigate(ROUTE_NOTIFICATIONS) }) {
                                     Icon(Icons.Filled.Notifications, contentDescription = "Notifications")
                                 }

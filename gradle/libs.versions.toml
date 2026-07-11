@@ -25,6 +25,8 @@ androidxTestRunner = "1.6.2"
 media3 = "1.5.0"
 robolectric = "4.14.1"
 coil = "2.7.0"
+firebase = "33.1.0"
+firebaseAuth = "23.0.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -72,6 +74,9 @@ androidx-media3-session = { group = "androidx.media3", name = "media3-session", 
 androidx-media3-common = { group = "androidx.media3", name = "media3-common", version.ref = "media3" }
 robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
 coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
+firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebase" }
+firebase-auth = { group = "com.google.firebase", name = "firebase-auth-ktx", version.ref = "firebaseAuth" }
+firebase-auth-playservices = { group = "com.google.android.gms", name = "play-services-auth", version = "21.0.0" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

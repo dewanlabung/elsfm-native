@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "237126652892",
+    "project_id": "elsfm-f2618",
+    "storage_bucket": "elsfm-f2618.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:237126652892:android:0b8d09d1bc1e2ee59a7519",
+        "android_client_info": {
+          "package_name": "com.elsfm.mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA34y4it0LsvdMIo3JMWfBEnp97OHD01fU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

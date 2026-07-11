@@ -41,6 +41,13 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services.auth)
+
+    // Firebase (Google Sign-In auth) - FirebaseAuthService.kt needs the real SDK,
+    // not just the app module's google-services plugin.
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.auth.playservices)
+
     implementation(libs.hilt.android)
     implementation(libs.hilt.navigation.compose)
     ksp(libs.hilt.compiler)

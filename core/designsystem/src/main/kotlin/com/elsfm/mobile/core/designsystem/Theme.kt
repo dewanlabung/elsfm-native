@@ -7,14 +7,25 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 
 private val ElsfmDarkColorScheme = darkColorScheme(
-    primary = ElsfmAccent,
+    primary = ElsfmPrimary,
+    onPrimary = ElsfmOnPrimary,
     background = ElsfmBackgroundDark,
+    onBackground = ElsfmOnSurfaceDark,
     surface = ElsfmSurfaceDark,
     onSurface = ElsfmOnSurfaceDark,
+    surfaceVariant = ElsfmSurfaceVariantDark,
+    onSurfaceVariant = ElsfmOnSurfaceVariantDark,
 )
 
 private val ElsfmLightColorScheme = lightColorScheme(
-    primary = ElsfmAccent,
+    primary = ElsfmPrimary,
+    onPrimary = ElsfmOnPrimary,
+    background = ElsfmBackgroundLight,
+    onBackground = ElsfmOnSurfaceLight,
+    surface = ElsfmSurfaceLight,
+    onSurface = ElsfmOnSurfaceLight,
+    surfaceVariant = ElsfmSurfaceVariantLight,
+    onSurfaceVariant = ElsfmOnSurfaceVariantLight,
 )
 
 @Composable
