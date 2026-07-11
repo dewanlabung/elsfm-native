@@ -336,7 +336,16 @@ fun ElsfmNavHost(
                                 artistId = artistId,
                                 onTrackClicked = { track, queue -> playerViewModel.play(track, queue) },
                                 onAlbumClicked = { albumId -> navController.navigateToAlbum(albumId) },
-                                onArtistClicked = { otherArtistId -> navController.navigate("artist/$otherArtistId") },
+                                onArtistClicked = { otherArtistId ->
+                                    // Replaces the current artist rather than pushing on top of it -
+                                    // without this, browsing a chain of "similar artists" stacked an
+                                    // unbounded number of ArtistDetailScreen instances (each keeping
+                                    // its own ViewModel/Compose state alive), which is what made
+                                    // returning to Home feel sluggish and need repeated back presses.
+                                    navController.navigate("artist/$otherArtistId") {
+                                        popUpTo(ROUTE_ARTIST) { inclusive = true }
+                                    }
+                                },
                             )
                         }
                         composable(ROUTE_DISCOVERY) {
@@ -351,7 +360,6 @@ fun ElsfmNavHost(
                             )
                         }
                         composable(ROUTE_PROFILE) {
-                            val playerViewModel: PlayerViewModel = hiltViewModel()
                             ProfileScreen(
                                 // Shares the nav-host-scoped instance rather than letting
                                 // ProfileScreen create its own via a bare hiltViewModel() -
@@ -360,9 +368,6 @@ fun ElsfmNavHost(
                                 // silently go out of sync and the toggle here would appear
                                 // to do nothing to the actual app theme.
                                 themeViewModel = themeViewModel,
-                                onTrackClicked = { track, queue ->
-                                    playerViewModel.play(track, queue)
-                                },
                                 onLogout = {
                                     startDestinationViewModel.logout()
                                     navController.navigate(ROUTE_LOGIN) { popUpTo(0) }
