@@ -43,12 +43,16 @@ import com.elsfm.mobile.feature.downloads.DownloadsScreen
 import com.elsfm.mobile.feature.library.LibraryScreen
 import com.elsfm.mobile.feature.library.LikedSongsScreen
 import com.elsfm.mobile.feature.library.ListeningHistoryScreen
+import com.elsfm.mobile.feature.library.PlaylistScreen
 import com.elsfm.mobile.feature.notifications.NotificationsScreen
 import com.elsfm.mobile.feature.player.MiniPlayer
 import com.elsfm.mobile.feature.player.PlayerScreen
 import com.elsfm.mobile.feature.player.PlayerViewModel
 import com.elsfm.mobile.feature.profile.ProfileScreen
 import com.elsfm.mobile.feature.search.SearchScreen
+import com.elsfm.mobile.core.model.Playlist
+import java.net.URLDecoder
+import java.net.URLEncoder
 
 private const val ROUTE_LOGIN = "login"
 private const val ROUTE_HOME = "home"
@@ -66,6 +70,20 @@ private const val ROUTE_NOTIFICATIONS = "notifications"
 private const val ROUTE_LIKED_SONGS = "liked_songs"
 private const val ROUTE_LISTENING_HISTORY = "listening_history"
 private const val CHANNEL_ID_ARG = "channelId"
+private const val ROUTE_PLAYLIST = "playlist/{playlistId}/{playlistName}"
+private const val PLAYLIST_ID_ARG = "playlistId"
+private const val PLAYLIST_NAME_ARG = "playlistName"
+
+/**
+ * `core:network` has no `GET /playlists/{id}` metadata endpoint (only
+ * [com.elsfm.mobile.core.network.api.TrackListApi.getPlaylistTracks] exists), so the
+ * playlist's id and name are threaded through the route itself rather than re-fetched -
+ * see the KDoc on [com.elsfm.mobile.feature.library.PlaylistDetailState].
+ */
+private fun NavHostController.navigateToPlaylist(playlist: Playlist) {
+    val encodedName = URLEncoder.encode(playlist.name, "UTF-8")
+    navigate("playlist/${playlist.id}/$encodedName")
+}
 
 private data class BottomTab(
     val route: String,
@@ -195,7 +213,7 @@ fun ElsfmNavHost(
                         }
                         composable(ROUTE_LIBRARY) {
                             LibraryScreen(
-                                onPlaylistTap = { /* TODO: navigate to playlist detail */ },
+                                onPlaylistTap = { playlist -> navController.navigateToPlaylist(playlist) },
                                 onAlbumTap = { /* TODO: navigate to album detail */ },
                                 onChannelTap = { channel -> navController.navigate("channel/${channel.id}") },
                                 onSongsClicked = { navController.navigate(ROUTE_LIKED_SONGS) },
@@ -218,13 +236,31 @@ fun ElsfmNavHost(
                             NotificationsScreen(onBack = { navController.popBackStack() })
                         }
                         composable(
+                            route = ROUTE_PLAYLIST,
+                            arguments = listOf(
+                                navArgument(PLAYLIST_ID_ARG) { type = NavType.IntType },
+                                navArgument(PLAYLIST_NAME_ARG) { type = NavType.StringType },
+                            ),
+                        ) { backStackEntry ->
+                            val playlistId = backStackEntry.arguments?.getInt(PLAYLIST_ID_ARG)
+                                ?: return@composable
+                            val encodedName = backStackEntry.arguments?.getString(PLAYLIST_NAME_ARG)
+                                ?: return@composable
+                            val playlistName = URLDecoder.decode(encodedName, "UTF-8")
+                            val playerViewModel: PlayerViewModel = hiltViewModel()
+                            PlaylistScreen(
+                                playlist = Playlist(id = playlistId, name = playlistName, image = null, channelId = null),
+                                onTrackTap = { track, queue -> playerViewModel.play(track, queue) },
+                            )
+                        }
+                        composable(
                             route = ROUTE_CHANNEL,
                             arguments = listOf(navArgument(CHANNEL_ID_ARG) { type = NavType.IntType }),
                         ) {
                             val playerViewModel: PlayerViewModel = hiltViewModel()
                             ChannelDetailScreen(
                                 onTrackClicked = { track, queue -> playerViewModel.play(track, queue) },
-                                onPlaylistClicked = { /* TODO: navigate to playlist detail */ },
+                                onPlaylistClicked = { playlist -> navController.navigateToPlaylist(playlist) },
                                 onAlbumClicked = { /* TODO: navigate to album detail */ },
                                 onChannelClicked = { channelId -> navController.navigate("channel/$channelId") },
                             )
@@ -235,7 +271,7 @@ fun ElsfmNavHost(
                                 onTrackTap = { track, queue -> playerViewModel.play(track, queue) },
                                 onAlbumTap = { /* TODO: navigate to album detail */ },
                                 onArtistTap = { artist -> navController.navigate("artist/${artist.id}") },
-                                onPlaylistTap = { /* TODO: navigate to playlist detail */ },
+                                onPlaylistTap = { playlist -> navController.navigateToPlaylist(playlist) },
                             )
                         }
                         composable(
@@ -258,6 +294,7 @@ fun ElsfmNavHost(
                                 onTrackClicked = { track, queue ->
                                     playerViewModel.play(track, queue)
                                 },
+                                onPlaylistClicked = { playlist -> navController.navigateToPlaylist(playlist) },
                                 onChannelClicked = { channelId -> navController.navigate("channel/$channelId") },
                             )
                         }
