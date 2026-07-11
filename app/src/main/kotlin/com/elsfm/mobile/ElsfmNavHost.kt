@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.List
@@ -103,14 +104,10 @@ private data class BottomTab(
     val icon: androidx.compose.ui.graphics.vector.ImageVector,
 )
 
-/**
- * Matches the real elsfm.com PWA's bottom nav (Home, Search, Your Music, Account) -
- * Downloads has no dedicated tab there either; it's reachable from the Account menu
- * instead (see the "Downloads" row wired into [com.elsfm.mobile.feature.profile.AccountSection]).
- */
 private val bottomTabs = listOf(
     BottomTab(ROUTE_DISCOVERY, "Discovery", Icons.Filled.Home),
     BottomTab(ROUTE_LIBRARY, "Library", Icons.Filled.List),
+    BottomTab(ROUTE_DOWNLOADS, "Download", Icons.Filled.Download),
     BottomTab(ROUTE_PROFILE, "Account", Icons.Filled.Person),
 )
 
@@ -370,7 +367,6 @@ fun ElsfmNavHost(
                                     startDestinationViewModel.logout()
                                     navController.navigate(ROUTE_LOGIN) { popUpTo(0) }
                                 },
-                                onDownloadsClicked = { navController.navigate(ROUTE_DOWNLOADS) },
                             )
                         }
                         composable(ROUTE_DOWNLOADS) {

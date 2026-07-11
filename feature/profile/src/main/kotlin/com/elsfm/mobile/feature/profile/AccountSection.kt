@@ -41,7 +41,6 @@ fun AccountSection(
     isDarkMode: Boolean,
     onToggleDarkMode: (Boolean) -> Unit,
     onLogout: () -> Unit,
-    onDownloadsClicked: () -> Unit = {},
 ) {
     Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
         Text("Account", style = MaterialTheme.typography.headlineSmall)
@@ -68,12 +67,6 @@ fun AccountSection(
         ) {
             Text("Dark Mode", style = MaterialTheme.typography.bodyLarge)
             Switch(checked = isDarkMode, onCheckedChange = onToggleDarkMode)
-        }
-
-        HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
-
-        TextButton(onClick = onDownloadsClicked) {
-            Text("Downloads", style = MaterialTheme.typography.bodyLarge)
         }
 
         HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))

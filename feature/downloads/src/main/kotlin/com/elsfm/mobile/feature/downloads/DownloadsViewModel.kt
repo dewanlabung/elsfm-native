@@ -56,6 +56,9 @@ class DownloadsViewModel @Inject constructor(
             is DownloadsEvent.ShareDownload -> {
                 shareDownload(event.trackId)
             }
+            is DownloadsEvent.PlayTrack -> {
+                playGroup(allDownloads, startTrackId = event.trackId)
+            }
             is DownloadsEvent.PlayAlbum -> {
                 playGroup(allDownloads.filter { it.albumId == event.albumId })
             }
@@ -120,10 +123,19 @@ class DownloadsViewModel @Inject constructor(
                 )
             }
 
+        val files = filtered.map { download ->
+            DownloadedFileUI(
+                trackId = download.trackId,
+                fileName = download.fileName,
+                fileSize = formatFileSize(download.fileSizeBytes),
+            )
+        }
+
         _state.value = currentState.copy(
             downloadedTracks = tracks,
             downloadedAlbums = albums,
             downloadedPlaylists = playlists,
+            downloadedFiles = files,
         )
     }
 
@@ -137,8 +149,12 @@ class DownloadsViewModel @Inject constructor(
         // Share logic will be implemented with actual sharing API
     }
 
-    /** Plays a downloaded album/playlist's tracks from their local files, fully offline. */
-    private fun playGroup(downloads: List<DownloadedTrack>) {
+    /**
+     * Plays a group of downloaded tracks from their local files, fully offline. When
+     * [startTrackId] is given (single-track play from the Songs tab), playback starts on
+     * that track with the rest of the downloads as its queue instead of the group's first.
+     */
+    private fun playGroup(downloads: List<DownloadedTrack>, startTrackId: Int? = null) {
         if (downloads.isEmpty()) return
         val queue = downloads.mapNotNull { download ->
             val file = downloadRepository.getLocalFile(download.fileName) ?: return@mapNotNull null
@@ -152,7 +168,8 @@ class DownloadsViewModel @Inject constructor(
             )
         }
         if (queue.isEmpty()) return
-        playerController.play(queue.first(), queue)
+        val startTrack = startTrackId?.let { id -> queue.find { it.id == id } } ?: queue.first()
+        playerController.play(startTrack, queue)
     }
 
     private fun formatFileSize(bytes: Long): String {

@@ -74,6 +74,7 @@ fun DownloadsScreen(
                 DownloadTab.SONGS -> 0
                 DownloadTab.ALBUMS -> 1
                 DownloadTab.PLAYLISTS -> 2
+                DownloadTab.FOLDER -> 3
             },
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -92,6 +93,11 @@ fun DownloadsScreen(
                 onClick = { viewModel.onEvent(DownloadsEvent.TabChanged(DownloadTab.PLAYLISTS)) },
                 text = { Text("Playlists") }
             )
+            Tab(
+                selected = state.activeTab == DownloadTab.FOLDER,
+                onClick = { viewModel.onEvent(DownloadsEvent.TabChanged(DownloadTab.FOLDER)) },
+                text = { Text("Folder") }
+            )
         }
 
         // Tab content
@@ -99,6 +105,7 @@ fun DownloadsScreen(
             DownloadTab.SONGS -> state.downloadedTracks.isEmpty()
             DownloadTab.ALBUMS -> state.downloadedAlbums.isEmpty()
             DownloadTab.PLAYLISTS -> state.downloadedPlaylists.isEmpty()
+            DownloadTab.FOLDER -> state.downloadedFiles.isEmpty()
         }
 
         if (isEmpty) {
@@ -123,6 +130,7 @@ fun DownloadsScreen(
                     DownloadTab.SONGS -> items(state.downloadedTracks) { track ->
                         TrackDownloadItem(
                             track = track,
+                            onPlay = { viewModel.onEvent(DownloadsEvent.PlayTrack(it)) },
                             onDelete = { viewModel.onEvent(DownloadsEvent.DeleteDownload(it)) },
                             onShare = { viewModel.onEvent(DownloadsEvent.ShareDownload(it)) }
                         )
@@ -141,6 +149,12 @@ fun DownloadsScreen(
                             artworkUrl = playlist.artworkUrl,
                             subtitle = "${playlist.trackCount} tracks downloaded",
                             onPlay = { viewModel.onEvent(DownloadsEvent.PlayPlaylist(playlist.playlistId)) },
+                        )
+                    }
+                    DownloadTab.FOLDER -> items(state.downloadedFiles) { file ->
+                        DownloadedFileRow(
+                            file = file,
+                            onPlay = { viewModel.onEvent(DownloadsEvent.PlayTrack(it)) },
                         )
                     }
                 }
@@ -214,6 +228,7 @@ fun DownloadedGroupCard(
 @Composable
 fun TrackDownloadItem(
     track: DownloadedTrackUI,
+    onPlay: (Int) -> Unit = {},
     onDelete: (Int) -> Unit = {},
     onShare: (Int) -> Unit = {},
 ) {
@@ -222,6 +237,7 @@ fun TrackDownloadItem(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable { onPlay(track.trackId) }
             .padding(12.dp)
             .background(MaterialTheme.colorScheme.surface),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -303,6 +319,36 @@ fun TrackDownloadItem(
                     showMenu.value = false
                 },
                 leadingIcon = { Icon(Icons.Default.Delete, "Delete") }
+            )
+        }
+    }
+}
+
+/** A raw file on disk in the app's downloads folder - the Folder tab's file-browser view. */
+@Composable
+fun DownloadedFileRow(
+    file: DownloadedFileUI,
+    onPlay: (Int) -> Unit = {},
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onPlay(file.trackId) }
+            .padding(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(Icons.Filled.PlayArrow, contentDescription = "Play")
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = file.fileName,
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 1,
+            )
+            Text(
+                text = file.fileSize,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }

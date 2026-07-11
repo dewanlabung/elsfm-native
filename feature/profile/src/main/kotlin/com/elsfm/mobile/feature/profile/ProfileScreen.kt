@@ -28,7 +28,6 @@ fun ProfileScreen(
     accountViewModel: AccountViewModel = hiltViewModel(),
     onTrackClicked: (Track, List<Track>) -> Unit,
     onLogout: () -> Unit,
-    onDownloadsClicked: () -> Unit = {},
 ) {
     val state by viewModel.state.collectAsState()
     val isDarkMode by themeViewModel.isDarkMode.collectAsState()
@@ -77,7 +76,6 @@ fun ProfileScreen(
                             isDarkMode = isDarkMode,
                             onToggleDarkMode = { themeViewModel.setDarkMode(it) },
                             onLogout = onLogout,
-                            onDownloadsClicked = onDownloadsClicked,
                         )
                     }
                     item {

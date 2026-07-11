@@ -1,7 +1,7 @@
 package com.elsfm.mobile.feature.downloads
 
 enum class DownloadTab {
-    SONGS, ALBUMS, PLAYLISTS
+    SONGS, ALBUMS, PLAYLISTS, FOLDER
 }
 
 enum class SortBy {
@@ -16,6 +16,13 @@ data class DownloadedTrackUI(
     val fileSize: String,
     val downloadedAt: Long,
     val isOffline: Boolean = false
+)
+
+/** One file physically present in the app's downloads folder, for the Folder tab. */
+data class DownloadedFileUI(
+    val trackId: Int,
+    val fileName: String,
+    val fileSize: String,
 )
 
 /** One downloaded album, grouping every downloaded track that shares its `albumId`. */
@@ -42,6 +49,7 @@ sealed interface DownloadsEvent {
     data class SortChanged(val sortBy: SortBy) : DownloadsEvent
     data class DeleteDownload(val trackId: Int) : DownloadsEvent
     data class ShareDownload(val trackId: Int) : DownloadsEvent
+    data class PlayTrack(val trackId: Int) : DownloadsEvent
     data class PlayAlbum(val albumId: Int) : DownloadsEvent
     data class PlayPlaylist(val playlistId: Int) : DownloadsEvent
 }
@@ -50,6 +58,7 @@ data class DownloadsState(
     val downloadedTracks: List<DownloadedTrackUI> = emptyList(),
     val downloadedAlbums: List<DownloadedAlbumUI> = emptyList(),
     val downloadedPlaylists: List<DownloadedPlaylistUI> = emptyList(),
+    val downloadedFiles: List<DownloadedFileUI> = emptyList(),
     val downloadProgress: Map<Int, Float> = emptyMap(),
     val isLoading: Boolean = false,
     val error: String? = null,
