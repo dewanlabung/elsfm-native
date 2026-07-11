@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -18,15 +17,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.elsfm.mobile.core.model.Track
-import com.elsfm.mobile.core.model.UserProfile
 
 @Composable
 fun ProfileScreen(
     viewModel: ProfileViewModel = hiltViewModel(),
     themeViewModel: ThemeViewModel = hiltViewModel(),
     accountViewModel: AccountViewModel = hiltViewModel(),
-    onTrackClicked: (Track, List<Track>) -> Unit,
     onLogout: () -> Unit,
 ) {
     val state by viewModel.state.collectAsState()
@@ -97,18 +93,6 @@ fun ProfileScreen(
                             sessions = accountState.sessions,
                             isLoading = accountState.isLoadingSessions,
                             error = accountState.sessionsError,
-                        )
-                    }
-                    item {
-                        Text(
-                            "Recently Played",
-                            style = MaterialTheme.typography.headlineSmall
-                        )
-                    }
-                    items(state.recentlyPlayed) { track ->
-                        RecentlyPlayedTrackItem(
-                            track = track,
-                            onTrackClicked = { onTrackClicked(track, state.recentlyPlayed) }
                         )
                     }
                 }
