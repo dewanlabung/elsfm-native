@@ -14,6 +14,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -100,66 +103,86 @@ fun DownloadsScreen(
             )
         }
 
-        // Tab content
-        val isEmpty = when (state.activeTab) {
-            DownloadTab.SONGS -> state.downloadedTracks.isEmpty()
-            DownloadTab.ALBUMS -> state.downloadedAlbums.isEmpty()
-            DownloadTab.PLAYLISTS -> state.downloadedPlaylists.isEmpty()
-            DownloadTab.FOLDER -> state.downloadedFiles.isEmpty()
-        }
-
-        if (isEmpty) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(32.dp),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = "No downloads yet",
-                    style = MaterialTheme.typography.bodyLarge
-                )
+        // Tab content — Albums uses a 2-column grid; all other tabs use a list.
+        when (state.activeTab) {
+            DownloadTab.ALBUMS -> {
+                if (state.downloadedAlbums.isEmpty()) {
+                    EmptyDownloads()
+                } else {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
+                        contentPadding = PaddingValues(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxSize(),
+                    ) {
+                        items(state.downloadedAlbums) { album ->
+                            DownloadedGroupCard(
+                                name = album.name,
+                                artworkUrl = album.artworkUrl,
+                                subtitle = album.artist,
+                                onPlay = { viewModel.onEvent(DownloadsEvent.PlayAlbum(album.albumId)) },
+                            )
+                        }
+                    }
+                }
             }
-        } else {
-            LazyColumn(
-                contentPadding = PaddingValues(0.dp),
-                modifier = Modifier.fillMaxSize()
-            ) {
-                when (state.activeTab) {
-                    DownloadTab.SONGS -> items(state.downloadedTracks) { track ->
-                        TrackDownloadItem(
-                            track = track,
-                            onPlay = { viewModel.onEvent(DownloadsEvent.PlayTrack(it)) },
-                            onDelete = { viewModel.onEvent(DownloadsEvent.DeleteDownload(it)) },
-                            onShare = { viewModel.onEvent(DownloadsEvent.ShareDownload(it)) }
-                        )
-                    }
-                    DownloadTab.ALBUMS -> items(state.downloadedAlbums) { album ->
-                        DownloadedGroupCard(
-                            name = album.name,
-                            artworkUrl = album.artworkUrl,
-                            subtitle = "${album.trackCount} tracks downloaded",
-                            onPlay = { viewModel.onEvent(DownloadsEvent.PlayAlbum(album.albumId)) },
-                        )
-                    }
-                    DownloadTab.PLAYLISTS -> items(state.downloadedPlaylists) { playlist ->
-                        DownloadedGroupCard(
-                            name = playlist.name,
-                            artworkUrl = playlist.artworkUrl,
-                            subtitle = "${playlist.trackCount} tracks downloaded",
-                            onPlay = { viewModel.onEvent(DownloadsEvent.PlayPlaylist(playlist.playlistId)) },
-                        )
-                    }
-                    DownloadTab.FOLDER -> items(state.downloadedFiles) { file ->
-                        DownloadedFileRow(
-                            file = file,
-                            onPlay = { viewModel.onEvent(DownloadsEvent.PlayTrack(it)) },
-                        )
+            else -> {
+                val isEmpty = when (state.activeTab) {
+                    DownloadTab.SONGS -> state.downloadedTracks.isEmpty()
+                    DownloadTab.PLAYLISTS -> state.downloadedPlaylists.isEmpty()
+                    DownloadTab.FOLDER -> state.downloadedFiles.isEmpty()
+                    else -> false
+                }
+                if (isEmpty) {
+                    EmptyDownloads()
+                } else {
+                    LazyColumn(
+                        contentPadding = PaddingValues(0.dp),
+                        modifier = Modifier.fillMaxSize(),
+                    ) {
+                        when (state.activeTab) {
+                            DownloadTab.SONGS -> items(state.downloadedTracks) { track ->
+                                TrackDownloadItem(
+                                    track = track,
+                                    onPlay = { viewModel.onEvent(DownloadsEvent.PlayTrack(it)) },
+                                    onDelete = { viewModel.onEvent(DownloadsEvent.DeleteDownload(it)) },
+                                    onShare = { viewModel.onEvent(DownloadsEvent.ShareDownload(it)) },
+                                )
+                            }
+                            DownloadTab.PLAYLISTS -> items(state.downloadedPlaylists) { playlist ->
+                                DownloadedGroupCard(
+                                    name = playlist.name,
+                                    artworkUrl = playlist.artworkUrl,
+                                    subtitle = "${playlist.trackCount} tracks downloaded",
+                                    onPlay = { viewModel.onEvent(DownloadsEvent.PlayPlaylist(playlist.playlistId)) },
+                                )
+                            }
+                            DownloadTab.FOLDER -> items(state.downloadedFiles) { file ->
+                                DownloadedFileRow(
+                                    file = file,
+                                    onPlay = { viewModel.onEvent(DownloadsEvent.PlayTrack(it)) },
+                                )
+                            }
+                            else -> {}
+                        }
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun EmptyDownloads() {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(32.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(text = "No downloads yet", style = MaterialTheme.typography.bodyLarge)
     }
 }
 

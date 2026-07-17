@@ -29,6 +29,7 @@ data class DownloadedFileUI(
 data class DownloadedAlbumUI(
     val albumId: Int,
     val name: String,
+    val artist: String,
     val artworkUrl: String?,
     val trackCount: Int,
     val trackIds: List<Int>,

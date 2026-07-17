@@ -104,6 +104,7 @@ class DownloadsViewModel @Inject constructor(
                 DownloadedAlbumUI(
                     albumId = albumId!!,
                     name = tracksInAlbum.first().albumName ?: "Unknown album",
+                    artist = tracksInAlbum.first().artist,
                     artworkUrl = tracksInAlbum.first().artworkUrl,
                     trackCount = tracksInAlbum.size,
                     trackIds = tracksInAlbum.map { it.trackId },
