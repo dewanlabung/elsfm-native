@@ -211,7 +211,11 @@ class PlayerViewModel @Inject constructor(
                         _menuState.value = _menuState.value.copy(
                             downloadingTrackIds = _menuState.value.downloadingTrackIds + track.id,
                         )
-                        val result = downloadRepository.downloadTrack(track)
+                        val result = downloadRepository.downloadTrack(
+                            track,
+                            albumId = track.album?.id,
+                            albumName = track.album?.name,
+                        )
                         result.onFailure {
                             _menuState.value = _menuState.value.copy(error = "Failed to download track")
                         }
