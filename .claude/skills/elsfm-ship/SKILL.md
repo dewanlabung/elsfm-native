@@ -1,7 +1,9 @@
 ---
 name: elsfm-ship
-description: Guided release build checklist for ELSFM — produces signed .aab for Google Play and .ipa for App Store, with store-listing reminders and AdSense policy warning.
-version: 1.0.0
+description: |
+  Release checklist for the ELSFM native Android app. Covers debug sideload via GitHub
+  Releases, and the signed .aab path for Google Play. Run /elsfm-android-build first.
+version: 2.0.0
 allowed-tools:
   - Bash
   - Read
@@ -15,91 +17,85 @@ triggers:
 
 # /elsfm-ship — ELSFM Release Checklist
 
-Walks through the full release process for Android (Google Play) and iOS (App Store).
+The ELSFM app is a **Kotlin native** Android app (not Capacitor).  
+Project: `/Users/siku/Documents/GitHub/elsfm-native/`  
+Repo: `https://github.com/dewanlabung/elsfm-native`
+
+Run `/elsfm-android-build` first to produce the APK.
 
 ## Pre-flight check
 
 ```bash
-[ -d /Users/siku/Documents/GitHub/elsfm-app/android ] && echo "Android: ✅" || echo "Android: ❌ MISSING — run /elsfm-build first"
-[ -d /Users/siku/Documents/GitHub/elsfm-app/ios ] && echo "iOS: ✅" || echo "iOS: ❌ MISSING — run /elsfm-build first"
-cd /Users/siku/Documents/GitHub/elsfm-app && npx cap sync 2>&1 | tail -5
+ls -lh /Users/siku/Documents/GitHub/elsfm-native/app/build/outputs/apk/debug/app-debug.apk \
+  && echo "APK: ✅" || echo "APK: ❌ — run /elsfm-android-build first"
+git -C /Users/siku/Documents/GitHub/elsfm-native status --short | head -10
 ```
 
-Stop if any platform is missing.
+Stop if APK is missing.
 
-## Step 1 — Version bump
+## Step 1 — Commit and push
 
-Ask: "What version number for this release? (e.g. 1.0.0)"
+```bash
+cd /Users/siku/Documents/GitHub/elsfm-native
+git add <changed files>
+git commit -m "feat: <description>"
+git push origin main
+```
 
-**Android** — edit `/Users/siku/Documents/GitHub/elsfm-app/android/app/build.gradle`:
-- Increment `versionCode` by 1
-- Set `versionName` to the user's answer
+## Step 2 — Create GitHub Release (dev/sideload)
 
-**iOS** — edit `ios/App/App/Info.plist`:
-- `CFBundleShortVersionString` = user's version
-- `CFBundleVersion` = increment by 1
+```bash
+NEXT_TAG="v1.0.X-<slug>"
+gh release create "$NEXT_TAG" \
+  --title "$NEXT_TAG — <Human title>" \
+  --notes "## What's New
+- feature 1
+- feature 2
 
-## Step 2 — Android: signed release build
+## Install
+Download \`app-debug.apk\` and sideload on Android." \
+  /Users/siku/Documents/GitHub/elsfm-native/app/build/outputs/apk/debug/app-debug.apk
+```
 
-Instruct the user:
-1. Open Android Studio: `cd /Users/siku/Documents/GitHub/elsfm-app && npx cap open android`
-2. Build → Generate Signed Bundle / APK → choose **Android App Bundle (.aab)**
-3. Create or select your keystore (keep it safe — you need it for every future update)
+Tag naming: `v1.0.X-<kebab-feature-slug>`  
+Previous tags: v1.0.1 through v1.0.8 — increment X.
+
+## Step 3 — Version bump in build.gradle (for Play Store)
+
+Edit `/Users/siku/Documents/GitHub/elsfm-native/app/build.gradle.kts`:
+- `versionCode` — increment by 1 (integer; Play Store rejects downgrades)
+- `versionName` — set to human-readable string (e.g. `"1.0.8"`)
+
+## Step 4 — Play Store signed .aab
+
+1. Open Android Studio, open `elsfm-native/`
+2. Build → Generate Signed Bundle / APK → **Android App Bundle (.aab)**
+3. Use/create a keystore (keep safe — required for all future updates)
 4. Build variant: **release**
 
-Check if .aab was produced:
+Check output:
 ```bash
-find /Users/siku/Documents/GitHub/elsfm-app/android -name "*.aab" 2>/dev/null
+find /Users/siku/Documents/GitHub/elsfm-native -name "*.aab" 2>/dev/null
 ```
 
-If found: print the path. If not: remind user to complete the build in Android Studio.
-
-## Step 3 — iOS: archive
-
-Instruct the user (requires full Xcode and Apple Developer account):
-1. Install CocoaPods if not present: `sudo gem install cocoapods`
-2. `cd /Users/siku/Documents/GitHub/elsfm-app/ios/App && pod install`
-3. Open: `cd /Users/siku/Documents/GitHub/elsfm-app && npx cap open ios` — opens `App.xcworkspace`
-4. Set scheme **App**, destination **Any iOS Device (arm64)**
-5. Product → Archive
-6. Distribute App → App Store Connect → Upload
-
-## Step 4 — Store listing checklist
-
-Print and confirm each item:
+## Step 5 — Play Store checklist
 
 ```
-Android (Google Play Console — play.google.com/console):
 [ ] App icon: 512×512 PNG, no alpha channel
 [ ] Feature graphic: 1024×500 PNG
-[ ] Screenshots: at least 2 phone screenshots (min 320px, max 3840px on longest side)
-[ ] Short description: max 80 characters
-[ ] Full description: max 4000 characters
-[ ] Privacy policy URL (publicly accessible)
-[ ] Data safety form: declare data collected (account info, listening history, device ID)
-[ ] Content rating: complete IARC questionnaire in Play Console
-[ ] ⚠️  AdSense policy: web AdSense inside a native app violates Google Play policy.
-    Options:
-    A) Serve https://app.elsfm.com (ad-free subdomain) as server.url in capacitor.config.json
-    B) Inject CSS to hide .adsbygoogle elements inside the WebView via Capacitor plugin
-
-iOS (App Store Connect — appstoreconnect.apple.com):
-[ ] App icon: 1024×1024 PNG (no alpha, no rounded corners — Apple adds them)
-[ ] Screenshots: iPhone 6.5" (required) and 5.5" (required)
+[ ] Screenshots: ≥2 phone screenshots
+[ ] Short description: max 80 chars
+[ ] Full description: max 4000 chars
 [ ] Privacy policy URL
-[ ] Background audio entitlement: UIBackgroundModes:audio is declared in Info.plist ✅
-[ ] Age rating: complete questionnaire
-[ ] $99/yr Apple Developer account active
+[ ] Data safety form: account info, listening history
+[ ] Content rating: complete IARC questionnaire
+[ ] minSdk 26 declared ✅
+[ ] Media3/ExoPlayer foreground service declared in manifest ✅
 ```
-
-## Step 5 — Submit
-
-- Android: upload `.aab` to Play Console → Production track → Review and submit (review takes 1-3 days)
-- iOS: submit build via Xcode Organizer → App Store Connect review takes 1-7 days
 
 ## Done
 
 Report:
-- Android .aab path (if found)
-- iOS archive status
-- Any unchecked items from the checklist
+- GitHub release URL
+- .aab path if produced
+- Any unchecked items

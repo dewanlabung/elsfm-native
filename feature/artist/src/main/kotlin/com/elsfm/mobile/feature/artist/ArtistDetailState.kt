@@ -16,6 +16,7 @@ enum class ArtistTab {
     SIMILAR_ARTISTS,
     ABOUT,
     TRACKS,
+    ALBUMS,
     FOLLOWERS,
 }
 

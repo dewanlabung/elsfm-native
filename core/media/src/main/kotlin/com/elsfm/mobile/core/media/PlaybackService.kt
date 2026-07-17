@@ -1,6 +1,7 @@
 package com.elsfm.mobile.core.media
 
 import android.app.PendingIntent
+import android.hardware.SensorManager
 import android.media.audiofx.Equalizer
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
@@ -25,6 +26,8 @@ class PlaybackService : MediaSessionService() {
     lateinit var sessionManager: SessionManager
 
     private var mediaSession: MediaSession? = null
+    private var shakeDetector: ShakeDetector? = null
+    private var headsetMonitor: HeadsetEventMonitor? = null
 
     // Kept so a future settings screen can expose band-level EQ controls off this same
     // audio-session-scoped instance; re-created whenever the session id changes (e.g. on
@@ -86,11 +89,26 @@ class PlaybackService : MediaSessionService() {
             sessionBuilder.setSessionActivity(pendingIntent)
         }
         mediaSession = sessionBuilder.build()
+
+        shakeDetector = ShakeDetector(
+            sensorManager = getSystemService(SensorManager::class.java),
+            onShake = {
+                player.seekToNextMediaItem()
+                if (!player.isPlaying) player.play()
+            },
+        ).also { it.start() }
+
+        headsetMonitor = HeadsetEventMonitor(
+            getIsPlaying = { player.isPlaying },
+            onResumeRequested = { player.play() },
+        ).also { it.start(this) }
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? = mediaSession
 
     override fun onDestroy() {
+        shakeDetector?.stop()
+        headsetMonitor?.stop(this)
         equalizer?.release()
         equalizer = null
         mediaSession?.run {

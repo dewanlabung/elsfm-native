@@ -9,7 +9,9 @@ import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import com.elsfm.mobile.core.common.PersistedPlaybackState
 import com.elsfm.mobile.core.common.PlaybackStateStore
+import com.elsfm.mobile.core.media.LocalRecommendationEngine
 import com.elsfm.mobile.core.media.PlaybackService
+import com.elsfm.mobile.core.media.RecentTracksStore
 import com.elsfm.mobile.core.media.toMediaItem
 import com.elsfm.mobile.core.model.Track
 import com.google.common.util.concurrent.MoreExecutors
@@ -32,6 +34,8 @@ private const val MAX_PLAYBACK_SPEED = 2f
 class Media3PlayerController @Inject constructor(
     @ApplicationContext private val context: Context,
     private val playbackStateStore: PlaybackStateStore,
+    private val recentTracksStore: RecentTracksStore,
+    private val recommendationEngine: LocalRecommendationEngine,
 ) : PlayerController {
 
     private val _state = MutableStateFlow(PlayerState())
@@ -73,13 +77,33 @@ class Media3PlayerController @Inject constructor(
                     durationMs = track?.durationMs ?: 0,
                     positionMs = 0,
                 )
+                track?.let { recentTracksStore.record(it) }
                 persistState()
+            }
+
+            override fun onPlaybackStateChanged(playbackState: Int) {
+                if (playbackState == Player.STATE_ENDED) {
+                    autoPlayRecommendations()
+                }
             }
 
             override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
                 _state.value = _state.value.copy(error = error.message)
             }
         })
+    }
+
+    private fun autoPlayRecommendations() {
+        val excludeIds = currentQueue.map { it.id }.toSet()
+        val recommendations = recommendationEngine.getRecommendations(excludeIds)
+        if (recommendations.isEmpty()) return
+        recommendations.forEach { track ->
+            currentQueue = currentQueue + track
+            mediaController?.addMediaItem(track.toMediaItem())
+        }
+        _state.value = _state.value.copy(queue = currentQueue)
+        mediaController?.seekToNextMediaItem()
+        mediaController?.play()
     }
 
     /**

@@ -128,6 +128,7 @@ class ArtistDetailViewModel @Inject constructor(
         if (tab == ArtistTab.FOLLOWERS && _state.value.followers.isEmpty() && !_state.value.isFollowersLoading) {
             loadFollowers()
         }
+        // ALBUMS tab uses albums already loaded in loadArtistDetails — no lazy fetch needed.
     }
 
     private fun loadFollowers() {

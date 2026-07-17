@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -30,11 +31,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import coil.compose.AsyncImage
+import androidx.compose.foundation.Image
 
 @Composable
 fun SignupScreen(
@@ -58,14 +60,13 @@ fun SignupScreen(
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        AsyncImage(
-            model = "http://localhost:8000/forgot-password",
-            contentDescription = "Signup hero image",
+        Image(
+            painter = painterResource(R.drawable.auth_hero),
+            contentDescription = "Siyonka Geetars",
             modifier = Modifier
-                .fillMaxWidth()
-                .height(200.dp)
-                .padding(bottom = 32.dp),
-            contentScale = ContentScale.Crop
+                .size(80.dp)
+                .padding(bottom = 16.dp),
+            contentScale = ContentScale.Fit
         )
 
         Text(
