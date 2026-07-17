@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.elsfm.mobile.core.common.DispatcherProvider
+import com.elsfm.mobile.core.database.UserDao
 import com.elsfm.mobile.core.database.repository.DownloadRepository
 import com.elsfm.mobile.core.model.Album
 import com.elsfm.mobile.core.model.Comment
@@ -11,13 +12,17 @@ import com.elsfm.mobile.core.model.Track
 import com.elsfm.mobile.core.network.ApiResult
 import com.elsfm.mobile.core.network.api.AlbumApi
 import com.elsfm.mobile.core.network.api.CommentApi
+import com.elsfm.mobile.core.network.api.PlaylistApi
+import com.elsfm.mobile.core.network.api.PlaylistInfo
 import com.elsfm.mobile.core.network.api.RepostApi
 import com.elsfm.mobile.core.network.api.UserApi
 import com.elsfm.mobile.feature.library.data.TrackLikeController
+import com.elsfm.mobile.feature.player.PlayerController
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -53,6 +58,11 @@ data class AlbumDetailState(
     val downloadingTrackIds: Set<Int> = emptySet(),
     val downloadedTrackIds: Set<Int> = emptySet(),
     val isDownloadingAlbum: Boolean = false,
+    val isPlaylistPickerVisible: Boolean = false,
+    val isLoadingPlaylists: Boolean = false,
+    val userPlaylists: List<PlaylistInfo> = emptyList(),
+    val addToPlaylistTrackId: Int? = null,
+    val addToPlaylistLoading: Boolean = false,
 )
 
 @HiltViewModel
@@ -65,6 +75,9 @@ class AlbumViewModel @Inject constructor(
     private val commentApi: CommentApi,
     private val downloadRepository: DownloadRepository,
     private val dispatcherProvider: DispatcherProvider,
+    private val playerController: PlayerController,
+    private val playlistApi: PlaylistApi,
+    private val userDao: UserDao,
 ) : ViewModel() {
     private val albumId: Int = checkNotNull(savedStateHandle[ALBUM_ID_ARG]) {
         "AlbumViewModel requires an albumId argument"
@@ -214,6 +227,57 @@ class AlbumViewModel @Inject constructor(
                         error = "Failed to post comment",
                     )
                 }
+            }
+        }
+    }
+
+    fun addToQueue(trackId: Int) {
+        val track = _state.value.tracks.find { it.id == trackId } ?: return
+        playerController.addToQueue(track)
+    }
+
+    fun repostTrack(trackId: Int) {
+        viewModelScope.launch(dispatcherProvider.io) {
+            when (repostApi.toggleTrackRepost(trackId)) {
+                is ApiResult.Success -> Unit
+                else -> _state.value = _state.value.copy(error = "Failed to repost track")
+            }
+        }
+    }
+
+    fun showPlaylistPicker(trackId: Int) {
+        _state.value = _state.value.copy(isPlaylistPickerVisible = true, addToPlaylistTrackId = trackId)
+        viewModelScope.launch(dispatcherProvider.io) {
+            _state.value = _state.value.copy(isLoadingPlaylists = true)
+            val userId = userDao.get()?.id
+            if (userId == null) {
+                _state.value = _state.value.copy(isLoadingPlaylists = false, error = "Not signed in")
+                return@launch
+            }
+            when (val result = playlistApi.getUserPlaylists(userId)) {
+                is ApiResult.Success -> {
+                    _state.value = _state.value.copy(isLoadingPlaylists = false, userPlaylists = result.data)
+                }
+                else -> _state.value = _state.value.copy(isLoadingPlaylists = false, error = "Failed to load playlists")
+            }
+        }
+    }
+
+    fun hidePlaylistPicker() {
+        _state.value = _state.value.copy(isPlaylistPickerVisible = false)
+    }
+
+    fun addTrackToPlaylist(playlistId: Int) {
+        val trackId = _state.value.addToPlaylistTrackId ?: return
+        viewModelScope.launch(dispatcherProvider.io) {
+            _state.value = _state.value.copy(addToPlaylistLoading = true)
+            when (playlistApi.addTrackToPlaylist(playlistId, trackId)) {
+                is ApiResult.Success -> {
+                    _state.value = _state.value.copy(
+                        addToPlaylistLoading = false, isPlaylistPickerVisible = false, error = null,
+                    )
+                }
+                else -> _state.value = _state.value.copy(addToPlaylistLoading = false, error = "Failed to add to playlist")
             }
         }
     }

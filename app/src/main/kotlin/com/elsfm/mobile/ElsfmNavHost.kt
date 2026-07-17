@@ -327,12 +327,22 @@ fun ElsfmNavHost(
                             val playerViewModel: PlayerViewModel = hiltViewModel()
                             LikedSongsScreen(
                                 onTrackTap = { track, queue -> playerViewModel.play(track, queue) },
+                                onGoToArtist = { artistId -> navController.navigate("artist/$artistId") },
+                                onGoToAlbum = { albumId -> navController.navigateToAlbum(albumId) },
+                                onGoToTrack = { /* no track-detail screen yet */ },
+                                onViewLyrics = { trackId -> navController.navigate("lyrics/$trackId") },
+                                onViewComments = { trackId -> navController.navigateToTrackComments(trackId) },
                             )
                         }
                         composable(ROUTE_LISTENING_HISTORY) {
                             val playerViewModel: PlayerViewModel = hiltViewModel()
                             ListeningHistoryScreen(
                                 onTrackTap = { track, queue -> playerViewModel.play(track, queue) },
+                                onGoToArtist = { artistId -> navController.navigate("artist/$artistId") },
+                                onGoToAlbum = { albumId -> navController.navigateToAlbum(albumId) },
+                                onGoToTrack = { /* no track-detail screen yet */ },
+                                onViewLyrics = { trackId -> navController.navigate("lyrics/$trackId") },
+                                onViewComments = { trackId -> navController.navigateToTrackComments(trackId) },
                             )
                         }
                         composable(ROUTE_NOTIFICATIONS) {
@@ -347,6 +357,10 @@ fun ElsfmNavHost(
                                 onTrackTap = { track, queue -> playerViewModel.play(track, queue) },
                                 onPlayAll = { tracks -> tracks.firstOrNull()?.let { playerViewModel.play(it, tracks) } },
                                 onViewComments = { trackId -> navController.navigateToTrackComments(trackId) },
+                                onGoToArtist = { artistId -> navController.navigate("artist/$artistId") },
+                                onGoToAlbum = { albumId -> navController.navigateToAlbum(albumId) },
+                                onGoToTrack = { /* no track-detail screen yet */ },
+                                onViewLyrics = { trackId -> navController.navigate("lyrics/$trackId") },
                             )
                         }
                         composable(

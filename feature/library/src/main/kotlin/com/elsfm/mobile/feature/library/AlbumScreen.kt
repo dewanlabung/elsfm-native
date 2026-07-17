@@ -1,6 +1,7 @@
 package com.elsfm.mobile.feature.library
 
 import android.content.Intent
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,12 +25,15 @@ import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -38,11 +42,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.AsyncImage
 import com.elsfm.mobile.core.designsystem.LikeButton
 import com.elsfm.mobile.core.designsystem.TrackContextMenu
 import com.elsfm.mobile.core.model.Album
@@ -59,6 +66,10 @@ fun AlbumScreen(
     onAddToQueue: (Track) -> Unit = {},
     onPlayAll: (List<Track>) -> Unit = {},
     onViewComments: (Int) -> Unit = {},
+    onGoToArtist: (Int) -> Unit = {},
+    onGoToAlbum: (Int) -> Unit = {},
+    onGoToTrack: (Int) -> Unit = {},
+    onViewLyrics: (Int) -> Unit = {},
     viewModel: AlbumViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -68,7 +79,7 @@ fun AlbumScreen(
         state = state,
         onPlayAll = { onPlayAll(state.tracks) },
         onTrackTap = onTrackTap,
-        onAddToQueue = onAddToQueue,
+        onAddToQueue = { trackId -> viewModel.addToQueue(trackId) },
         onToggleTrackLike = viewModel::toggleTrackLike,
         onToggleAlbumLike = viewModel::toggleAlbumLike,
         onToggleAlbumRepost = viewModel::toggleAlbumRepost,
@@ -77,9 +88,26 @@ fun AlbumScreen(
         },
         onDownloadAlbum = viewModel::downloadAlbum,
         onDownloadTrack = viewModel::downloadTrack,
+        onRepostTrack = viewModel::repostTrack,
+        onShowPlaylistPicker = viewModel::showPlaylistPicker,
+        onHidePlaylistPicker = viewModel::hidePlaylistPicker,
+        onAddTrackToPlaylist = viewModel::addTrackToPlaylist,
         onCommentInputChanged = viewModel::onCommentInputChanged,
         onPostComment = viewModel::postComment,
         onViewComments = onViewComments,
+        onGoToArtist = onGoToArtist,
+        onGoToAlbum = onGoToAlbum,
+        onGoToTrack = onGoToTrack,
+        onViewLyrics = onViewLyrics,
+        onShareTrack = { track ->
+            val url = "https://www.elsfm.com/track/${track.id}/${slugifyTrackName(track.name)}"
+            val intent = Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_TEXT, url)
+                putExtra(Intent.EXTRA_SUBJECT, track.name)
+            }
+            context.startActivity(Intent.createChooser(intent, "Share track"))
+        },
     )
 }
 
@@ -88,19 +116,38 @@ internal fun AlbumDetailContent(
     state: AlbumDetailState,
     onPlayAll: () -> Unit,
     onTrackTap: (Track, List<Track>) -> Unit,
-    onAddToQueue: (Track) -> Unit,
+    onAddToQueue: (Int) -> Unit = {},
     onToggleTrackLike: (Int) -> Unit = {},
     onToggleAlbumLike: () -> Unit = {},
     onToggleAlbumRepost: () -> Unit = {},
     onShare: () -> Unit = {},
     onDownloadAlbum: () -> Unit = {},
     onDownloadTrack: (Track) -> Unit = {},
+    onRepostTrack: (Int) -> Unit = {},
+    onShowPlaylistPicker: (Int) -> Unit = {},
+    onHidePlaylistPicker: () -> Unit = {},
+    onAddTrackToPlaylist: (Int) -> Unit = {},
     onCommentInputChanged: (String) -> Unit = {},
     onPostComment: () -> Unit = {},
     onViewComments: (Int) -> Unit = {},
+    onGoToArtist: (Int) -> Unit = {},
+    onGoToAlbum: (Int) -> Unit = {},
+    onGoToTrack: (Int) -> Unit = {},
+    onViewLyrics: (Int) -> Unit = {},
+    onShareTrack: (Track) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val album = state.album
+
+    if (state.isPlaylistPickerVisible) {
+        AlbumAddToPlaylistSheet(
+            playlists = state.userPlaylists,
+            isLoading = state.isLoadingPlaylists,
+            isAdding = state.addToPlaylistLoading,
+            onPlaylistTap = onAddTrackToPlaylist,
+            onDismiss = onHidePlaylistPicker,
+        )
+    }
 
     BlurredBackground(imageUrl = album?.image, modifier = modifier) {
         when {
@@ -139,14 +186,21 @@ internal fun AlbumDetailContent(
                         AlbumTrackRow(
                             track = track,
                             onClick = { onTrackTap(track, state.tracks) },
-                            onAddToQueue = { onAddToQueue(track) },
+                            onAddToQueue = { onAddToQueue(track.id) },
                             isLiked = state.likedTrackIds.contains(track.id),
                             isLikeLoading = state.likeLoadingTrackIds.contains(track.id),
                             onToggleLike = { onToggleTrackLike(track.id) },
                             isDownloading = state.downloadingTrackIds.contains(track.id),
                             isDownloaded = state.downloadedTrackIds.contains(track.id),
                             onDownload = { onDownloadTrack(track) },
+                            onRepost = { onRepostTrack(track.id) },
+                            onAddToPlaylist = { onShowPlaylistPicker(track.id) },
                             onViewComments = onViewComments,
+                            onGoToArtist = onGoToArtist,
+                            onGoToAlbum = onGoToAlbum,
+                            onGoToTrack = onGoToTrack,
+                            onViewLyrics = onViewLyrics,
+                            onShare = { onShareTrack(track) },
                         )
                     }
                     if (state.error != null) {
@@ -404,7 +458,14 @@ private fun AlbumTrackRow(
     isDownloading: Boolean = false,
     isDownloaded: Boolean = false,
     onDownload: () -> Unit = {},
+    onRepost: () -> Unit = {},
+    onAddToPlaylist: () -> Unit = {},
     onViewComments: (Int) -> Unit = {},
+    onGoToArtist: (Int) -> Unit = {},
+    onGoToAlbum: (Int) -> Unit = {},
+    onGoToTrack: (Int) -> Unit = {},
+    onViewLyrics: (Int) -> Unit = {},
+    onShare: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
@@ -435,15 +496,94 @@ private fun AlbumTrackRow(
                 onDismiss = { menuExpanded = false },
                 onAddToQueue = { onAddToQueue() },
                 onAddToLibrary = { onToggleLike() },
-                onAddToPlaylist = {},
-                onShare = {},
-                onRepost = {},
+                onAddToPlaylist = { onAddToPlaylist() },
+                onShare = onShare,
+                onRepost = { onRepost() },
                 onMakeAvailableOffline = { if (!isDownloading && !isDownloaded) onDownload() },
                 onViewComments = onViewComments,
+                onGoToArtist = onGoToArtist,
+                onGoToAlbum = onGoToAlbum,
+                onGoToTrack = onGoToTrack,
+                onViewLyrics = onViewLyrics,
             )
         }
     }
 }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AlbumAddToPlaylistSheet(
+    playlists: List<com.elsfm.mobile.core.network.api.PlaylistInfo>,
+    isLoading: Boolean,
+    isAdding: Boolean,
+    onPlaylistTap: (Int) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val sheetState = rememberModalBottomSheetState()
+
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+        Text(
+            text = "Add to playlist",
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+        )
+
+        when {
+            isLoading -> {
+                Box(
+                    modifier = Modifier.fillMaxWidth().padding(32.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
+            playlists.isEmpty() -> {
+                Text(
+                    text = "You don't have any playlists yet",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(16.dp),
+                )
+            }
+            else -> {
+                LazyColumn {
+                    items(playlists, key = { it.id }) { playlist ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable(enabled = !isAdding) { onPlaylistTap(playlist.id) }
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Surface(
+                                modifier = Modifier.size(40.dp).clip(RoundedCornerShape(4.dp)),
+                                color = MaterialTheme.colorScheme.surfaceVariant,
+                            ) {
+                                AsyncImage(
+                                    model = playlist.image,
+                                    contentDescription = playlist.name,
+                                    modifier = Modifier.size(40.dp),
+                                    contentScale = ContentScale.Crop,
+                                )
+                            }
+                            Text(
+                                text = playlist.name,
+                                style = MaterialTheme.typography.bodyMedium,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+private fun slugifyTrackName(input: String): String =
+    input.lowercase().replace(Regex("[^a-z0-9\\s-]"), "").trim().replace(Regex("\\s+"), "-")
 
 private fun shareAlbumUrl(context: android.content.Context, albumName: String, url: String) {
     val intent = Intent(Intent.ACTION_SEND).apply {
