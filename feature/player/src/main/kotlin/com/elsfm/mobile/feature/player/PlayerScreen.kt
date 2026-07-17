@@ -8,7 +8,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,8 +35,8 @@ import androidx.compose.material.icons.filled.RepeatOne
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
-import androidx.compose.material.icons.automirrored.filled.VolumeDown
-import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import androidx.compose.material.icons.filled.Lyrics
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -53,6 +52,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -109,8 +109,6 @@ fun PlayerScreen(
     val state by viewModel.state.collectAsState()
     val menuState by viewModel.menuState.collectAsState()
     val context = LocalContext.current
-    var menuAnchorX by remember { mutableFloatStateOf(0f) }
-    var menuAnchorY by remember { mutableFloatStateOf(0f) }
     var isQueueVisible by remember { mutableStateOf(false) }
     var isSleepTimerDialogVisible by remember { mutableStateOf(false) }
 
@@ -217,6 +215,19 @@ fun PlayerScreen(
                         )
                     }
 
+                    if (state.currentTrack != null) {
+                        IconButton(
+                            onClick = { state.currentTrack?.let { onViewLyrics(it.id) } },
+                            modifier = Modifier.testTag("player_lyrics"),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Lyrics,
+                                contentDescription = "View lyrics",
+                                tint = Color.White,
+                            )
+                        }
+                    }
+
                     IconButton(
                         onClick = { isQueueVisible = true },
                         modifier = Modifier.testTag("player_queue_toggle"),
@@ -269,61 +280,72 @@ fun PlayerScreen(
                 }
             }
 
-            // Track info with long-press menu
-            Box(
+            // Track info row: [heart] [title + artist] [3-dot menu]
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-                    .pointerInput(state.currentTrack) {
-                        detectTapGestures(
-                            onLongPress = { offset ->
-                                state.currentTrack?.let {
-                                    menuAnchorX = offset.x
-                                    menuAnchorY = offset.y
-                                    viewModel.onMenuEvent(PlayerMenuEvent.ShowMenu(it.id))
-                                }
-                            }
-                        )
-                    }
+                    .padding(horizontal = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
+                // Heart / like button (always visible on left)
+                LikeButton(
+                    isLiked = menuState.isLiked,
+                    isLoading = menuState.isLikeLoading,
+                    onClick = if (state.currentTrack != null) viewModel::toggleLike else ({}),
+                    modifier = Modifier.testTag("player_like_button"),
+                )
+
+                // Title + artist centered
                 Column(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .align(Alignment.Center),
+                        .weight(1f)
+                        .padding(horizontal = 8.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text(
                         text = state.currentTrack?.name ?: "Nothing playing",
-                        style = MaterialTheme.typography.headlineMedium,
+                        style = MaterialTheme.typography.titleLarge,
                         color = Color.White,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Center,
                         modifier = Modifier.testTag("player_track_title"),
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(4.dp))
+                    val artistId = state.currentTrack?.artists?.firstOrNull()?.id
                     Text(
                         text = state.currentTrack?.artists?.firstOrNull()?.name ?: "Unknown Artist",
-                        style = MaterialTheme.typography.bodyLarge,
+                        style = MaterialTheme.typography.bodyMedium,
                         color = Color.White.copy(alpha = 0.7f),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.testTag("player_artist_name"),
-                    )
-                }
-
-                // Like/save toggle
-                if (state.currentTrack != null) {
-                    LikeButton(
-                        isLiked = menuState.isLiked,
-                        isLoading = menuState.isLikeLoading,
-                        onClick = viewModel::toggleLike,
+                        textAlign = TextAlign.Center,
                         modifier = Modifier
-                            .align(Alignment.CenterEnd)
-                            .testTag("player_like_button"),
+                            .testTag("player_artist_name")
+                            .then(
+                                if (artistId != null) Modifier.clickable { onGoToArtist(artistId) }
+                                else Modifier
+                            ),
                     )
                 }
 
-                // Track context menu
+                // 3-dot context menu button (always visible on right)
+                IconButton(
+                    onClick = {
+                        state.currentTrack?.let {
+                            viewModel.onMenuEvent(PlayerMenuEvent.ShowMenu(it.id))
+                        }
+                    },
+                    modifier = Modifier.testTag("player_more_menu"),
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.MoreVert,
+                        contentDescription = "More options",
+                        tint = Color.White,
+                    )
+                }
+
+                // Track context menu (invisible anchor, toggled by MoreVert above)
                 TrackContextMenu(
                     trackId = state.currentTrack?.id ?: -1,
                     artistId = state.currentTrack?.artists?.firstOrNull()?.id,
@@ -371,13 +393,13 @@ fun PlayerScreen(
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp)
                 ) {
-                    var sliderValue by remember { mutableFloatStateOf(0f) }
+                    var sliderValue by remember { mutableFloatStateOf(-1f) }
                     val currentMs = state.positionMs.toFloat()
                     val durationMs = (state.currentTrack?.durationMs ?: 1).toFloat()
                     val progress = if (durationMs > 0) currentMs / durationMs else 0f
 
                     Slider(
-                        value = if (sliderValue >= 0) sliderValue else progress,
+                        value = if (sliderValue >= 0f) sliderValue else progress,
                         onValueChange = { newValue ->
                             sliderValue = newValue
                             viewModel.seekTo((newValue * durationMs).toLong())
@@ -408,68 +430,6 @@ fun PlayerScreen(
                             style = MaterialTheme.typography.labelSmall,
                             color = Color.White.copy(alpha = 0.7f),
                         )
-                    }
-                }
-            }
-
-            // Volume + playback speed
-            if (state.currentTrack != null) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.VolumeDown,
-                        contentDescription = null,
-                        tint = Color.White.copy(alpha = 0.7f),
-                        modifier = Modifier.size(20.dp),
-                    )
-                    Slider(
-                        value = state.volume,
-                        onValueChange = viewModel::setVolume,
-                        modifier = Modifier
-                            .weight(1f)
-                            .testTag("player_volume_slider"),
-                        colors = SliderDefaults.colors(
-                            thumbColor = Color.White,
-                            activeTrackColor = Color.White.copy(alpha = 0.7f),
-                            inactiveTrackColor = Color.White.copy(alpha = 0.2f),
-                        ),
-                    )
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.VolumeUp,
-                        contentDescription = null,
-                        tint = Color.White.copy(alpha = 0.7f),
-                        modifier = Modifier.size(20.dp),
-                    )
-                }
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 4.dp)
-                        .testTag("player_speed_control"),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    PLAYBACK_SPEED_OPTIONS.forEach { speed ->
-                        val isSelected = state.playbackSpeed == speed
-                        Surface(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(50))
-                                .clickable { viewModel.setPlaybackSpeed(speed) }
-                                .testTag("player_speed_option_${speed}x"),
-                            color = if (isSelected) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.15f),
-                        ) {
-                            Text(
-                                text = "${speed}x",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = Color.White,
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                            )
-                        }
                     }
                 }
             }
