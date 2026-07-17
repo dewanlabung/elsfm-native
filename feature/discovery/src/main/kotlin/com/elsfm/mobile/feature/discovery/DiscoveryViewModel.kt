@@ -3,14 +3,19 @@ package com.elsfm.mobile.feature.discovery
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.elsfm.mobile.core.common.DispatcherProvider
+import com.elsfm.mobile.core.database.dao.DiscoveryCacheDao
+import com.elsfm.mobile.core.database.entity.DiscoveryCache
 import com.elsfm.mobile.core.model.Album
 import com.elsfm.mobile.core.model.Channel
+import com.elsfm.mobile.core.model.DiscoverySections
 import com.elsfm.mobile.core.model.Playlist
 import com.elsfm.mobile.core.model.Track
 import com.elsfm.mobile.core.network.ApiResult
 import com.elsfm.mobile.core.network.api.ChannelApi
 import com.elsfm.mobile.core.network.api.ChannelContentResult
 import com.elsfm.mobile.core.network.api.ProfileApi
+import com.elsfm.mobile.core.network.connectivity.NetworkMonitor
+import com.elsfm.mobile.core.network.elsfmJson
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -18,6 +23,9 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -74,50 +82,130 @@ class DiscoveryViewModel @Inject constructor(
     private val profileApi: ProfileApi,
     private val channelApi: ChannelApi,
     private val dispatcherProvider: DispatcherProvider,
+    private val discoveryCacheDao: DiscoveryCacheDao,
+    private val networkMonitor: NetworkMonitor,
 ) : ViewModel() {
     private val _state = MutableStateFlow(DiscoveryUiState())
     val state: StateFlow<DiscoveryUiState> = _state.asStateFlow()
 
     init {
-        loadHome()
+        // Paint any cached sections instantly (no spinner), then always refresh
+        // from the network afterwards - performLoad() only shows the spinner
+        // when there is nothing cached to show yet (e.g. a fresh install).
+        viewModelScope.launch(dispatcherProvider.io) {
+            loadCachedSectionsIfAvailable()
+            performLoad()
+        }
+
+        // A user who loses connectivity mid-session and reconnects gets a
+        // silent refresh without leaving the screen. `drop(1)` skips the
+        // initial emission so this only reacts to actual transitions.
+        viewModelScope.launch(dispatcherProvider.io) {
+            networkMonitor.isOnline
+                .drop(1)
+                .distinctUntilChanged()
+                .filter { it }
+                .collect { performLoad() }
+        }
     }
 
     fun loadHome() {
-        viewModelScope.launch(dispatcherProvider.io) {
-            _state.value = _state.value.copy(isLoading = true, error = null)
+        viewModelScope.launch(dispatcherProvider.io) { performLoad() }
+    }
 
-            var loadError: String? = null
+    private suspend fun loadCachedSectionsIfAvailable() {
+        val cached = discoveryCacheDao.get() ?: return
+        val sections = runCatching {
+            elsfmJson().decodeFromString(DiscoverySections.serializer(), cached.payloadJson)
+        }.getOrNull() ?: return
 
-            coroutineScope {
-                val recentlyPlayedDeferred = async { loadRecentlyPlayed() }
-                val homeSectionsDeferred = async { loadHomeSections() }
+        _state.value = _state.value.copy(
+            kidsZone = sections.kidsZone,
+            kidsZoneTitle = sections.kidsZoneTitle ?: DEFAULT_KIDS_ZONE_TITLE,
+            exploreMoreChannel = sections.exploreMoreChannel,
+            exploreMoreChannelTitle = sections.exploreMoreChannelTitle ?: DEFAULT_EXPLORE_MORE_TITLE,
+            exploreMoreChannelId = sections.exploreMoreChannelId,
+            newReleases = sections.newReleases,
+            newReleasesTitle = sections.newReleasesTitle ?: DEFAULT_NEW_RELEASES_TITLE,
+            mostlyPlayedSongs = sections.mostlyPlayedSongs,
+            mostlyPlayedSongsTitle = sections.mostlyPlayedSongsTitle ?: DEFAULT_MOSTLY_PLAYED_TITLE,
+            isLoading = false,
+        )
+    }
 
-                val recentlyPlayed = recentlyPlayedDeferred.await()
-                val homeSections = homeSectionsDeferred.await()
+    /**
+     * Loads recently-played + home sections and merges them into state. Only
+     * shows the full-screen spinner ([DiscoveryUiState.isLoading]) when there
+     * is no content on screen yet - once cache-or-fresh content has painted,
+     * subsequent calls (background refresh, connectivity restore) update
+     * silently and simply leave stale content up if the refresh itself fails.
+     */
+    private suspend fun performLoad() {
+        val hadContentAlready = _state.value.hasAnySection()
+        _state.value = _state.value.copy(isLoading = !hadContentAlready, error = null)
 
-                if (recentlyPlayed == null) {
-                    loadError = "Failed to load recently played"
-                }
-                if (homeSections.isEmpty()) {
-                    loadError = loadError ?: "Failed to load home sections"
-                }
+        var loadError: String? = null
 
-                _state.value = _state.value.copy(
-                    kidsZone = homeSections.kidsZone.orEmpty(),
-                    kidsZoneTitle = homeSections.kidsZoneTitle ?: DEFAULT_KIDS_ZONE_TITLE,
-                    exploreMoreChannel = homeSections.exploreMoreChannel.orEmpty(),
-                    exploreMoreChannelTitle = homeSections.exploreMoreChannelTitle ?: DEFAULT_EXPLORE_MORE_TITLE,
-                    exploreMoreChannelId = homeSections.exploreMoreChannelId,
-                    newReleases = homeSections.newReleases.orEmpty(),
-                    newReleasesTitle = homeSections.newReleasesTitle ?: DEFAULT_NEW_RELEASES_TITLE,
-                    mostlyPlayedSongs = homeSections.mostlyPlayedSongs.orEmpty(),
-                    mostlyPlayedSongsTitle = homeSections.mostlyPlayedSongsTitle ?: DEFAULT_MOSTLY_PLAYED_TITLE,
-                    recentlyPlayed = recentlyPlayed.orEmpty(),
-                )
+        coroutineScope {
+            val recentlyPlayedDeferred = async { loadRecentlyPlayed() }
+            val homeSectionsDeferred = async { loadHomeSections() }
+
+            val recentlyPlayed = recentlyPlayedDeferred.await()
+            val homeSections = homeSectionsDeferred.await()
+
+            if (recentlyPlayed == null) {
+                loadError = "Failed to load recently played"
+            }
+            if (homeSections.isEmpty()) {
+                loadError = loadError ?: "Failed to load home sections"
             }
 
-            _state.value = _state.value.copy(isLoading = false, error = loadError)
+            val previous = _state.value
+            _state.value = previous.copy(
+                // Fall back to whatever is already on screen (cache or a prior
+                // successful load) rather than clearing sections a failed
+                // refresh didn't actually touch.
+                kidsZone = homeSections.kidsZone ?: previous.kidsZone,
+                kidsZoneTitle = homeSections.kidsZoneTitle ?: previous.kidsZoneTitle,
+                exploreMoreChannel = homeSections.exploreMoreChannel ?: previous.exploreMoreChannel,
+                exploreMoreChannelTitle = homeSections.exploreMoreChannelTitle ?: previous.exploreMoreChannelTitle,
+                exploreMoreChannelId = homeSections.exploreMoreChannelId ?: previous.exploreMoreChannelId,
+                newReleases = homeSections.newReleases ?: previous.newReleases,
+                newReleasesTitle = homeSections.newReleasesTitle ?: previous.newReleasesTitle,
+                mostlyPlayedSongs = homeSections.mostlyPlayedSongs ?: previous.mostlyPlayedSongs,
+                mostlyPlayedSongsTitle = homeSections.mostlyPlayedSongsTitle ?: previous.mostlyPlayedSongsTitle,
+                recentlyPlayed = recentlyPlayed.orEmpty(),
+            )
+
+            if (!homeSections.isEmpty()) {
+                cacheSections(_state.value)
+            }
         }
+
+        _state.value = _state.value.copy(isLoading = false, error = loadError)
+    }
+
+    private fun DiscoveryUiState.hasAnySection(): Boolean {
+        return kidsZone.isNotEmpty() ||
+            exploreMoreChannel.isNotEmpty() ||
+            newReleases.isNotEmpty() ||
+            mostlyPlayedSongs.isNotEmpty()
+    }
+
+    private suspend fun cacheSections(state: DiscoveryUiState) {
+        val sections = DiscoverySections(
+            kidsZone = state.kidsZone,
+            kidsZoneTitle = state.kidsZoneTitle,
+            exploreMoreChannel = state.exploreMoreChannel,
+            exploreMoreChannelTitle = state.exploreMoreChannelTitle,
+            exploreMoreChannelId = state.exploreMoreChannelId,
+            newReleases = state.newReleases,
+            newReleasesTitle = state.newReleasesTitle,
+            mostlyPlayedSongs = state.mostlyPlayedSongs,
+            mostlyPlayedSongsTitle = state.mostlyPlayedSongsTitle,
+        )
+        val payloadJson = elsfmJson().encodeToString(DiscoverySections.serializer(), sections)
+        discoveryCacheDao.save(DiscoveryCache(payloadJson = payloadJson))
     }
 
     private suspend fun loadRecentlyPlayed(): List<Track>? {

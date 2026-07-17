@@ -71,7 +71,7 @@ class SearchViewModelTest {
     }
 
     @Test
-    fun `search populates tracks artists and playlists buckets`() = runTest {
+    fun `search populates tracks artists and playlists buckets`() = runTest(testDispatcher) {
         val viewModel = SearchViewModel(mockSearchApi(), mockTrackLikeController())
         viewModel.state.test {
             val initialState = awaitItem()
@@ -104,7 +104,7 @@ class SearchViewModelTest {
     }
 
     @Test
-    fun `search with empty results marks hasSearched true with empty buckets`() = runTest {
+    fun `search with empty results marks hasSearched true with empty buckets`() = runTest(testDispatcher) {
         val viewModel = SearchViewModel(mockSearchApi(body = EMPTY_BODY), mockTrackLikeController())
         viewModel.state.test {
             awaitItem() // initial
@@ -121,7 +121,7 @@ class SearchViewModelTest {
     }
 
     @Test
-    fun `search surfaces error on failure without silently swallowing it`() = runTest {
+    fun `search surfaces error on failure without silently swallowing it`() = runTest(testDispatcher) {
         val viewModel = SearchViewModel(mockSearchApi(status = HttpStatusCode.InternalServerError, body = "{}"), mockTrackLikeController())
         viewModel.state.test {
             awaitItem() // initial
@@ -137,7 +137,7 @@ class SearchViewModelTest {
     }
 
     @Test
-    fun `search with blank query resets to initial state without calling api`() = runTest {
+    fun `search with blank query resets to initial state without calling api`() = runTest(testDispatcher) {
         val viewModel = SearchViewModel(mockSearchApi(), mockTrackLikeController())
         viewModel.state.test {
             awaitItem() // initial
@@ -156,7 +156,7 @@ class SearchViewModelTest {
     }
 
     @Test
-    fun `clearResults resets state to defaults`() = runTest {
+    fun `clearResults resets state to defaults`() = runTest(testDispatcher) {
         val viewModel = SearchViewModel(mockSearchApi(), mockTrackLikeController())
         viewModel.state.test {
             awaitItem() // initial
@@ -172,7 +172,7 @@ class SearchViewModelTest {
     }
 
     @Test
-    fun `toggleTrackLike adds track to likedTrackIds on success`() = runTest {
+    fun `toggleTrackLike adds track to likedTrackIds on success`() = runTest(testDispatcher) {
         val viewModel = SearchViewModel(mockSearchApi(), mockTrackLikeController())
         viewModel.search("test")
         advanceUntilIdle()
@@ -186,7 +186,7 @@ class SearchViewModelTest {
     }
 
     @Test
-    fun `toggleTrackLike surfaces error without changing liked state on failure`() = runTest {
+    fun `toggleTrackLike surfaces error without changing liked state on failure`() = runTest(testDispatcher) {
         val viewModel = SearchViewModel(mockSearchApi(), mockTrackLikeController(HttpStatusCode.InternalServerError))
         viewModel.search("test")
         advanceUntilIdle()

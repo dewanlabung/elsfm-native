@@ -21,10 +21,28 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:launchMode="singleTask"
             android:theme="@style/Theme.ELSFM">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!--
+                Deep link for track URLs (real web pattern: /track/{id}/{slug} -
+                see resources/client/web-player/tracks/track-link.tsx in the backend
+                repo). android:autoVerify requests Android App Links verification
+                (opens directly in-app instead of a chooser), which requires an
+                assetlinks.json hosted at https://www.elsfm.com/.well-known/ -
+                without that file the filter still works as a normal (non-verified)
+                deep link.
+            -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="www.elsfm.com" android:pathPrefix="/track" />
+                <data android:scheme="https" android:host="elsfm.com" android:pathPrefix="/track" />
             </intent-filter>
         </activity>
 

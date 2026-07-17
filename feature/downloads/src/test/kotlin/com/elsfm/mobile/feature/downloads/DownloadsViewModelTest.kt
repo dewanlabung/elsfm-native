@@ -46,6 +46,12 @@ private class FakePlayerController : PlayerController {
     override fun addToQueue(track: Track) = Unit
     override fun toggleShuffle() = Unit
     override fun cycleRepeatMode() = Unit
+    override fun stop() = Unit
+    override fun startSleepTimer(minutes: Int) = Unit
+    override fun cancelSleepTimer() = Unit
+    override fun setPlaybackSpeed(speed: Float) = Unit
+    override fun setVolume(volume: Float) = Unit
+    override suspend fun restorePersistedState() = Unit
 }
 
 private class FakeDownloadedTrackDao(initial: List<DownloadedTrack> = emptyList()) : DownloadedTrackDao {

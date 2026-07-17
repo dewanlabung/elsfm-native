@@ -37,7 +37,15 @@ class PlayerViewModel @Inject constructor(
         // the same simplification used by Album/Playlist track rows.
         _menuState.value = _menuState.value.copy(isLiked = false, isLikeLoading = false)
         playerController.play(track, queue)
+        playHistoryApi.startNewQueueSession()
         viewModelScope.launch { playHistoryApi.recordPlay(track.id) }
+        viewModelScope.launch {
+            if (downloadRepository.isDownloaded(track.id)) {
+                _menuState.value = _menuState.value.copy(
+                    downloadedTrackIds = _menuState.value.downloadedTrackIds + track.id,
+                )
+            }
+        }
     }
 
     fun togglePlayPause() = playerController.togglePlayPause()
@@ -47,6 +55,10 @@ class PlayerViewModel @Inject constructor(
     fun jumpToQueueItem(track: Track) = playerController.jumpToQueueItem(track)
     fun toggleShuffle() = playerController.toggleShuffle()
     fun cycleRepeatMode() = playerController.cycleRepeatMode()
+    fun startSleepTimer(minutes: Int) = playerController.startSleepTimer(minutes)
+    fun cancelSleepTimer() = playerController.cancelSleepTimer()
+    fun setPlaybackSpeed(speed: Float) = playerController.setPlaybackSpeed(speed)
+    fun setVolume(volume: Float) = playerController.setVolume(volume)
 
     fun toggleLike() {
         val track = state.value.currentTrack ?: return
@@ -199,12 +211,17 @@ class PlayerViewModel @Inject constructor(
                         _menuState.value = _menuState.value.copy(
                             downloadingTrackIds = _menuState.value.downloadingTrackIds + track.id,
                         )
-                        downloadRepository.downloadTrack(track)
-                            .onFailure {
-                                _menuState.value = _menuState.value.copy(error = "Failed to download track")
-                            }
+                        val result = downloadRepository.downloadTrack(track)
+                        result.onFailure {
+                            _menuState.value = _menuState.value.copy(error = "Failed to download track")
+                        }
                         _menuState.value = _menuState.value.copy(
                             downloadingTrackIds = _menuState.value.downloadingTrackIds - track.id,
+                            downloadedTrackIds = if (result.isSuccess) {
+                                _menuState.value.downloadedTrackIds + track.id
+                            } else {
+                                _menuState.value.downloadedTrackIds
+                            },
                         )
                     }
                 }

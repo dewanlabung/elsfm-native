@@ -33,6 +33,7 @@ sealed class LoginEvent {
 class LoginViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val googleSignInService: GoogleSignInService,
+    private val passwordSaver: PasswordSaver,
 ) : ViewModel() {
     private val _state = MutableStateFlow(LoginState())
     val state = _state.asStateFlow()
@@ -69,6 +70,7 @@ class LoginViewModel @Inject constructor(
 
             when (val result = authRepository.login(currentState.email, currentState.password)) {
                 is ApiResult.Success -> {
+                    passwordSaver.save(currentState.email, currentState.password)
                     _state.value = _state.value.copy(
                         isLoading = false,
                         isLoggedIn = true

@@ -30,6 +30,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -83,6 +84,31 @@ private class FakePlayerController : PlayerController {
         }
         _state.value = _state.value.copy(repeatMode = next)
     }
+
+    override fun stop() {
+        _state.value = PlayerState()
+    }
+
+    var lastSleepTimerMinutes: Int? = null
+
+    override fun startSleepTimer(minutes: Int) {
+        lastSleepTimerMinutes = minutes
+        _state.value = _state.value.copy(sleepTimerMillisLeft = minutes * 60_000L)
+    }
+
+    override fun cancelSleepTimer() {
+        _state.value = _state.value.copy(sleepTimerMillisLeft = null)
+    }
+
+    override fun setPlaybackSpeed(speed: Float) {
+        _state.value = _state.value.copy(playbackSpeed = speed)
+    }
+
+    override fun setVolume(volume: Float) {
+        _state.value = _state.value.copy(volume = volume)
+    }
+
+    override suspend fun restorePersistedState() = Unit
 }
 
 private fun fakePlayerMenuRepository(responseBody: String = "{}"): PlayerMenuRepository {
@@ -262,5 +288,85 @@ class PlayerViewModelTest {
             assertEquals(false, state.repostLoading)
             assertEquals(null, state.error)
         }
+    }
+
+    @Test
+    fun `startSleepTimer delegates to controller`() = runTest {
+        val controller = FakePlayerController()
+        val playHistoryApi = playHistoryApiReturning(HttpStatusCode.OK)
+        val menuRepository = fakePlayerMenuRepository()
+        val viewModel = PlayerViewModel(controller, playHistoryApi, menuRepository, fakeUserApi(), FakeUserDao(), fakeDownloadRepository())
+
+        viewModel.startSleepTimer(30)
+
+        assertEquals(30, controller.lastSleepTimerMinutes)
+        viewModel.state.test {
+            assertEquals(30 * 60_000L, awaitItem().sleepTimerMillisLeft)
+        }
+    }
+
+    @Test
+    fun `cancelSleepTimer delegates to controller`() = runTest {
+        val controller = FakePlayerController()
+        val playHistoryApi = playHistoryApiReturning(HttpStatusCode.OK)
+        val menuRepository = fakePlayerMenuRepository()
+        val viewModel = PlayerViewModel(controller, playHistoryApi, menuRepository, fakeUserApi(), FakeUserDao(), fakeDownloadRepository())
+        viewModel.startSleepTimer(30)
+
+        viewModel.cancelSleepTimer()
+
+        viewModel.state.test {
+            assertEquals(null, awaitItem().sleepTimerMillisLeft)
+        }
+    }
+
+    @Test
+    fun `setPlaybackSpeed delegates to controller`() = runTest {
+        val controller = FakePlayerController()
+        val playHistoryApi = playHistoryApiReturning(HttpStatusCode.OK)
+        val menuRepository = fakePlayerMenuRepository()
+        val viewModel = PlayerViewModel(controller, playHistoryApi, menuRepository, fakeUserApi(), FakeUserDao(), fakeDownloadRepository())
+
+        viewModel.setPlaybackSpeed(1.5f)
+
+        viewModel.state.test {
+            assertEquals(1.5f, awaitItem().playbackSpeed)
+        }
+    }
+
+    @Test
+    fun `setVolume delegates to controller`() = runTest {
+        val controller = FakePlayerController()
+        val playHistoryApi = playHistoryApiReturning(HttpStatusCode.OK)
+        val menuRepository = fakePlayerMenuRepository()
+        val viewModel = PlayerViewModel(controller, playHistoryApi, menuRepository, fakeUserApi(), FakeUserDao(), fakeDownloadRepository())
+
+        viewModel.setVolume(0.4f)
+
+        viewModel.state.test {
+            assertEquals(0.4f, awaitItem().volume)
+        }
+    }
+
+    @Test
+    fun `play marks a track already saved offline as downloaded`() = runTest(testDispatcher) {
+        val controller = FakePlayerController()
+        val playHistoryApi = playHistoryApiReturning(HttpStatusCode.OK)
+        val menuRepository = fakePlayerMenuRepository()
+        val httpClient = HttpClient(MockEngine { respond("{}") })
+        val downloadManager = DownloadManager(
+            context = null,
+            httpClient = httpClient,
+            dispatcherProvider = NoopDispatcherProvider(Dispatchers.Unconfined),
+        )
+        val downloadRepository = object : DownloadRepository(FakeDownloadedTrackDao(), downloadManager) {
+            override suspend fun isDownloaded(trackId: Int): Boolean = trackId == track.id
+        }
+        val viewModel = PlayerViewModel(controller, playHistoryApi, menuRepository, fakeUserApi(), FakeUserDao(), downloadRepository)
+
+        viewModel.play(track, listOf(track))
+        advanceUntilIdle()
+
+        assertEquals(true, viewModel.menuState.value.downloadedTrackIds.contains(track.id))
     }
 }

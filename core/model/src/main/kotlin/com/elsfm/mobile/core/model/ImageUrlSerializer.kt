@@ -18,7 +18,7 @@ private const val IMAGE_BASE_URL = "https://www.elsfm.com/"
  * serializer normalizes both shapes into a fully-qualified URL at decode time
  * so no call site has to remember to prefix anything.
  */
-internal object ImageUrlSerializer : KSerializer<String> {
+object ImageUrlSerializer : KSerializer<String> {
     override val descriptor: SerialDescriptor =
         PrimitiveSerialDescriptor("ImageUrl", PrimitiveKind.STRING)
 

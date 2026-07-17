@@ -263,4 +263,249 @@ class UserApiTest {
 
         assertTrue(result is ApiResult.NetworkError)
     }
+
+    private val likedAlbumsResponseBody = """
+        {
+          "pagination": {
+            "data": [
+              {
+                "id": 99,
+                "name": "Liked Album One",
+                "image": "storage/album_image_media/liked.jpeg",
+                "release_date": "2024-01-15"
+              }
+            ]
+          }
+        }
+    """.trimIndent()
+
+    @Test
+    fun `getLikedAlbums parses albums from the response`() = runTest {
+        val api = UserApi(clientReturning(HttpStatusCode.OK, likedAlbumsResponseBody))
+
+        val result = api.getLikedAlbums(userId = 5)
+
+        assertTrue(result is ApiResult.Success)
+        val albums = (result as ApiResult.Success).data
+        assertEquals(1, albums.size)
+        assertEquals("Liked Album One", albums[0].name)
+    }
+
+    @Test
+    fun `getLikedAlbums requests the user-scoped liked-albums endpoint`() = runTest {
+        var capturedPath: String? = null
+        val api = UserApi(
+            clientCapturingRequest(HttpStatusCode.OK, likedAlbumsResponseBody) { request ->
+                capturedPath = request.url.encodedPath
+            },
+        )
+
+        api.getLikedAlbums(userId = 5)
+
+        assertEquals("/api/v1/users/5/liked-albums", capturedPath)
+    }
+
+    @Test
+    fun `getLikedAlbums returns NetworkError on server error`() = runTest {
+        val api = UserApi(clientReturning(HttpStatusCode.InternalServerError, ""))
+
+        val result = api.getLikedAlbums(userId = 5)
+
+        assertTrue(result is ApiResult.NetworkError)
+    }
+
+    @Test
+    fun `getLikedAlbums returns NetworkError on exception`() = runTest {
+        val mockEngine = MockEngine { _ ->
+            throw RuntimeException("Network error")
+        }
+        val client = HttpClient(mockEngine) {
+            install(ContentNegotiation) { json(elsfmJson()) }
+        }
+        val api = UserApi(client)
+
+        val result = api.getLikedAlbums(userId = 5)
+
+        assertTrue(result is ApiResult.NetworkError)
+    }
+
+    private val likedArtistsResponseBody = """
+        {
+          "pagination": {
+            "data": [
+              {"id": 7, "name": "Liked Artist One", "image_small": "storage/artist_image_media/liked.jpeg"}
+            ]
+          }
+        }
+    """.trimIndent()
+
+    @Test
+    fun `getLikedArtists parses artists from the response`() = runTest {
+        val api = UserApi(clientReturning(HttpStatusCode.OK, likedArtistsResponseBody))
+
+        val result = api.getLikedArtists(userId = 5)
+
+        assertTrue(result is ApiResult.Success)
+        val artists = (result as ApiResult.Success).data
+        assertEquals(1, artists.size)
+        assertEquals("Liked Artist One", artists[0].name)
+    }
+
+    @Test
+    fun `getLikedArtists requests the user-scoped liked-artists endpoint`() = runTest {
+        var capturedPath: String? = null
+        val api = UserApi(
+            clientCapturingRequest(HttpStatusCode.OK, likedArtistsResponseBody) { request ->
+                capturedPath = request.url.encodedPath
+            },
+        )
+
+        api.getLikedArtists(userId = 5)
+
+        assertEquals("/api/v1/users/5/liked-artists", capturedPath)
+    }
+
+    @Test
+    fun `getLikedArtists returns NetworkError on server error`() = runTest {
+        val api = UserApi(clientReturning(HttpStatusCode.InternalServerError, ""))
+
+        val result = api.getLikedArtists(userId = 5)
+
+        assertTrue(result is ApiResult.NetworkError)
+    }
+
+    @Test
+    fun `getLikedArtists returns NetworkError on exception`() = runTest {
+        val mockEngine = MockEngine { _ ->
+            throw RuntimeException("Network error")
+        }
+        val client = HttpClient(mockEngine) {
+            install(ContentNegotiation) { json(elsfmJson()) }
+        }
+        val api = UserApi(client)
+
+        val result = api.getLikedArtists(userId = 5)
+
+        assertTrue(result is ApiResult.NetworkError)
+    }
+
+    private val followersResponseBody = """
+        {
+          "pagination": {
+            "data": [
+              {"id": 8, "name": "Follower One", "username": "follower_one", "image": "storage/user/f.jpeg"}
+            ]
+          }
+        }
+    """.trimIndent()
+
+    @Test
+    fun `getFollowers parses users from the response`() = runTest {
+        val api = UserApi(clientReturning(HttpStatusCode.OK, followersResponseBody))
+
+        val result = api.getFollowers(userId = 5)
+
+        assertTrue(result is ApiResult.Success)
+        val followers = (result as ApiResult.Success).data
+        assertEquals(1, followers.size)
+        assertEquals("Follower One", followers[0].name)
+    }
+
+    @Test
+    fun `getFollowers requests the user-scoped followers endpoint`() = runTest {
+        var capturedPath: String? = null
+        val api = UserApi(
+            clientCapturingRequest(HttpStatusCode.OK, followersResponseBody) { request ->
+                capturedPath = request.url.encodedPath
+            },
+        )
+
+        api.getFollowers(userId = 5)
+
+        assertEquals("/api/v1/users/5/followers", capturedPath)
+    }
+
+    @Test
+    fun `getFollowers returns NetworkError on server error`() = runTest {
+        val api = UserApi(clientReturning(HttpStatusCode.InternalServerError, ""))
+
+        val result = api.getFollowers(userId = 5)
+
+        assertTrue(result is ApiResult.NetworkError)
+    }
+
+    @Test
+    fun `getFollowers returns NetworkError on exception`() = runTest {
+        val mockEngine = MockEngine { _ ->
+            throw RuntimeException("Network error")
+        }
+        val client = HttpClient(mockEngine) {
+            install(ContentNegotiation) { json(elsfmJson()) }
+        }
+        val api = UserApi(client)
+
+        val result = api.getFollowers(userId = 5)
+
+        assertTrue(result is ApiResult.NetworkError)
+    }
+
+    private val followedUsersResponseBody = """
+        {
+          "pagination": {
+            "data": [
+              {"id": 9, "name": "Followed One", "username": "followed_one", "image": "storage/user/g.jpeg"}
+            ]
+          }
+        }
+    """.trimIndent()
+
+    @Test
+    fun `getFollowedUsers parses users from the response`() = runTest {
+        val api = UserApi(clientReturning(HttpStatusCode.OK, followedUsersResponseBody))
+
+        val result = api.getFollowedUsers(userId = 5)
+
+        assertTrue(result is ApiResult.Success)
+        val followedUsers = (result as ApiResult.Success).data
+        assertEquals(1, followedUsers.size)
+        assertEquals("Followed One", followedUsers[0].name)
+    }
+
+    @Test
+    fun `getFollowedUsers requests the user-scoped followed-users endpoint`() = runTest {
+        var capturedPath: String? = null
+        val api = UserApi(
+            clientCapturingRequest(HttpStatusCode.OK, followedUsersResponseBody) { request ->
+                capturedPath = request.url.encodedPath
+            },
+        )
+
+        api.getFollowedUsers(userId = 5)
+
+        assertEquals("/api/v1/users/5/followed-users", capturedPath)
+    }
+
+    @Test
+    fun `getFollowedUsers returns NetworkError on server error`() = runTest {
+        val api = UserApi(clientReturning(HttpStatusCode.InternalServerError, ""))
+
+        val result = api.getFollowedUsers(userId = 5)
+
+        assertTrue(result is ApiResult.NetworkError)
+    }
+
+    @Test
+    fun `getFollowedUsers returns NetworkError on exception`() = runTest {
+        val mockEngine = MockEngine { _ ->
+            throw RuntimeException("Network error")
+        }
+        val client = HttpClient(mockEngine) {
+            install(ContentNegotiation) { json(elsfmJson()) }
+        }
+        val api = UserApi(client)
+
+        val result = api.getFollowedUsers(userId = 5)
+
+        assertTrue(result is ApiResult.NetworkError)
+    }
 }

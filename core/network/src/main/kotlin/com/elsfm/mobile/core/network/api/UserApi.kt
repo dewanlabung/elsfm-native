@@ -1,5 +1,8 @@
 package com.elsfm.mobile.core.network.api
 
+import com.elsfm.mobile.core.model.Album
+import com.elsfm.mobile.core.model.Artist
+import com.elsfm.mobile.core.model.FollowUser
 import com.elsfm.mobile.core.model.Track
 import com.elsfm.mobile.core.network.ApiResult
 import io.ktor.client.HttpClient
@@ -28,6 +31,30 @@ private data class LikedTracksPagination(val data: List<Track>)
 
 @Serializable
 private data class LikedTracksResponse(val pagination: LikedTracksPagination)
+
+@Serializable
+private data class LikedAlbumsPagination(val data: List<Album>)
+
+@Serializable
+private data class LikedAlbumsResponse(val pagination: LikedAlbumsPagination)
+
+@Serializable
+private data class LikedArtistsPagination(val data: List<Artist>)
+
+@Serializable
+private data class LikedArtistsResponse(val pagination: LikedArtistsPagination)
+
+@Serializable
+private data class FollowersPagination(val data: List<FollowUser>)
+
+@Serializable
+private data class FollowersResponse(val pagination: FollowersPagination)
+
+@Serializable
+private data class FollowedUsersPagination(val data: List<FollowUser>)
+
+@Serializable
+private data class FollowedUsersResponse(val pagination: FollowedUsersPagination)
 
 private const val LIKEABLE_TYPE_TRACK = "track"
 private const val LIKEABLE_TYPE_ALBUM = "album"
@@ -105,6 +132,46 @@ class UserApi @Inject constructor(
         }
     }
 
+    /**
+     * Fetches the full list of albums the given user has liked ("liked albums").
+     *
+     * Backed by `GET api/v1/users/{user}/liked-albums` (`UserLibraryAlbumsController::index`),
+     * same envelope shape as [getLikedTracks]. Only the first page is requested here -
+     * pagination/"load more" is not wired yet, matching [getLikedTracks].
+     */
+    suspend fun getLikedAlbums(userId: Int): ApiResult<List<Album>> {
+        return try {
+            val response = httpClient.get("api/v1/users/$userId/liked-albums")
+            if (response.status.isSuccess()) {
+                ApiResult.Success(response.body<LikedAlbumsResponse>().pagination.data)
+            } else {
+                ApiResult.NetworkError(RuntimeException("Unexpected status: ${response.status}"))
+            }
+        } catch (e: Exception) {
+            ApiResult.NetworkError(e)
+        }
+    }
+
+    /**
+     * Fetches the full list of artists the given user follows/has liked ("liked artists").
+     *
+     * Backed by `GET api/v1/users/{user}/liked-artists` (`UserLibraryArtistsController::index`),
+     * same envelope shape as [getLikedTracks]/[getLikedAlbums]. Only the first page is
+     * requested here - pagination/"load more" is not wired yet, matching those.
+     */
+    suspend fun getLikedArtists(userId: Int): ApiResult<List<Artist>> {
+        return try {
+            val response = httpClient.get("api/v1/users/$userId/liked-artists")
+            if (response.status.isSuccess()) {
+                ApiResult.Success(response.body<LikedArtistsResponse>().pagination.data)
+            } else {
+                ApiResult.NetworkError(RuntimeException("Unexpected status: ${response.status}"))
+            }
+        } catch (e: Exception) {
+            ApiResult.NetworkError(e)
+        }
+    }
+
     private suspend fun postLikeable(
         path: String,
         trackId: Int,
@@ -154,6 +221,50 @@ class UserApi @Inject constructor(
             val response = httpClient.post("api/v1/users/$userId/$action")
             if (response.status.isSuccess()) {
                 ApiResult.Success(Unit)
+            } else {
+                ApiResult.NetworkError(RuntimeException("Unexpected status: ${response.status}"))
+            }
+        } catch (e: Exception) {
+            ApiResult.NetworkError(e)
+        }
+    }
+
+    /**
+     * Fetches the users who follow the given user.
+     *
+     * Backed by the real `FollowersController::index` route (assumed):
+     * `GET api/v1/users/{userId}/followers`. Same paginated envelope shape as
+     * [getLikedTracks]/[getArtistFollowers][ArtistApi.getArtistFollowers]:
+     * `{ "pagination": { "data": [...] } }`. Only the first page is requested here -
+     * pagination/"load more" is not wired yet, matching the other list endpoints on this
+     * class. **Unverified**: no `FollowersController` source was available to confirm this
+     * shape - adjust [FollowUser] if a live response differs.
+     */
+    suspend fun getFollowers(userId: Int): ApiResult<List<FollowUser>> {
+        return try {
+            val response = httpClient.get("api/v1/users/$userId/followers")
+            if (response.status.isSuccess()) {
+                ApiResult.Success(response.body<FollowersResponse>().pagination.data)
+            } else {
+                ApiResult.NetworkError(RuntimeException("Unexpected status: ${response.status}"))
+            }
+        } catch (e: Exception) {
+            ApiResult.NetworkError(e)
+        }
+    }
+
+    /**
+     * Fetches the users the given user follows.
+     *
+     * Backed by the real `FollowedUsersController::index` route (assumed):
+     * `GET api/v1/users/{userId}/followed-users`. Same envelope shape as [getFollowers].
+     * **Unverified** for the same reason noted on [getFollowers].
+     */
+    suspend fun getFollowedUsers(userId: Int): ApiResult<List<FollowUser>> {
+        return try {
+            val response = httpClient.get("api/v1/users/$userId/followed-users")
+            if (response.status.isSuccess()) {
+                ApiResult.Success(response.body<FollowedUsersResponse>().pagination.data)
             } else {
                 ApiResult.NetworkError(RuntimeException("Unexpected status: ${response.status}"))
             }

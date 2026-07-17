@@ -156,4 +156,55 @@ class PlaylistApiTest {
 
         assertTrue(result is ApiResult.NetworkError)
     }
+
+    @Test
+    fun `getUserPlaylists normalizes relative image paths to full URLs`() = runTest {
+        val body = """
+            {"pagination":{"data":[{"id":1,"name":"Chill Vibes","image":"storage/playlist_image_media/abc.jpeg"}]}}
+        """.trimIndent()
+        val api = PlaylistApi(clientReturning(HttpStatusCode.OK, body))
+
+        val result = api.getUserPlaylists(userId = 5)
+
+        assertTrue(result is ApiResult.Success)
+        assertEquals(
+            "https://www.elsfm.com/storage/playlist_image_media/abc.jpeg",
+            (result as ApiResult.Success).data[0].image,
+        )
+    }
+
+    @Test
+    fun `createPlaylist returns the new playlist on success`() = runTest {
+        val api = PlaylistApi(clientReturning(HttpStatusCode.OK, playlistJson))
+
+        val result = api.createPlaylist("Chill Vibes")
+
+        assertTrue(result is ApiResult.Success)
+        assertEquals("Chill Vibes", (result as ApiResult.Success).data.name)
+    }
+
+    @Test
+    fun `createPlaylist returns validation error for a duplicate name`() = runTest {
+        val body = """
+            {"message":"The given data was invalid.","errors":{"name":["You have already created a playlist with this name."]}}
+        """.trimIndent()
+        val api = PlaylistApi(clientReturning(HttpStatusCode.UnprocessableEntity, body))
+
+        val result = api.createPlaylist("Chill Vibes")
+
+        assertTrue(result is ApiResult.ValidationError)
+        assertEquals(
+            listOf("You have already created a playlist with this name."),
+            (result as ApiResult.ValidationError).fields["name"],
+        )
+    }
+
+    @Test
+    fun `createPlaylist returns NetworkError on failure`() = runTest {
+        val api = PlaylistApi(clientReturning(HttpStatusCode.InternalServerError, "{}"))
+
+        val result = api.createPlaylist("Chill Vibes")
+
+        assertTrue(result is ApiResult.NetworkError)
+    }
 }

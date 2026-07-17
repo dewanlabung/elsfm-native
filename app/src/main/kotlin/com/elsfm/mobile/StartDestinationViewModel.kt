@@ -6,6 +6,7 @@ import com.elsfm.mobile.core.model.User
 import com.elsfm.mobile.core.network.auth.SessionEvent
 import com.elsfm.mobile.core.network.auth.SessionManager
 import com.elsfm.mobile.feature.auth.data.AuthRepository
+import com.elsfm.mobile.feature.player.PlayerController
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -23,6 +24,7 @@ sealed interface StartDestinationState {
 class StartDestinationViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val sessionManager: SessionManager,
+    private val playerController: PlayerController,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<StartDestinationState>(StartDestinationState.Loading)
@@ -41,6 +43,9 @@ class StartDestinationViewModel @Inject constructor(
     }
 
     fun logout() {
+        // Stop first so a track already playing doesn't keep playing under the
+        // login screen or the next (possibly different) signed-in session.
+        playerController.stop()
         viewModelScope.launch {
             authRepository.logout()
         }

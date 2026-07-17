@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.room)
     alias(libs.plugins.hilt)
@@ -38,6 +39,8 @@ dependencies {
 
     implementation(project(":core:model"))
     implementation(project(":core:network"))
+    implementation(project(":core:common"))
+    implementation(libs.kotlinx.serialization.json)
 
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.test.ext.junit)

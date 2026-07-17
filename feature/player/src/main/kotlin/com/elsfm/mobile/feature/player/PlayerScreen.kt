@@ -22,8 +22,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.QueueMusic
+import androidx.compose.material.icons.filled.Bedtime
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.DownloadDone
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
@@ -32,16 +36,21 @@ import androidx.compose.material.icons.filled.RepeatOne
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
+import androidx.compose.material.icons.automirrored.filled.VolumeDown
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -83,6 +92,8 @@ import kotlin.math.max
  * - [onViewLyrics] -> navigate to a lyrics screen for the given track id, backed by the real
  *   `LyricsApi.getTrackLyrics()` (`GET api/v1/tracks/{id}/lyrics`); no lyrics screen is built by
  *   this change, only the callback plumbing and the API client.
+ * - [onViewComments] -> navigate to the track comments screen (`feature:comments`'
+ *   `CommentsScreen`) for the given track id.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -93,6 +104,7 @@ fun PlayerScreen(
     onGoToAlbum: (Int) -> Unit = {},
     onGoToTrack: (Int) -> Unit = {},
     onViewLyrics: (Int) -> Unit = {},
+    onViewComments: (Int) -> Unit = {},
 ) {
     val state by viewModel.state.collectAsState()
     val menuState by viewModel.menuState.collectAsState()
@@ -100,6 +112,7 @@ fun PlayerScreen(
     var menuAnchorX by remember { mutableFloatStateOf(0f) }
     var menuAnchorY by remember { mutableFloatStateOf(0f) }
     var isQueueVisible by remember { mutableStateOf(false) }
+    var isSleepTimerDialogVisible by remember { mutableStateOf(false) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         // Blurred album art background with gradient overlay
@@ -159,15 +172,61 @@ fun PlayerScreen(
                     )
                 }
 
-                IconButton(
-                    onClick = { isQueueVisible = true },
-                    modifier = Modifier.testTag("player_queue_toggle"),
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.QueueMusic,
-                        contentDescription = "Show queue",
-                        tint = Color.White,
-                    )
+                Row {
+                    val currentTrack = state.currentTrack
+                    val isDownloading = currentTrack != null && menuState.downloadingTrackIds.contains(currentTrack.id)
+                    val isDownloaded = currentTrack != null && menuState.downloadedTrackIds.contains(currentTrack.id)
+                    if (currentTrack != null) {
+                        IconButton(
+                            onClick = {
+                                if (!isDownloaded) {
+                                    viewModel.onMenuEvent(PlayerMenuEvent.MakeAvailableOffline(currentTrack.id))
+                                }
+                            },
+                            enabled = !isDownloading && !isDownloaded,
+                            modifier = Modifier.testTag("player_download"),
+                        ) {
+                            when {
+                                isDownloading -> CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White)
+                                isDownloaded -> Icon(
+                                    imageVector = Icons.Filled.DownloadDone,
+                                    contentDescription = "Available offline",
+                                    tint = Color.White,
+                                )
+                                else -> Icon(
+                                    imageVector = Icons.Filled.Download,
+                                    contentDescription = "Make available offline",
+                                    tint = Color.White,
+                                )
+                            }
+                        }
+                    }
+
+                    IconButton(
+                        onClick = { isSleepTimerDialogVisible = true },
+                        modifier = Modifier.testTag("player_sleep_timer"),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Bedtime,
+                            contentDescription = if (state.sleepTimerMillisLeft != null) {
+                                "Sleep timer: ${formatDuration(state.sleepTimerMillisLeft ?: 0)} left"
+                            } else {
+                                "Set sleep timer"
+                            },
+                            tint = if (state.sleepTimerMillisLeft != null) MaterialTheme.colorScheme.primary else Color.White,
+                        )
+                    }
+
+                    IconButton(
+                        onClick = { isQueueVisible = true },
+                        modifier = Modifier.testTag("player_queue_toggle"),
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.QueueMusic,
+                            contentDescription = "Show queue",
+                            tint = Color.White,
+                        )
+                    }
                 }
             }
 
@@ -181,7 +240,16 @@ fun PlayerScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 24.dp)
-                        .weight(1f),
+                        .weight(1f)
+                        .pointerInput(state.currentTrack) {
+                            detectTapGestures(
+                                onLongPress = {
+                                    state.currentTrack?.let {
+                                        viewModel.onMenuEvent(PlayerMenuEvent.ShowMenu(it.id))
+                                    }
+                                }
+                            )
+                        },
                     contentAlignment = Alignment.Center,
                 ) {
                     Surface(
@@ -275,6 +343,7 @@ fun PlayerScreen(
                     onGoToAlbum = onGoToAlbum,
                     onGoToTrack = onGoToTrack,
                     onViewLyrics = onViewLyrics,
+                    onViewComments = onViewComments,
                     onShare = {
                         state.currentTrack?.let { track ->
                             val url = "https://www.elsfm.com/track/${track.id}/${slugify(track.name)}"
@@ -339,6 +408,68 @@ fun PlayerScreen(
                             style = MaterialTheme.typography.labelSmall,
                             color = Color.White.copy(alpha = 0.7f),
                         )
+                    }
+                }
+            }
+
+            // Volume + playback speed
+            if (state.currentTrack != null) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.VolumeDown,
+                        contentDescription = null,
+                        tint = Color.White.copy(alpha = 0.7f),
+                        modifier = Modifier.size(20.dp),
+                    )
+                    Slider(
+                        value = state.volume,
+                        onValueChange = viewModel::setVolume,
+                        modifier = Modifier
+                            .weight(1f)
+                            .testTag("player_volume_slider"),
+                        colors = SliderDefaults.colors(
+                            thumbColor = Color.White,
+                            activeTrackColor = Color.White.copy(alpha = 0.7f),
+                            inactiveTrackColor = Color.White.copy(alpha = 0.2f),
+                        ),
+                    )
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.VolumeUp,
+                        contentDescription = null,
+                        tint = Color.White.copy(alpha = 0.7f),
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp)
+                        .testTag("player_speed_control"),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    PLAYBACK_SPEED_OPTIONS.forEach { speed ->
+                        val isSelected = state.playbackSpeed == speed
+                        Surface(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(50))
+                                .clickable { viewModel.setPlaybackSpeed(speed) }
+                                .testTag("player_speed_option_${speed}x"),
+                            color = if (isSelected) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.15f),
+                        ) {
+                            Text(
+                                text = "${speed}x",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = Color.White,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                            )
+                        }
                     }
                 }
             }
@@ -469,6 +600,74 @@ fun PlayerScreen(
             onDismiss = { viewModel.onMenuEvent(PlayerMenuEvent.HidePlaylistPicker) },
         )
     }
+
+    if (isSleepTimerDialogVisible) {
+        SleepTimerDialog(
+            minutesLeft = state.sleepTimerMillisLeft?.let { (it / 60_000L).toInt() + 1 },
+            onDismiss = { isSleepTimerDialogVisible = false },
+            onSelectMinutes = { minutes ->
+                viewModel.startSleepTimer(minutes)
+                isSleepTimerDialogVisible = false
+            },
+            onCancelTimer = {
+                viewModel.cancelSleepTimer()
+                isSleepTimerDialogVisible = false
+            },
+        )
+    }
+}
+
+private val SLEEP_TIMER_OPTIONS_MINUTES = listOf(15, 30, 45, 60)
+private val PLAYBACK_SPEED_OPTIONS = listOf(0.5f, 0.75f, 1f, 1.25f, 1.5f, 2f)
+
+@Composable
+private fun SleepTimerDialog(
+    minutesLeft: Int?,
+    onDismiss: () -> Unit,
+    onSelectMinutes: (Int) -> Unit,
+    onCancelTimer: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var selectedMinutes by remember { mutableStateOf(SLEEP_TIMER_OPTIONS_MINUTES.first()) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        modifier = modifier.testTag("sleep_timer_dialog"),
+        title = { Text(if (minutesLeft != null) "Sleep timer: ${minutesLeft}m left" else "Sleep timer") },
+        text = {
+            Column {
+                SLEEP_TIMER_OPTIONS_MINUTES.forEach { minutes ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { selectedMinutes = minutes }
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        RadioButton(selected = selectedMinutes == minutes, onClick = { selectedMinutes = minutes })
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("$minutes minutes")
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onSelectMinutes(selectedMinutes) }) {
+                Text("Start")
+            }
+        },
+        dismissButton = {
+            if (minutesLeft != null) {
+                TextButton(onClick = onCancelTimer) {
+                    Text("Cancel timer")
+                }
+            } else {
+                TextButton(onClick = onDismiss) {
+                    Text("Cancel")
+                }
+            }
+        },
+    )
 }
 
 private fun slugify(input: String): String {

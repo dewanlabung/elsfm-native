@@ -8,6 +8,7 @@ import com.elsfm.mobile.core.network.api.AuthApiLike
 import com.elsfm.mobile.core.network.auth.SessionManager
 import com.elsfm.mobile.core.network.auth.TokenStore
 import com.elsfm.mobile.feature.auth.data.AuthRepository
+import com.elsfm.mobile.feature.auth.data.GoogleSignInServiceLike
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -28,9 +29,15 @@ private class LoginFakeUserDao : UserDao {
     override suspend fun clear() { stored = null }
 }
 
+private class LoginFakeGoogleSignInService : GoogleSignInServiceLike {
+    override fun signOut() = Unit
+}
+
 private class LoginFakeAuthApi(private val result: ApiResult<User>) : AuthApiLike {
     override suspend fun login(email: String, password: String, tokenName: String) = result
     override suspend fun loginWithGoogle(googleAccessToken: String, tokenName: String) = result
+    override suspend fun register(email: String, password: String, tokenName: String) = result
+    override suspend fun requestPasswordReset(email: String): ApiResult<Unit> = ApiResult.Success(Unit)
 }
 
 class LoginViewModelTest {
@@ -41,7 +48,8 @@ class LoginViewModelTest {
         val repository = AuthRepository(
             authApi = LoginFakeAuthApi(ApiResult.Success(user)),
             sessionManager = SessionManager(LoginFakeTokenStore()),
-            userDao = LoginFakeUserDao()
+            userDao = LoginFakeUserDao(),
+            googleSignInService = LoginFakeGoogleSignInService(),
         )
 
         val result = repository.login("test.elsfm@gmail.com", "secret")
@@ -56,7 +64,8 @@ class LoginViewModelTest {
         val repository = AuthRepository(
             authApi = LoginFakeAuthApi(ApiResult.ValidationError(errors)),
             sessionManager = SessionManager(LoginFakeTokenStore()),
-            userDao = LoginFakeUserDao()
+            userDao = LoginFakeUserDao(),
+            googleSignInService = LoginFakeGoogleSignInService(),
         )
 
         val result = repository.login("test.elsfm@gmail.com", "wrong")
@@ -70,7 +79,8 @@ class LoginViewModelTest {
         val repository = AuthRepository(
             authApi = LoginFakeAuthApi(ApiResult.NetworkError(RuntimeException("offline"))),
             sessionManager = SessionManager(LoginFakeTokenStore()),
-            userDao = LoginFakeUserDao()
+            userDao = LoginFakeUserDao(),
+            googleSignInService = LoginFakeGoogleSignInService(),
         )
 
         val result = repository.login("test.elsfm@gmail.com", "secret")

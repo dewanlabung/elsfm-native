@@ -58,6 +58,7 @@ fun AlbumScreen(
     onTrackTap: (Track, List<Track>) -> Unit = { _, _ -> },
     onAddToQueue: (Track) -> Unit = {},
     onPlayAll: (List<Track>) -> Unit = {},
+    onViewComments: (Int) -> Unit = {},
     viewModel: AlbumViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -78,6 +79,7 @@ fun AlbumScreen(
         onDownloadTrack = viewModel::downloadTrack,
         onCommentInputChanged = viewModel::onCommentInputChanged,
         onPostComment = viewModel::postComment,
+        onViewComments = onViewComments,
     )
 }
 
@@ -95,6 +97,7 @@ internal fun AlbumDetailContent(
     onDownloadTrack: (Track) -> Unit = {},
     onCommentInputChanged: (String) -> Unit = {},
     onPostComment: () -> Unit = {},
+    onViewComments: (Int) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val album = state.album
@@ -143,6 +146,7 @@ internal fun AlbumDetailContent(
                             isDownloading = state.downloadingTrackIds.contains(track.id),
                             isDownloaded = state.downloadedTrackIds.contains(track.id),
                             onDownload = { onDownloadTrack(track) },
+                            onViewComments = onViewComments,
                         )
                     }
                     if (state.error != null) {
@@ -400,6 +404,7 @@ private fun AlbumTrackRow(
     isDownloading: Boolean = false,
     isDownloaded: Boolean = false,
     onDownload: () -> Unit = {},
+    onViewComments: (Int) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
@@ -434,6 +439,7 @@ private fun AlbumTrackRow(
                 onShare = {},
                 onRepost = {},
                 onMakeAvailableOffline = { if (!isDownloading && !isDownloaded) onDownload() },
+                onViewComments = onViewComments,
             )
         }
     }

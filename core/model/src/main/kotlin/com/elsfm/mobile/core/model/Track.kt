@@ -8,7 +8,7 @@ data class Track(
     val id: Int,
     val name: String,
     @Serializable(with = ImageUrlSerializer::class) val image: String?,
-    @SerialName("duration") val durationMs: Long,
+    @SerialName("duration") @Serializable(with = NullSafeLongSerializer::class) val durationMs: Long,
     val src: String? = null,
     val plays: String? = null,
     val artists: List<Artist>,

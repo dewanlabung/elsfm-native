@@ -21,4 +21,26 @@ interface PlayerController {
 
     /** Cycles OFF -> ALL -> ONE -> OFF. */
     fun cycleRepeatMode()
+
+    /**
+     * Stops playback and clears the queue entirely (not just pause) - used on logout so
+     * a track already playing doesn't keep playing under the next signed-out/different
+     * session.
+     */
+    fun stop()
+
+    /** Pauses playback after [minutes]; replaces any timer already running. */
+    fun startSleepTimer(minutes: Int)
+
+    /** Cancels a running sleep timer, if any. */
+    fun cancelSleepTimer()
+
+    /** Clamped to 0.5x-2x. */
+    fun setPlaybackSpeed(speed: Float)
+
+    /** In-app software volume, clamped to 0f-1f, independent of the hardware volume keys. */
+    fun setVolume(volume: Float)
+
+    /** Restores a persisted queue/track/position in a paused (not auto-playing) state, if one exists. */
+    suspend fun restorePersistedState()
 }

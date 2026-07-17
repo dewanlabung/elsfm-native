@@ -25,7 +25,7 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             val result = trackListApi.getPlaylistTracks(PLACEHOLDER_PLAYLIST_ID)
             if (result is ApiResult.Success) {
-                _tracks.value = result.data
+                _tracks.value = result.data.tracks
             }
         }
     }

@@ -12,6 +12,7 @@ import io.ktor.http.headersOf
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -55,9 +56,28 @@ class TrackListApiTest {
         val result = api.getPlaylistTracks(playlistId = 8)
 
         assertTrue(result is ApiResult.Success)
-        val tracks = (result as ApiResult.Success).data
-        assertEquals(1, tracks.size)
-        assertEquals("Phul Phulyo Bana Pakhama Ashu Jhajhalkyo", tracks[0].name)
+        val page = (result as ApiResult.Success).data
+        assertEquals(1, page.tracks.size)
+        assertEquals("Phul Phulyo Bana Pakhama Ashu Jhajhalkyo", page.tracks[0].name)
+        assertFalse(page.hasMore)
+    }
+
+    @Test
+    fun `getPlaylistTracks reports hasMore when next_page is present`() = runTest {
+        val bodyWithNextPage = """
+            {
+              "pagination": {
+                "data": [],
+                "next_page": 2
+              }
+            }
+        """.trimIndent()
+        val api = TrackListApi(clientReturning(HttpStatusCode.OK, bodyWithNextPage))
+
+        val result = api.getPlaylistTracks(playlistId = 8, page = 1)
+
+        assertTrue(result is ApiResult.Success)
+        assertTrue((result as ApiResult.Success).data.hasMore)
     }
 
     @Test

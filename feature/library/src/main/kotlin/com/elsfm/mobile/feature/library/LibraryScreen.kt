@@ -5,33 +5,51 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.elsfm.mobile.core.model.Album
+import com.elsfm.mobile.core.model.Artist
 import com.elsfm.mobile.core.model.Channel
 import com.elsfm.mobile.core.model.Playlist
 import com.elsfm.mobile.feature.library.composables.AlbumCard
+import com.elsfm.mobile.feature.library.composables.ArtistCard
 import com.elsfm.mobile.feature.library.composables.PlaylistCard
 
 internal const val LIBRARY_GRID_TEST_TAG = "libraryGrid"
@@ -42,27 +60,93 @@ private const val SHIMMER_CARD_COUNT = 6
 fun LibraryScreen(
     onPlaylistTap: (Playlist) -> Unit = {},
     onAlbumTap: (Album) -> Unit = {},
+    onArtistTap: (Artist) -> Unit = {},
     onChannelTap: (Channel) -> Unit = {},
-    // Not yet wired to a tap target in this screen's current grid+tabs layout
-    // (there is no "Songs"/"Play history" row here to attach these to). Added
-    // ahead of time so LikedSongsScreen/ListeningHistoryScreen navigation can be
-    // hooked up without another signature change once an entry point exists.
     onSongsClicked: () -> Unit = {},
     onPlayHistoryClicked: () -> Unit = {},
     libraryViewModel: LibraryViewModel = hiltViewModel(),
 ) {
     val state by libraryViewModel.state.collectAsState()
+    var showCreatePlaylistDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(state.playlistCreated) {
+        if (state.playlistCreated) {
+            showCreatePlaylistDialog = false
+            libraryViewModel.consumePlaylistCreatedEvent()
+        }
+    }
+
+    if (showCreatePlaylistDialog) {
+        CreatePlaylistDialog(
+            isLoading = state.isCreatingPlaylist,
+            error = state.createPlaylistError,
+            onDismiss = { showCreatePlaylistDialog = false },
+            onCreate = libraryViewModel::createPlaylist,
+        )
+    }
 
     LibraryContent(
         state = state,
         onFilterSelected = libraryViewModel::selectFilter,
         onPlaylistTap = onPlaylistTap,
         onAlbumTap = onAlbumTap,
-        onChannelTap = { channel ->
-            libraryViewModel.selectChannel(channel.id)
-            onChannelTap(channel)
-        },
+        onArtistTap = onArtistTap,
+        onChannelTap = onChannelTap,
+        onSongsClick = onSongsClicked,
+        onPlayHistoryClick = onPlayHistoryClicked,
+        onCreatePlaylistClick = { showCreatePlaylistDialog = true },
         onRetry = libraryViewModel::loadLibrary,
+    )
+}
+
+@Composable
+private fun CreatePlaylistDialog(
+    isLoading: Boolean,
+    error: String?,
+    onDismiss: () -> Unit,
+    onCreate: (String) -> Unit,
+) {
+    var name by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("New playlist") },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Playlist name") },
+                    singleLine = true,
+                    isError = error != null,
+                    enabled = !isLoading,
+                )
+                if (error != null) {
+                    Text(
+                        text = error,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onCreate(name) },
+                enabled = !isLoading && name.isNotBlank(),
+            ) {
+                if (isLoading) {
+                    CircularProgressIndicator(modifier = Modifier.size(16.dp))
+                } else {
+                    Text("Create")
+                }
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss, enabled = !isLoading) {
+                Text("Cancel")
+            }
+        },
     )
 }
 
@@ -72,11 +156,22 @@ internal fun LibraryContent(
     onFilterSelected: (LibraryFilter) -> Unit,
     onPlaylistTap: (Playlist) -> Unit,
     onAlbumTap: (Album) -> Unit,
+    onArtistTap: (Artist) -> Unit,
     onChannelTap: (Channel) -> Unit,
+    onSongsClick: () -> Unit = {},
+    onPlayHistoryClick: () -> Unit = {},
+    onCreatePlaylistClick: () -> Unit = {},
     onRetry: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.fillMaxSize()) {
+        LibraryHeader(onCreatePlaylistClick = onCreatePlaylistClick)
+
+        LibraryQuickLinks(
+            onSongsClick = onSongsClick,
+            onPlayHistoryClick = onPlayHistoryClick,
+        )
+
         LibraryFilterTabs(
             selectedFilter = state.selectedFilter,
             onFilterSelected = onFilterSelected,
@@ -103,8 +198,79 @@ internal fun LibraryContent(
                 state = state,
                 onPlaylistTap = onPlaylistTap,
                 onAlbumTap = onAlbumTap,
+                onArtistTap = onArtistTap,
                 onChannelTap = onChannelTap,
             )
+        }
+    }
+}
+
+@Composable
+private fun LibraryHeader(
+    onCreatePlaylistClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(text = "Your library", style = MaterialTheme.typography.titleLarge)
+        IconButton(onClick = onCreatePlaylistClick) {
+            Icon(Icons.Filled.Add, contentDescription = "Create playlist")
+        }
+    }
+}
+
+@Composable
+private fun LibraryQuickLinks(
+    onSongsClick: () -> Unit,
+    onPlayHistoryClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        LibraryQuickLinkCard(
+            icon = Icons.Filled.MusicNote,
+            label = "Songs",
+            onClick = onSongsClick,
+            modifier = Modifier.weight(1f),
+        )
+        LibraryQuickLinkCard(
+            icon = Icons.Filled.History,
+            label = "Play history",
+            onClick = onPlayHistoryClick,
+            modifier = Modifier.weight(1f),
+        )
+    }
+}
+
+@Composable
+private fun LibraryQuickLinkCard(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier
+            .clickable { onClick() },
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        shape = RoundedCornerShape(12.dp),
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(text = label, style = MaterialTheme.typography.bodyMedium)
         }
     }
 }
@@ -135,6 +301,7 @@ private fun LibraryFilter.label(): String = when (this) {
     LibraryFilter.ALL -> "All"
     LibraryFilter.PLAYLISTS -> "Playlists"
     LibraryFilter.ALBUMS -> "Albums"
+    LibraryFilter.ARTISTS -> "Artists"
     LibraryFilter.CHANNELS -> "Channels"
 }
 
@@ -180,6 +347,7 @@ private fun emptyMessage(filter: LibraryFilter): String = when (filter) {
     LibraryFilter.ALL -> "Your library is empty"
     LibraryFilter.PLAYLISTS -> "No playlists yet"
     LibraryFilter.ALBUMS -> "No albums yet"
+    LibraryFilter.ARTISTS -> "No artists yet"
     LibraryFilter.CHANNELS -> "No channels yet"
 }
 
@@ -188,11 +356,13 @@ private fun LibraryGrid(
     state: LibraryState,
     onPlaylistTap: (Playlist) -> Unit,
     onAlbumTap: (Album) -> Unit,
+    onArtistTap: (Artist) -> Unit,
     onChannelTap: (Channel) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val showPlaylists = state.selectedFilter == LibraryFilter.ALL || state.selectedFilter == LibraryFilter.PLAYLISTS
     val showAlbums = state.selectedFilter == LibraryFilter.ALL || state.selectedFilter == LibraryFilter.ALBUMS
+    val showArtists = state.selectedFilter == LibraryFilter.ALL || state.selectedFilter == LibraryFilter.ARTISTS
     val showChannels = state.selectedFilter == LibraryFilter.ALL || state.selectedFilter == LibraryFilter.CHANNELS
 
     LazyVerticalGrid(
@@ -212,6 +382,11 @@ private fun LibraryGrid(
         if (showAlbums) {
             items(state.albums, key = { "album_${it.id}" }) { album ->
                 AlbumCard(album = album, onClick = { onAlbumTap(album) })
+            }
+        }
+        if (showArtists) {
+            items(state.artists, key = { "artist_${it.id}" }) { artist ->
+                ArtistCard(artist = artist, onClick = { onArtistTap(artist) })
             }
         }
         if (showChannels) {

@@ -30,6 +30,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -41,6 +42,7 @@ import com.elsfm.mobile.feature.artist.ArtistDetailScreen
 import com.elsfm.mobile.feature.auth.LoginScreen
 import com.elsfm.mobile.feature.auth.PasswordResetScreen
 import com.elsfm.mobile.feature.auth.SignupScreen
+import com.elsfm.mobile.feature.comments.CommentsScreen
 import com.elsfm.mobile.feature.discovery.ChannelDetailScreen
 import com.elsfm.mobile.feature.discovery.DiscoveryScreen
 import com.elsfm.mobile.feature.downloads.DownloadsScreen
@@ -53,9 +55,12 @@ import com.elsfm.mobile.feature.notifications.NotificationsScreen
 import com.elsfm.mobile.feature.player.MiniPlayer
 import com.elsfm.mobile.feature.player.PlayerScreen
 import com.elsfm.mobile.feature.player.PlayerViewModel
+import com.elsfm.mobile.feature.player.lyrics.LyricsScreen
 import com.elsfm.mobile.feature.profile.ProfileScreen
 import com.elsfm.mobile.feature.profile.ThemeViewModel
 import com.elsfm.mobile.feature.search.SearchScreen
+import com.elsfm.mobile.feature.subscriptions.SubscriptionScreen
+import com.elsfm.mobile.feature.userprofile.UserProfileScreen
 import com.elsfm.mobile.core.model.Playlist
 import java.net.URLDecoder
 import java.net.URLEncoder
@@ -75,20 +80,26 @@ private const val ROUTE_CHANNEL = "channel/{channelId}"
 private const val ROUTE_NOTIFICATIONS = "notifications"
 private const val ROUTE_LIKED_SONGS = "liked_songs"
 private const val ROUTE_LISTENING_HISTORY = "listening_history"
+private const val ROUTE_SUBSCRIPTIONS = "subscriptions"
 private const val CHANNEL_ID_ARG = "channelId"
-private const val ROUTE_PLAYLIST = "playlist/{playlistId}/{playlistName}"
+private const val ROUTE_PLAYLIST = "playlist/{playlistId}/{playlistName}?channelId={channelId}"
 private const val PLAYLIST_ID_ARG = "playlistId"
 private const val PLAYLIST_NAME_ARG = "playlistName"
+private const val PLAYLIST_CHANNEL_ID_ARG = "channelId"
+private const val NO_CHANNEL_ID = -1
 
 /**
  * `core:network` has no `GET /playlists/{id}` metadata endpoint (only
  * [com.elsfm.mobile.core.network.api.TrackListApi.getPlaylistTracks] exists), so the
- * playlist's id and name are threaded through the route itself rather than re-fetched -
- * see the KDoc on [com.elsfm.mobile.feature.library.PlaylistDetailState].
+ * playlist's id, name, and channelId are threaded through the route itself rather than
+ * re-fetched - see the KDoc on [com.elsfm.mobile.feature.library.PlaylistDetailState].
+ * channelId must survive the trip: it's how the destination tells curated channel
+ * playlists (not owned by the signed-in user) apart from personal ones, to decide
+ * whether to show the rename/delete menu.
  */
 private fun NavHostController.navigateToPlaylist(playlist: Playlist) {
     val encodedName = URLEncoder.encode(playlist.name, "UTF-8")
-    navigate("playlist/${playlist.id}/$encodedName")
+    navigate("playlist/${playlist.id}/$encodedName?channelId=${playlist.channelId ?: NO_CHANNEL_ID}")
 }
 
 private const val ROUTE_ALBUM = "album/{albumId}"
@@ -97,6 +108,23 @@ private const val ALBUM_ID_ARG = "albumId"
 private fun NavHostController.navigateToAlbum(albumId: Int) {
     navigate("album/$albumId")
 }
+
+private const val ROUTE_USER_PROFILE = "user/{userId}"
+private const val USER_ID_ARG = "userId"
+
+private fun NavHostController.navigateToUserProfile(userId: Int) {
+    navigate("user/$userId")
+}
+
+private const val ROUTE_TRACK_COMMENTS = "track/{trackId}/comments"
+private const val COMMENTS_TRACK_ID_ARG = "trackId"
+
+private fun NavHostController.navigateToTrackComments(trackId: Int) {
+    navigate("track/$trackId/comments")
+}
+
+private const val ROUTE_LYRICS = "lyrics/{trackId}"
+private const val TRACK_ID_ARG = "trackId"
 
 private data class BottomTab(
     val route: String,
@@ -126,6 +154,8 @@ fun ElsfmNavHost(
     navController: NavHostController = rememberNavController(),
     startDestinationViewModel: StartDestinationViewModel = hiltViewModel(),
     themeViewModel: ThemeViewModel = hiltViewModel(),
+    deepLinkTrackId: Int? = null,
+    onDeepLinkConsumed: () -> Unit = {},
 ) {
     val startState by startDestinationViewModel.state.collectAsState()
     val isDarkMode by themeViewModel.isDarkMode.collectAsState()
@@ -143,6 +173,23 @@ fun ElsfmNavHost(
     when (val current = startState) {
         StartDestinationState.Loading -> Unit
         is StartDestinationState.Resolved -> {
+            // No track-detail screen exists yet, so a track deep link starts playback and
+            // opens the full-screen player instead of navigating to a dedicated page. Only
+            // acts once the user is signed in - a deep link tapped from the login screen is
+            // silently dropped rather than queued.
+            val deepLinkPlayerViewModel: PlayerViewModel = hiltViewModel()
+            val deepLinkTrackViewModel: DeepLinkTrackViewModel = hiltViewModel()
+            LaunchedEffect(deepLinkTrackId, current.restoredUser) {
+                val trackId = deepLinkTrackId ?: return@LaunchedEffect
+                if (current.restoredUser == null) return@LaunchedEffect
+                val track = deepLinkTrackViewModel.getTrack(trackId)
+                if (track != null) {
+                    deepLinkPlayerViewModel.play(track, listOf(track))
+                    navController.navigate(ROUTE_PLAYER)
+                }
+                onDeepLinkConsumed()
+            }
+
             val backStackEntry by navController.currentBackStackEntryAsState()
             val currentRoute = backStackEntry?.destination
             val showTopBar = currentRoute?.hierarchy?.any { destination ->
@@ -186,12 +233,16 @@ fun ElsfmNavHost(
                                 NavigationBarItem(
                                     selected = selected,
                                     onClick = {
+                                        // No saveState/restoreState: this is a single flat NavHost,
+                                        // not per-tab nested graphs, so restoreState would restore
+                                        // whatever screen (e.g. a pushed Playlist) was on top of
+                                        // *any* tab when last saved, not necessarily this tab's own
+                                        // root. Always land on the tab's root screen instead.
                                         navController.navigate(tab.route) {
-                                            popUpTo(navController.graph.startDestinationId) {
-                                                saveState = true
+                                            popUpTo(navController.graph.findStartDestination().id) {
+                                                inclusive = false
                                             }
                                             launchSingleTop = true
-                                            restoreState = true
                                         }
                                     },
                                     icon = { Icon(tab.icon, contentDescription = tab.label) },
@@ -248,13 +299,25 @@ fun ElsfmNavHost(
                                 onGoToArtist = { artistId -> navController.navigate("artist/$artistId") },
                                 onGoToAlbum = { albumId -> navController.navigateToAlbum(albumId) },
                                 onGoToTrack = { /* TODO: no track-detail screen yet */ },
-                                onViewLyrics = { /* TODO: no lyrics screen yet - LyricsApi exists, UI not built */ },
+                                onViewLyrics = { trackId -> navController.navigate("lyrics/$trackId") },
+                                onViewComments = { trackId -> navController.navigateToTrackComments(trackId) },
+                            )
+                        }
+                        composable(
+                            route = ROUTE_LYRICS,
+                            arguments = listOf(navArgument(TRACK_ID_ARG) { type = NavType.IntType }),
+                        ) { backStackEntry ->
+                            val trackId = backStackEntry.arguments?.getInt(TRACK_ID_ARG) ?: return@composable
+                            LyricsScreen(
+                                trackId = trackId,
+                                onBack = { navController.popBackStack() },
                             )
                         }
                         composable(ROUTE_LIBRARY) {
                             LibraryScreen(
                                 onPlaylistTap = { playlist -> navController.navigateToPlaylist(playlist) },
                                 onAlbumTap = { album -> navController.navigateToAlbum(album.id) },
+                                onArtistTap = { artist -> navController.navigate("artist/${artist.id}") },
                                 onChannelTap = { channel -> navController.navigate("channel/${channel.id}") },
                                 onSongsClicked = { navController.navigate(ROUTE_LIKED_SONGS) },
                                 onPlayHistoryClicked = { navController.navigate(ROUTE_LISTENING_HISTORY) },
@@ -283,6 +346,7 @@ fun ElsfmNavHost(
                             AlbumScreen(
                                 onTrackTap = { track, queue -> playerViewModel.play(track, queue) },
                                 onPlayAll = { tracks -> tracks.firstOrNull()?.let { playerViewModel.play(it, tracks) } },
+                                onViewComments = { trackId -> navController.navigateToTrackComments(trackId) },
                             )
                         }
                         composable(
@@ -290,6 +354,10 @@ fun ElsfmNavHost(
                             arguments = listOf(
                                 navArgument(PLAYLIST_ID_ARG) { type = NavType.IntType },
                                 navArgument(PLAYLIST_NAME_ARG) { type = NavType.StringType },
+                                navArgument(PLAYLIST_CHANNEL_ID_ARG) {
+                                    type = NavType.IntType
+                                    defaultValue = NO_CHANNEL_ID
+                                },
                             ),
                         ) { backStackEntry ->
                             val playlistId = backStackEntry.arguments?.getInt(PLAYLIST_ID_ARG)
@@ -297,11 +365,20 @@ fun ElsfmNavHost(
                             val encodedName = backStackEntry.arguments?.getString(PLAYLIST_NAME_ARG)
                                 ?: return@composable
                             val playlistName = URLDecoder.decode(encodedName, "UTF-8")
+                            val channelId = backStackEntry.arguments
+                                ?.getInt(PLAYLIST_CHANNEL_ID_ARG)
+                                ?.takeIf { it != NO_CHANNEL_ID }
                             val playerViewModel: PlayerViewModel = hiltViewModel()
                             PlaylistScreen(
-                                playlist = Playlist(id = playlistId, name = playlistName, image = null, channelId = null),
+                                playlist = Playlist(id = playlistId, name = playlistName, image = null, channelId = channelId),
                                 onTrackTap = { track, queue -> playerViewModel.play(track, queue) },
                                 onPlayAll = { tracks -> tracks.firstOrNull()?.let { playerViewModel.play(it, tracks) } },
+                                onBack = { navController.popBackStack() },
+                                onGoToArtist = { artistId -> navController.navigate("artist/$artistId") },
+                                onGoToAlbum = { albumId -> navController.navigateToAlbum(albumId) },
+                                onGoToTrack = { /* TODO: no track-detail screen yet */ },
+                                onViewLyrics = { trackId -> navController.navigate("lyrics/$trackId") },
+                                onViewComments = { trackId -> navController.navigateToTrackComments(trackId) },
                             )
                         }
                         composable(
@@ -346,6 +423,28 @@ fun ElsfmNavHost(
                                         popUpTo(ROUTE_ARTIST) { inclusive = true }
                                     }
                                 },
+                                onUserClicked = { userId -> navController.navigateToUserProfile(userId) },
+                            )
+                        }
+                        composable(
+                            route = ROUTE_USER_PROFILE,
+                            arguments = listOf(navArgument(USER_ID_ARG) { type = NavType.IntType }),
+                        ) { backStackEntry ->
+                            val userId = backStackEntry.arguments?.getInt(USER_ID_ARG) ?: return@composable
+                            UserProfileScreen(
+                                userId = userId,
+                                onBack = { navController.popBackStack() },
+                                onUserClicked = { otherUserId -> navController.navigateToUserProfile(otherUserId) },
+                            )
+                        }
+                        composable(
+                            route = ROUTE_TRACK_COMMENTS,
+                            arguments = listOf(navArgument(COMMENTS_TRACK_ID_ARG) { type = NavType.IntType }),
+                        ) { backStackEntry ->
+                            val trackId = backStackEntry.arguments?.getInt(COMMENTS_TRACK_ID_ARG) ?: return@composable
+                            CommentsScreen(
+                                trackId = trackId,
+                                onBack = { navController.popBackStack() },
                             )
                         }
                         composable(ROUTE_DISCOVERY) {
@@ -372,7 +471,11 @@ fun ElsfmNavHost(
                                     startDestinationViewModel.logout()
                                     navController.navigate(ROUTE_LOGIN) { popUpTo(0) }
                                 },
+                                onManageSubscriptionClicked = { navController.navigate(ROUTE_SUBSCRIPTIONS) },
                             )
+                        }
+                        composable(ROUTE_SUBSCRIPTIONS) {
+                            SubscriptionScreen(onBack = { navController.popBackStack() })
                         }
                         composable(ROUTE_DOWNLOADS) {
                             DownloadsScreen()

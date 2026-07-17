@@ -2,10 +2,14 @@ package com.elsfm.mobile.core.database.di
 
 import android.content.Context
 import androidx.room.Room
+import com.elsfm.mobile.core.common.PlaybackStateStore
 import com.elsfm.mobile.core.database.AppDatabase
 import com.elsfm.mobile.core.database.UserDao
+import com.elsfm.mobile.core.database.dao.DiscoveryCacheDao
 import com.elsfm.mobile.core.database.dao.DownloadedTrackDao
 import com.elsfm.mobile.core.database.dao.FollowStateDao
+import com.elsfm.mobile.core.database.dao.PlaybackStateDao
+import com.elsfm.mobile.core.database.repository.RoomPlaybackStateStore
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -33,4 +37,14 @@ object DatabaseModule {
 
     @Provides
     fun provideFollowStateDao(database: AppDatabase): FollowStateDao = database.followStateDao()
+
+    @Provides
+    fun providePlaybackStateDao(database: AppDatabase): PlaybackStateDao = database.playbackStateDao()
+
+    @Provides
+    fun provideDiscoveryCacheDao(database: AppDatabase): DiscoveryCacheDao = database.discoveryCacheDao()
+
+    @Provides
+    @Singleton
+    fun providePlaybackStateStore(dao: PlaybackStateDao): PlaybackStateStore = RoomPlaybackStateStore(dao)
 }

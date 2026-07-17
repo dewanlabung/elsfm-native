@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -31,6 +32,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
@@ -92,7 +95,12 @@ fun LoginScreen(
             onValueChange = { viewModel.onEvent(LoginEvent.EmailChanged(it)) },
             label = { Text("Email") },
             modifier = Modifier.fillMaxWidth(),
-            singleLine = true
+            singleLine = true,
+            // Email keyboard: shows "@"/"." shortcuts (e.g. quick ".com") instead of
+            // the default text keyboard, and lets the OS autofill service (Google
+            // Password Manager or the device's password manager) recognize this as
+            // a username/email field and offer saved-credential suggestions.
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
         )
 
         OutlinedTextField(
@@ -115,7 +123,10 @@ fun LoginScreen(
                     )
                 }
             },
-            singleLine = true
+            singleLine = true,
+            // Password keyboard type is what makes autofill offer to save/fill this
+            // field's value via the device's password manager.
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
         )
 
         if (state.error != null) {

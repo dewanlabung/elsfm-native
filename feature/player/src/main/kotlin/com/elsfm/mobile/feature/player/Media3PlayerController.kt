@@ -3,9 +3,12 @@ package com.elsfm.mobile.feature.player
 import android.content.ComponentName
 import android.content.Context
 import androidx.media3.common.MediaItem
+import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
+import com.elsfm.mobile.core.common.PersistedPlaybackState
+import com.elsfm.mobile.core.common.PlaybackStateStore
 import com.elsfm.mobile.core.media.PlaybackService
 import com.elsfm.mobile.core.media.toMediaItem
 import com.elsfm.mobile.core.model.Track
@@ -22,10 +25,13 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 private const val POSITION_POLL_INTERVAL_MS = 500L
+private const val MIN_PLAYBACK_SPEED = 0.5f
+private const val MAX_PLAYBACK_SPEED = 2f
 
 @Singleton
 class Media3PlayerController @Inject constructor(
     @ApplicationContext private val context: Context,
+    private val playbackStateStore: PlaybackStateStore,
 ) : PlayerController {
 
     private val _state = MutableStateFlow(PlayerState())
@@ -37,6 +43,7 @@ class Media3PlayerController @Inject constructor(
     // Application-lifetime scope: this controller is a @Singleton with no natural
     // cancellation point, so the ticker below runs for the process's lifetime.
     private val scope = CoroutineScope(Dispatchers.Main.immediate + SupervisorJob())
+    private val sleepTimer = SleepTimer(scope)
 
     init {
         val sessionToken = SessionToken(context, ComponentName(context, PlaybackService::class.java))
@@ -45,6 +52,7 @@ class Media3PlayerController @Inject constructor(
             {
                 mediaController = controllerFuture.get()
                 attachListener()
+                scope.launch { restorePersistedState() }
             },
             MoreExecutors.directExecutor(),
         )
@@ -55,6 +63,7 @@ class Media3PlayerController @Inject constructor(
         mediaController?.addListener(object : Player.Listener {
             override fun onIsPlayingChanged(isPlaying: Boolean) {
                 _state.value = _state.value.copy(isPlaying = isPlaying)
+                if (!isPlaying) persistState()
             }
 
             override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
@@ -64,12 +73,56 @@ class Media3PlayerController @Inject constructor(
                     durationMs = track?.durationMs ?: 0,
                     positionMs = 0,
                 )
+                persistState()
             }
 
             override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
                 _state.value = _state.value.copy(error = error.message)
             }
         })
+    }
+
+    /**
+     * Saves the current queue/track/position/speed/volume so [restorePersistedState] can bring
+     * it back on the next app launch. No-ops when nothing is playing yet.
+     */
+    private fun persistState() {
+        val track = _state.value.currentTrack ?: return
+        val positionMs = mediaController?.currentPosition?.coerceAtLeast(0) ?: _state.value.positionMs
+        scope.launch {
+            playbackStateStore.save(
+                PersistedPlaybackState(
+                    currentTrack = track,
+                    queue = currentQueue,
+                    positionMs = positionMs,
+                    speed = _state.value.playbackSpeed,
+                    volume = _state.value.volume,
+                ),
+            )
+        }
+    }
+
+    override suspend fun restorePersistedState() {
+        val persisted = playbackStateStore.restore() ?: return
+        currentQueue = persisted.queue
+        val startIndex = persisted.queue.indexOfFirst { it.id == persisted.currentTrack.id }.coerceAtLeast(0)
+        val mediaItems = persisted.queue.map { it.toMediaItem() }
+        _state.value = _state.value.copy(
+            queue = persisted.queue,
+            currentTrack = persisted.currentTrack,
+            durationMs = persisted.currentTrack.durationMs,
+            positionMs = persisted.positionMs,
+            playbackSpeed = persisted.speed,
+            volume = persisted.volume,
+        )
+        mediaController?.apply {
+            setMediaItems(mediaItems, startIndex, persisted.positionMs)
+            prepare()
+            playbackParameters = PlaybackParameters(persisted.speed)
+            volume = persisted.volume
+            // Deliberately not calling play() - restored state comes back paused/ready, matching
+            // the plan's "restore in a paused state" requirement rather than auto-resuming audio.
+        }
     }
 
     /**
@@ -101,6 +154,7 @@ class Media3PlayerController @Inject constructor(
             prepare()
             play()
         }
+        persistState()
     }
 
     override fun togglePlayPause() {
@@ -141,6 +195,22 @@ class Media3PlayerController @Inject constructor(
         _state.value = _state.value.copy(shuffleEnabled = newValue)
     }
 
+    override fun stop() {
+        mediaController?.apply {
+            stop()
+            clearMediaItems()
+        }
+        currentQueue = emptyList()
+        // Without this, a sleep timer started in a previous session (e.g. before logout)
+        // keeps ticking on this app-lifetime singleton and can later pause/clobber state
+        // for whichever session is active when it fires.
+        sleepTimer.cancel()
+        _state.value = PlayerState()
+        // An explicit stop (e.g. logout) shouldn't leave stale state for restorePersistedState
+        // to bring back on the next launch or next signed-in user.
+        scope.launch { playbackStateStore.clear() }
+    }
+
     override fun cycleRepeatMode() {
         val nextMode = when (_state.value.repeatMode) {
             PlayerRepeatMode.OFF -> PlayerRepeatMode.ALL
@@ -153,5 +223,35 @@ class Media3PlayerController @Inject constructor(
             PlayerRepeatMode.ONE -> Player.REPEAT_MODE_ONE
         }
         _state.value = _state.value.copy(repeatMode = nextMode)
+    }
+
+    override fun startSleepTimer(minutes: Int) {
+        sleepTimer.start(
+            minutes = minutes,
+            onTick = { millisLeft -> _state.value = _state.value.copy(sleepTimerMillisLeft = millisLeft) },
+            onFinished = {
+                mediaController?.pause()
+                _state.value = _state.value.copy(sleepTimerMillisLeft = null)
+            },
+        )
+    }
+
+    override fun cancelSleepTimer() {
+        sleepTimer.cancel()
+        _state.value = _state.value.copy(sleepTimerMillisLeft = null)
+    }
+
+    override fun setPlaybackSpeed(speed: Float) {
+        val clamped = speed.coerceIn(MIN_PLAYBACK_SPEED, MAX_PLAYBACK_SPEED)
+        mediaController?.playbackParameters = PlaybackParameters(clamped)
+        _state.value = _state.value.copy(playbackSpeed = clamped)
+        persistState()
+    }
+
+    override fun setVolume(volume: Float) {
+        val clamped = volume.coerceIn(0f, 1f)
+        mediaController?.volume = clamped
+        _state.value = _state.value.copy(volume = clamped)
+        persistState()
     }
 }

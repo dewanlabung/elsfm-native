@@ -8,19 +8,22 @@ import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import kotlinx.serialization.Serializable
+import java.util.UUID
 import javax.inject.Inject
 
 @Serializable
-private data class RecordPlayRequest(val track_id: Int)
+private data class RecordPlayRequest(val track_id: Int, val queue_id: String)
 
 class PlayHistoryApi @Inject constructor(
     private val httpClient: HttpClient,
 ) {
+    private var currentQueueId: String = UUID.randomUUID().toString()
+
     suspend fun recordPlay(trackId: Int): ApiResult<Unit> {
         return try {
             val response = httpClient.post("api/v1/player/tracks") {
                 contentType(ContentType.Application.Json)
-                setBody(RecordPlayRequest(track_id = trackId))
+                setBody(RecordPlayRequest(track_id = trackId, queue_id = currentQueueId))
             }
             if (response.status.isSuccess()) {
                 ApiResult.Success(Unit)
@@ -30,5 +33,9 @@ class PlayHistoryApi @Inject constructor(
         } catch (e: Exception) {
             ApiResult.NetworkError(e)
         }
+    }
+
+    fun startNewQueueSession() {
+        currentQueueId = UUID.randomUUID().toString()
     }
 }

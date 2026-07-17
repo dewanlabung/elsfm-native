@@ -1,8 +1,13 @@
 package com.elsfm.mobile.feature.discovery
 
 import com.elsfm.mobile.core.common.DispatcherProvider
+import com.elsfm.mobile.core.database.dao.DiscoveryCacheDao
+import com.elsfm.mobile.core.database.entity.DiscoveryCache
+import com.elsfm.mobile.core.model.DiscoverySections
+import com.elsfm.mobile.core.model.Track
 import com.elsfm.mobile.core.network.api.ChannelApi
 import com.elsfm.mobile.core.network.api.ProfileApi
+import com.elsfm.mobile.core.network.connectivity.NetworkMonitor
 import com.elsfm.mobile.core.network.elsfmJson
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
@@ -12,9 +17,13 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import io.ktor.serialization.kotlinx.json.json
+import java.util.concurrent.atomic.AtomicInteger
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -33,6 +42,29 @@ private class FakeDispatcherProvider(dispatcher: CoroutineDispatcher) : Dispatch
     override val io: CoroutineDispatcher = dispatcher
     override val main: CoroutineDispatcher = dispatcher
     override val default: CoroutineDispatcher = dispatcher
+}
+
+private class FakeDiscoveryCacheDao(initial: DiscoveryCache? = null) : DiscoveryCacheDao {
+    var saved: DiscoveryCache? = initial
+        private set
+    var saveCount: Int = 0
+        private set
+
+    override suspend fun save(cache: DiscoveryCache) {
+        saved = cache
+        saveCount += 1
+    }
+
+    override suspend fun get(): DiscoveryCache? = saved
+}
+
+private class FakeNetworkMonitor(initiallyOnline: Boolean = true) : NetworkMonitor {
+    private val onlineFlow = MutableStateFlow(initiallyOnline)
+    override val isOnline: Flow<Boolean> = onlineFlow
+
+    fun setOnline(online: Boolean) {
+        onlineFlow.value = online
+    }
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -161,10 +193,16 @@ class DiscoveryViewModelTest {
         }
     """.trimIndent()
 
-    private fun mockChannelApi(homeChannelsStatus: HttpStatusCode = HttpStatusCode.OK): ChannelApi {
+    private fun mockChannelApi(
+        homeChannelsStatus: HttpStatusCode = HttpStatusCode.OK,
+        requestCount: AtomicInteger? = null,
+        gate: CompletableDeferred<Unit>? = null,
+    ): ChannelApi {
         val mockEngine = MockEngine.create {
             dispatcher = testDispatcher
             addHandler { request ->
+                gate?.await()
+                requestCount?.incrementAndGet()
                 val path = request.url.encodedPath
                 val body = when {
                     path.endsWith("/channel/5") -> homeChannelsBody
@@ -186,10 +224,13 @@ class DiscoveryViewModelTest {
 
     @Test
     fun loadHomeSuccessLoadsAllSectionsWithRealNames() = runTest(testDispatcher) {
+        val cacheDao = FakeDiscoveryCacheDao()
         val viewModel = DiscoveryViewModel(
             mockProfileApi(),
             mockChannelApi(),
             FakeDispatcherProvider(testDispatcher),
+            cacheDao,
+            FakeNetworkMonitor(),
         )
         advanceUntilIdle()
 
@@ -214,6 +255,7 @@ class DiscoveryViewModelTest {
         assertEquals(1, state.recentlyPlayed.size)
         assertFalse(state.isLoading)
         assertNull(state.error)
+        assertEquals(1, cacheDao.saveCount)
     }
 
     @Test
@@ -222,6 +264,8 @@ class DiscoveryViewModelTest {
             mockProfileApi(status = HttpStatusCode.InternalServerError),
             mockChannelApi(),
             FakeDispatcherProvider(testDispatcher),
+            FakeDiscoveryCacheDao(),
+            FakeNetworkMonitor(),
         )
         advanceUntilIdle()
 
@@ -240,6 +284,8 @@ class DiscoveryViewModelTest {
             mockProfileApi(),
             mockChannelApi(homeChannelsStatus = HttpStatusCode.InternalServerError),
             FakeDispatcherProvider(testDispatcher),
+            FakeDiscoveryCacheDao(),
+            FakeNetworkMonitor(),
         )
         advanceUntilIdle()
 
@@ -251,5 +297,97 @@ class DiscoveryViewModelTest {
         assertEquals(1, state.recentlyPlayed.size)
         assertFalse(state.isLoading)
         assertNotNull(state.error)
+    }
+
+    private fun cachedDiscoverySectionsPayload(): String {
+        val track = Track(
+            id = 999,
+            name = "Cached Track",
+            image = null,
+            durationMs = 1000,
+            artists = emptyList(),
+        )
+        val sections = DiscoverySections(
+            mostlyPlayedSongs = listOf(track),
+            mostlyPlayedSongsTitle = "Mostly Played Songs",
+        )
+        return elsfmJson().encodeToString(DiscoverySections.serializer(), sections)
+    }
+
+    @Test
+    fun cachedSectionsPaintImmediatelyWithoutLoadingSpinnerBeforeNetworkResolves() = runTest(testDispatcher) {
+        val cacheDao = FakeDiscoveryCacheDao(initial = DiscoveryCache(payloadJson = cachedDiscoverySectionsPayload()))
+        val gate = CompletableDeferred<Unit>()
+
+        val viewModel = DiscoveryViewModel(
+            mockProfileApi(),
+            mockChannelApi(gate = gate),
+            FakeDispatcherProvider(testDispatcher),
+            cacheDao,
+            FakeNetworkMonitor(),
+        )
+
+        // Let the cache-read coroutine (and the recently-played fetch, which
+        // isn't gated) run to completion, but leave the channel network calls
+        // parked on the gate so we can inspect state before they resolve.
+        testDispatcher.scheduler.runCurrent()
+
+        val midFlightState = viewModel.state.value
+        assertEquals(1, midFlightState.mostlyPlayedSongs.size)
+        assertEquals("Cached Track", midFlightState.mostlyPlayedSongs[0].name)
+        assertFalse(midFlightState.isLoading)
+
+        gate.complete(Unit)
+        advanceUntilIdle()
+
+        // After the background refresh completes, live data replaces the cache.
+        val finalState = viewModel.state.value
+        assertEquals(2, finalState.mostlyPlayedSongs.size)
+        assertFalse(finalState.isLoading)
+    }
+
+    @Test
+    fun cachedSectionsSurviveOnScreenWhenBackgroundRefreshFails() = runTest(testDispatcher) {
+        val cacheDao = FakeDiscoveryCacheDao(initial = DiscoveryCache(payloadJson = cachedDiscoverySectionsPayload()))
+
+        val viewModel = DiscoveryViewModel(
+            mockProfileApi(),
+            mockChannelApi(homeChannelsStatus = HttpStatusCode.InternalServerError),
+            FakeDispatcherProvider(testDispatcher),
+            cacheDao,
+            FakeNetworkMonitor(),
+        )
+        advanceUntilIdle()
+
+        val state = viewModel.state.value
+        assertEquals(1, state.mostlyPlayedSongs.size)
+        assertEquals("Cached Track", state.mostlyPlayedSongs[0].name)
+        assertFalse(state.isLoading)
+        assertNotNull(state.error)
+    }
+
+    @Test
+    fun connectivityRestoredTriggersAnotherLoad() = runTest(testDispatcher) {
+        val requestCount = AtomicInteger(0)
+        val networkMonitor = FakeNetworkMonitor(initiallyOnline = true)
+        val viewModel = DiscoveryViewModel(
+            mockProfileApi(),
+            mockChannelApi(requestCount = requestCount),
+            FakeDispatcherProvider(testDispatcher),
+            FakeDiscoveryCacheDao(),
+            networkMonitor,
+        )
+        advanceUntilIdle()
+        val countAfterInitialLoad = requestCount.get()
+        assertTrue(countAfterInitialLoad > 0)
+
+        networkMonitor.setOnline(false)
+        advanceUntilIdle()
+        assertEquals(countAfterInitialLoad, requestCount.get())
+
+        networkMonitor.setOnline(true)
+        advanceUntilIdle()
+
+        assertTrue(requestCount.get() > countAfterInitialLoad)
     }
 }

@@ -1,9 +1,11 @@
 package com.elsfm.mobile.feature.library
 
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.elsfm.mobile.core.model.Album
+import com.elsfm.mobile.core.model.Artist
 import com.elsfm.mobile.core.model.Channel
 import com.elsfm.mobile.core.model.Playlist
 import org.junit.Rule
@@ -15,14 +17,19 @@ class LibraryScreenTest {
 
     private val samplePlaylists = listOf(Playlist(id = 1, name = "My Playlist", image = null))
     private val sampleAlbums = listOf(Album(id = 2, name = "My Album", image = null, releaseDate = "2026-01-01"))
-    private val sampleChannels = listOf(Channel(id = 3, name = "My Channel"))
+    private val sampleArtists = listOf(Artist(id = 3, name = "My Artist"))
+    private val sampleChannels = listOf(Channel(id = 4, name = "My Channel"))
 
     private fun setContent(
         state: LibraryState,
         onFilterSelected: (LibraryFilter) -> Unit = {},
         onPlaylistTap: (Playlist) -> Unit = {},
         onAlbumTap: (Album) -> Unit = {},
+        onArtistTap: (Artist) -> Unit = {},
         onChannelTap: (Channel) -> Unit = {},
+        onSongsClick: () -> Unit = {},
+        onPlayHistoryClick: () -> Unit = {},
+        onCreatePlaylistClick: () -> Unit = {},
     ) {
         composeRule.setContent {
             LibraryContent(
@@ -30,9 +37,51 @@ class LibraryScreenTest {
                 onFilterSelected = onFilterSelected,
                 onPlaylistTap = onPlaylistTap,
                 onAlbumTap = onAlbumTap,
+                onArtistTap = onArtistTap,
                 onChannelTap = onChannelTap,
+                onSongsClick = onSongsClick,
+                onPlayHistoryClick = onPlayHistoryClick,
+                onCreatePlaylistClick = onCreatePlaylistClick,
             )
         }
+    }
+
+    @Test
+    fun rendersSongsAndPlayHistoryQuickLinks() {
+        setContent(LibraryState())
+
+        composeRule.onNodeWithText("Songs").assertExists()
+        composeRule.onNodeWithText("Play history").assertExists()
+    }
+
+    @Test
+    fun tappingSongsQuickLinkInvokesCallback() {
+        var tapped = false
+        setContent(LibraryState(), onSongsClick = { tapped = true })
+
+        composeRule.onNodeWithText("Songs").performClick()
+
+        assert(tapped) { "onSongsClick was not invoked" }
+    }
+
+    @Test
+    fun tappingPlayHistoryQuickLinkInvokesCallback() {
+        var tapped = false
+        setContent(LibraryState(), onPlayHistoryClick = { tapped = true })
+
+        composeRule.onNodeWithText("Play history").performClick()
+
+        assert(tapped) { "onPlayHistoryClick was not invoked" }
+    }
+
+    @Test
+    fun tappingCreatePlaylistIconInvokesCallback() {
+        var tapped = false
+        setContent(LibraryState(), onCreatePlaylistClick = { tapped = true })
+
+        composeRule.onNodeWithContentDescription("Create playlist").performClick()
+
+        assert(tapped) { "onCreatePlaylistClick was not invoked" }
     }
 
     @Test
@@ -42,6 +91,7 @@ class LibraryScreenTest {
         composeRule.onNodeWithText("All").assertExists()
         composeRule.onNodeWithText("Playlists").assertExists()
         composeRule.onNodeWithText("Albums").assertExists()
+        composeRule.onNodeWithText("Artists").assertExists()
         composeRule.onNodeWithText("Channels").assertExists()
     }
 
@@ -58,12 +108,14 @@ class LibraryScreenTest {
             LibraryState(
                 playlists = samplePlaylists,
                 albums = sampleAlbums,
+                artists = sampleArtists,
                 channels = sampleChannels,
             ),
         )
 
         composeRule.onNodeWithText("My Playlist").assertExists()
         composeRule.onNodeWithText("My Album").assertExists()
+        composeRule.onNodeWithText("My Artist").assertExists()
         composeRule.onNodeWithText("My Channel").assertExists()
     }
 

@@ -14,6 +14,7 @@ data class PlayerMenuState(
     val isLoadingPlaylists: Boolean = false,
     val userPlaylists: List<PlaylistInfo> = emptyList(),
     val downloadingTrackIds: Set<Int> = emptySet(),
+    val downloadedTrackIds: Set<Int> = emptySet(),
     val error: String? = null,
 )
 

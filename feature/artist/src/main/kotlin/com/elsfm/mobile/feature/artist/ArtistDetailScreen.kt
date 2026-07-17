@@ -67,6 +67,7 @@ fun ArtistDetailScreen(
     onTrackClicked: (track: Track, queue: List<Track>) -> Unit,
     onAlbumClicked: (albumId: Int) -> Unit,
     onArtistClicked: (artistId: Int) -> Unit = {},
+    onUserClicked: (userId: Int) -> Unit = {},
     viewModel: ArtistDetailViewModel = hiltViewModel(key = artistId.toString()),
 ) {
     val state by viewModel.state.collectAsState()
@@ -137,6 +138,7 @@ fun ArtistDetailScreen(
                                 error = state.followersError,
                                 followedUserIds = state.followedUserIds,
                                 onToggleFollowUser = { viewModel.toggleFollowUser(it) },
+                                onUserClicked = onUserClicked,
                             )
                         }
                     }
@@ -508,6 +510,7 @@ private fun FollowersTab(
     error: String?,
     followedUserIds: Set<Int>,
     onToggleFollowUser: (Int) -> Unit,
+    onUserClicked: (Int) -> Unit = {},
 ) {
     when {
         isLoading -> {
@@ -528,6 +531,7 @@ private fun FollowersTab(
                     follower = follower,
                     isFollowed = followedUserIds.contains(follower.id),
                     onToggleFollow = { onToggleFollowUser(follower.id) },
+                    onClick = { onUserClicked(follower.id) },
                 )
             }
         }
@@ -539,10 +543,12 @@ private fun FollowerRow(
     follower: ArtistFollower,
     isFollowed: Boolean,
     onToggleFollow: () -> Unit,
+    onClick: () -> Unit = {},
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable(onClick = onClick)
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),

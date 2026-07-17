@@ -9,7 +9,7 @@ import androidx.compose.ui.Modifier
 /**
  * Track context menu matching the real elsfm.com PWA's item order and set:
  * Add to queue, Add to library, Add to playlist, Go to artist, Go to album, Go to track,
- * View lyrics, Make available offline, Share, Repost.
+ * View lyrics, Comments, Make available offline, Share, Repost.
  *
  * [artistId] and [albumId] are nullable because the currently playing/listed [Track] may not
  * carry that information (a track's `album` relation is only populated when the backend
@@ -32,6 +32,7 @@ fun TrackContextMenu(
     onGoToAlbum: (Int) -> Unit = {},
     onGoToTrack: (Int) -> Unit = {},
     onViewLyrics: (Int) -> Unit = {},
+    onViewComments: (Int) -> Unit = {},
     onMakeAvailableOffline: (Int) -> Unit = {},
     onRemoveFromPlaylist: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
@@ -74,6 +75,10 @@ fun TrackContextMenu(
         DropdownMenuItem(
             text = { Text("View lyrics") },
             onClick = { onViewLyrics(trackId); onDismiss() },
+        )
+        DropdownMenuItem(
+            text = { Text("Comments") },
+            onClick = { onViewComments(trackId); onDismiss() },
         )
         DropdownMenuItem(
             text = { Text("Make available offline") },

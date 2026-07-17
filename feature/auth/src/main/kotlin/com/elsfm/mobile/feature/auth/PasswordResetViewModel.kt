@@ -53,10 +53,30 @@ class PasswordResetViewModel @Inject constructor(
                 return@launch
             }
 
-            _state.value = _state.value.copy(
-                isLoading = false,
-                isSubmitted = true
-            )
+            when (val result = authRepository.requestPasswordReset(currentState.email)) {
+                is ApiResult.Success -> {
+                    _state.value = _state.value.copy(isLoading = false, isSubmitted = true)
+                }
+                is ApiResult.ValidationError -> {
+                    val errorMessages = result.fields.values.flatten().joinToString(", ")
+                    _state.value = _state.value.copy(
+                        isLoading = false,
+                        error = errorMessages.ifEmpty { "Validation error" }
+                    )
+                }
+                is ApiResult.NetworkError -> {
+                    _state.value = _state.value.copy(
+                        isLoading = false,
+                        error = "Network error. Please check your connection."
+                    )
+                }
+                is ApiResult.Unauthorized -> {
+                    _state.value = _state.value.copy(
+                        isLoading = false,
+                        error = "Could not request a password reset"
+                    )
+                }
+            }
         }
     }
 }

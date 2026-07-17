@@ -3,6 +3,7 @@ package com.elsfm.mobile.feature.library
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.elsfm.mobile.core.model.Album
+import com.elsfm.mobile.core.model.Artist
 import com.elsfm.mobile.core.model.Channel
 import com.elsfm.mobile.core.model.Playlist
 import com.elsfm.mobile.core.network.ApiResult
@@ -18,26 +19,31 @@ enum class LibraryFilter {
     ALL,
     PLAYLISTS,
     ALBUMS,
+    ARTISTS,
     CHANNELS,
 }
 
 /**
  * Immutable, hoisted UI state for [LibraryScreen].
  *
- * Playlists, albums and channels are all backed by real API data via
- * [LibraryApiRepository].
+ * Playlists, albums and artists are all backed by real, per-user API data via
+ * [LibraryApiRepository]; channels are the app's home/discovery channel list.
  */
 data class LibraryState(
     val playlists: List<Playlist> = emptyList(),
     val albums: List<Album> = emptyList(),
+    val artists: List<Artist> = emptyList(),
     val channels: List<Channel> = emptyList(),
     val selectedFilter: LibraryFilter = LibraryFilter.ALL,
-    val selectedChannelId: Int? = null,
     val isLoading: Boolean = false,
     val error: String? = null,
+    val isCreatingPlaylist: Boolean = false,
+    val createPlaylistError: String? = null,
+    /** One-shot signal the screen consumes to dismiss the create-playlist dialog. */
+    val playlistCreated: Boolean = false,
 ) {
     val isEmpty: Boolean
-        get() = playlists.isEmpty() && albums.isEmpty() && channels.isEmpty()
+        get() = playlists.isEmpty() && albums.isEmpty() && artists.isEmpty() && channels.isEmpty()
 }
 
 @HiltViewModel
@@ -59,6 +65,7 @@ class LibraryViewModel @Inject constructor(
                 _state.value = _state.value.copy(
                     playlists = result.data.playlists,
                     albums = result.data.albums,
+                    artists = result.data.artists,
                     channels = result.data.channels,
                     isLoading = false,
                 )
@@ -75,7 +82,37 @@ class LibraryViewModel @Inject constructor(
         _state.value = _state.value.copy(selectedFilter = filter)
     }
 
-    fun selectChannel(channelId: Int) {
-        _state.value = _state.value.copy(selectedChannelId = channelId)
+    fun createPlaylist(name: String) {
+        _state.value = _state.value.copy(isCreatingPlaylist = true, createPlaylistError = null)
+
+        viewModelScope.launch {
+            when (val result = libraryRepository.createPlaylist(name)) {
+                is ApiResult.Success -> {
+                    _state.value = _state.value.copy(
+                        playlists = _state.value.playlists + result.data,
+                        isCreatingPlaylist = false,
+                        playlistCreated = true,
+                    )
+                }
+                is ApiResult.ValidationError -> {
+                    val errorMessages = result.fields.values.flatten().joinToString(", ")
+                    _state.value = _state.value.copy(
+                        isCreatingPlaylist = false,
+                        createPlaylistError = errorMessages.ifEmpty { "Could not create playlist" },
+                    )
+                }
+                is ApiResult.NetworkError, is ApiResult.Unauthorized -> {
+                    _state.value = _state.value.copy(
+                        isCreatingPlaylist = false,
+                        createPlaylistError = "Could not create playlist",
+                    )
+                }
+            }
+        }
+    }
+
+    /** Called by the screen once it has reacted to [LibraryState.playlistCreated]. */
+    fun consumePlaylistCreatedEvent() {
+        _state.value = _state.value.copy(playlistCreated = false)
     }
 }

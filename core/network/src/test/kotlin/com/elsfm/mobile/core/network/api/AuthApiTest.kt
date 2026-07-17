@@ -102,4 +102,59 @@ class AuthApiTest {
         assertTrue(result is ApiResult.ValidationError)
         assertTrue((result as ApiResult.ValidationError).fields["email"]?.isNotEmpty() == true)
     }
+
+    @Test
+    fun `register success returns user nested under bootstrapData`() = runTest {
+        val body = """
+            {"status":"success","bootstrapData":{"user":{"id":210,"email":"new.user@example.com","access_token":"1|newtoken"}}}
+        """.trimIndent()
+        val authApi = AuthApi(clientReturning(HttpStatusCode.OK, body))
+
+        val result = authApi.register("new.user@example.com", "secret123", "android-uuid-1")
+
+        assertTrue(result is ApiResult.Success)
+        assertEquals("1|newtoken", (result as ApiResult.Success).data.accessToken)
+    }
+
+    @Test
+    fun `register with an email already taken returns validation error`() = runTest {
+        val body = """
+            {"message":"The given data was invalid.","errors":{"email":["The email has already been taken."]}}
+        """.trimIndent()
+        val authApi = AuthApi(clientReturning(HttpStatusCode.UnprocessableEntity, body))
+
+        val result = authApi.register("existing@example.com", "secret123", "android-uuid-1")
+
+        assertTrue(result is ApiResult.ValidationError)
+        assertEquals(
+            listOf("The email has already been taken."),
+            (result as ApiResult.ValidationError).fields["email"],
+        )
+    }
+
+    @Test
+    fun `requestPasswordReset success returns Unit`() = runTest {
+        val body = """{"status":"passwords.sent"}"""
+        val authApi = AuthApi(clientReturning(HttpStatusCode.OK, body))
+
+        val result = authApi.requestPasswordReset("user@example.com")
+
+        assertTrue(result is ApiResult.Success)
+    }
+
+    @Test
+    fun `requestPasswordReset for unknown email returns validation error`() = runTest {
+        val body = """
+            {"message":"The given data was invalid.","errors":{"email":["We can't find a user with that email address."]}}
+        """.trimIndent()
+        val authApi = AuthApi(clientReturning(HttpStatusCode.UnprocessableEntity, body))
+
+        val result = authApi.requestPasswordReset("unknown@example.com")
+
+        assertTrue(result is ApiResult.ValidationError)
+        assertEquals(
+            listOf("We can't find a user with that email address."),
+            (result as ApiResult.ValidationError).fields["email"],
+        )
+    }
 }

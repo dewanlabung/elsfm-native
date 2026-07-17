@@ -17,4 +17,8 @@ data class PlayerState(
     val shuffleEnabled: Boolean = false,
     val repeatMode: PlayerRepeatMode = PlayerRepeatMode.OFF,
     val error: String? = null,
+    /** Milliseconds left before the sleep timer pauses playback, or null if none is active. */
+    val sleepTimerMillisLeft: Long? = null,
+    val playbackSpeed: Float = 1f,
+    val volume: Float = 1f,
 )

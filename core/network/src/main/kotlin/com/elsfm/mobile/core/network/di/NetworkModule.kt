@@ -11,6 +11,8 @@ import com.elsfm.mobile.core.network.auth.AuthPlugin
 import com.elsfm.mobile.core.network.auth.EncryptedTokenStore
 import com.elsfm.mobile.core.network.auth.SessionManager
 import com.elsfm.mobile.core.network.auth.TokenStore
+import com.elsfm.mobile.core.network.connectivity.DefaultNetworkMonitor
+import com.elsfm.mobile.core.network.connectivity.NetworkMonitor
 import com.elsfm.mobile.core.network.elsfmJson
 import dagger.Binds
 import dagger.Module
@@ -19,12 +21,14 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
+import io.ktor.client.plugins.HttpRequestRetry
 import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.request.url
+import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import javax.inject.Singleton
 
@@ -46,6 +50,10 @@ abstract class NetworkBindsModule {
     @Binds
     @Singleton
     abstract fun bindDispatcherProvider(impl: DefaultDispatcherProvider): DispatcherProvider
+
+    @Binds
+    @Singleton
+    abstract fun bindNetworkMonitor(impl: DefaultNetworkMonitor): NetworkMonitor
 }
 
 @Module
@@ -58,6 +66,23 @@ object NetworkModule {
         return HttpClient(OkHttp) {
             defaultRequest { url(ElsfmApiConfig.BASE_URL) }
             install(ContentNegotiation) { json(elsfmJson()) }
+            // The backend has occasionally returned 401 on the very first authenticated
+            // request right after a fresh login, using a token it had just issued seconds
+            // earlier (confirmed via live device testing - the token becomes valid on
+            // later requests, so this looks like backend-side replication lag rather than
+            // an actually-invalid token). Retrying briefly here avoids AuthPlugin below
+            // treating that transient 401 as a real session expiry and wiping a token that
+            // was never actually bad, which was otherwise kicking freshly-logged-in users
+            // straight back to the sign-in screen.
+            install(HttpRequestRetry) {
+                retryIf(maxRetries = 2) { request, response ->
+                    response.status == HttpStatusCode.Unauthorized &&
+                        !request.url.encodedPath.contains("/auth/login") &&
+                        !request.url.encodedPath.contains("/auth/register") &&
+                        !request.url.encodedPath.contains("/auth/social")
+                }
+                constantDelay(millis = 500)
+            }
             install(AuthPlugin) { this.sessionManager = sessionManager }
             install(Logging) {
                 level = LogLevel.BODY

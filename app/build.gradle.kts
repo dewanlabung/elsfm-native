@@ -69,6 +69,9 @@ dependencies {
     implementation(project(":feature:profile"))
     implementation(project(":feature:downloads"))
     implementation(project(":feature:notifications"))
+    implementation(project(":feature:userprofile"))
+    implementation(project(":feature:comments"))
+    implementation(project(":feature:subscriptions"))
 
     // Core Android
     implementation(libs.androidx.core.ktx)

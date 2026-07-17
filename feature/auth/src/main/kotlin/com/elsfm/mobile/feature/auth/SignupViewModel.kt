@@ -76,7 +76,7 @@ class SignupViewModel @Inject constructor(
         viewModelScope.launch {
             _state.value = currentState.copy(isLoading = true, error = null)
 
-            when (val result = authRepository.login(
+            when (val result = authRepository.register(
                 currentState.email,
                 currentState.password
             )) {

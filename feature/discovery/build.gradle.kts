@@ -36,7 +36,10 @@ dependencies {
     implementation(project(":core:model"))
     implementation(project(":core:common"))
     implementation(project(":core:network"))
+    implementation(project(":core:database"))
     implementation(project(":feature:library"))
+
+    implementation(libs.kotlinx.serialization.json)
 
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.kotlinx.coroutines.android)

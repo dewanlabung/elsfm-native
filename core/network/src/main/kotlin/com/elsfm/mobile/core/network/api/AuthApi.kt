@@ -3,6 +3,9 @@ package com.elsfm.mobile.core.network.api
 import com.elsfm.mobile.core.model.LaravelValidationError
 import com.elsfm.mobile.core.model.LoginRequest
 import com.elsfm.mobile.core.model.LoginResponse
+import com.elsfm.mobile.core.model.PasswordResetRequest
+import com.elsfm.mobile.core.model.RegisterRequest
+import com.elsfm.mobile.core.model.RegisterResponse
 import com.elsfm.mobile.core.model.User
 import com.elsfm.mobile.core.network.ApiResult
 import io.ktor.client.HttpClient
@@ -72,6 +75,53 @@ class AuthApi @Inject constructor(
                 response.status == HttpStatusCode.Unauthorized || response.status == HttpStatusCode.Forbidden -> {
                     ApiResult.Unauthorized
                 }
+                else -> ApiResult.NetworkError(IllegalStateException("Unexpected status ${response.status}"))
+            }
+        } catch (e: IOException) {
+            ApiResult.NetworkError(e)
+        }
+    }
+
+    override suspend fun register(email: String, password: String, tokenName: String): ApiResult<User> {
+        return try {
+            val response = httpClient.post("api/v1/auth/register") {
+                contentType(ContentType.Application.Json)
+                setBody(
+                    RegisterRequest(
+                        email = email,
+                        password = password,
+                        passwordConfirmation = password,
+                        tokenName = tokenName,
+                    ),
+                )
+            }
+            when (response.status) {
+                HttpStatusCode.OK -> ApiResult.Success(response.body<RegisterResponse>().bootstrapData.user)
+                HttpStatusCode.UnprocessableEntity -> {
+                    val error = response.body<LaravelValidationError>()
+                    ApiResult.ValidationError(error.errors)
+                }
+                HttpStatusCode.Unauthorized, HttpStatusCode.Forbidden -> ApiResult.Unauthorized
+                else -> ApiResult.NetworkError(IllegalStateException("Unexpected status ${response.status}"))
+            }
+        } catch (e: IOException) {
+            ApiResult.NetworkError(e)
+        }
+    }
+
+    override suspend fun requestPasswordReset(email: String): ApiResult<Unit> {
+        return try {
+            val response = httpClient.post("api/v1/auth/password/email") {
+                contentType(ContentType.Application.Json)
+                setBody(PasswordResetRequest(email = email))
+            }
+            when (response.status) {
+                HttpStatusCode.OK -> ApiResult.Success(Unit)
+                HttpStatusCode.UnprocessableEntity -> {
+                    val error = response.body<LaravelValidationError>()
+                    ApiResult.ValidationError(error.errors)
+                }
+                HttpStatusCode.Unauthorized, HttpStatusCode.Forbidden -> ApiResult.Unauthorized
                 else -> ApiResult.NetworkError(IllegalStateException("Unexpected status ${response.status}"))
             }
         } catch (e: IOException) {

@@ -14,4 +14,18 @@ interface AuthApiLike {
      * directly, so a Firebase ID token will not work here.
      */
     suspend fun loginWithGoogle(googleAccessToken: String, tokenName: String): ApiResult<User>
+
+    /**
+     * Backed by the real `POST auth/register` route (`MobileAuthController::register` ->
+     * `FortifyRegisterUser::create`). The backend requires `password_confirmation` (Fortify's
+     * default password rules append `confirmed`) - callers must pass a matching value.
+     */
+    suspend fun register(email: String, password: String, tokenName: String): ApiResult<User>
+
+    /**
+     * Backed by the real `POST auth/password/email` route (Fortify's
+     * `PasswordResetLinkController::store`), which emails the user a reset link. This route
+     * is `guest`-only on the backend (rejects requests carrying a valid session/token).
+     */
+    suspend fun requestPasswordReset(email: String): ApiResult<Unit>
 }

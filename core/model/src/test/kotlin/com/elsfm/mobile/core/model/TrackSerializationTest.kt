@@ -39,4 +39,27 @@ class TrackSerializationTest {
         assertEquals(1, track.artists.size)
         assertEquals("Sunday School Songs", track.artists[0].name)
     }
+
+    @Test
+    fun `treats a null duration as zero instead of failing to parse`() {
+        // Regression guard: confirmed live on page 3 of the "2015 EL Shaddai Youth Camp
+        // Songs" playlist - a real track had "duration": null. A non-nullable Long
+        // previously failed to decode this, which crashed parsing for the whole page
+        // (not just that one track), silently stalling playlist auto-load partway through.
+        val body = """
+            {
+              "id": 403,
+              "name": "Dishahen bani hriday baralenchha",
+              "image": null,
+              "duration": null,
+              "plays": "37",
+              "artists": []
+            }
+        """.trimIndent()
+
+        val track = json.decodeFromString<Track>(body)
+
+        assertEquals(403, track.id)
+        assertEquals(0L, track.durationMs)
+    }
 }

@@ -1,14 +1,19 @@
 package com.elsfm.mobile.core.network.api
 
+import com.elsfm.mobile.core.model.ImageUrlSerializer
+import com.elsfm.mobile.core.model.LaravelValidationError
 import com.elsfm.mobile.core.model.Track
 import com.elsfm.mobile.core.network.ApiResult
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
 import io.ktor.client.request.post
+import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
+import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import kotlinx.serialization.SerialName
@@ -27,6 +32,7 @@ data class PlaylistInfo(
     val id: Int,
     val name: String,
     val description: String? = null,
+    @Serializable(with = ImageUrlSerializer::class)
     val image: String? = null,
     @SerialName("tracks_count")
     val trackCount: Int? = null,
@@ -55,6 +61,12 @@ data class PaginatedTracks(
 
 @Serializable
 private data class PaginatedTracksResponse(val pagination: PaginatedTracks)
+
+@Serializable
+private data class CreatePlaylistRequest(val name: String)
+
+@Serializable
+private data class TrackIdsRequest(val ids: List<Int>)
 
 class PlaylistApi @Inject constructor(
     private val httpClient: HttpClient,
@@ -114,6 +126,30 @@ class PlaylistApi @Inject constructor(
     }
 
     /**
+     * Real endpoint (`PlaylistController::store`): `POST api/v1/playlists`. Only `name`
+     * is required (`ModifyPlaylist` validation - min 3, max 100 chars, unique per owner).
+     */
+    suspend fun createPlaylist(name: String): ApiResult<PlaylistInfo> {
+        return try {
+            val response = httpClient.post("api/v1/playlists") {
+                contentType(ContentType.Application.Json)
+                setBody(CreatePlaylistRequest(name))
+            }
+            when (response.status) {
+                HttpStatusCode.OK, HttpStatusCode.Created ->
+                    ApiResult.Success(response.body<PlaylistInfoDetail>().playlist)
+                HttpStatusCode.UnprocessableEntity -> {
+                    val error = response.body<LaravelValidationError>()
+                    ApiResult.ValidationError(error.errors)
+                }
+                else -> ApiResult.NetworkError(RuntimeException("Unexpected status: ${response.status}"))
+            }
+        } catch (e: Exception) {
+            ApiResult.NetworkError(e)
+        }
+    }
+
+    /**
      * Real endpoint is `POST api/v1/playlists/{id}/tracks/add`
      * (`PlaylistTracksController::add`), which reads track ids from an `ids` array,
      * not a singular `trackId` field.
@@ -122,8 +158,99 @@ class PlaylistApi @Inject constructor(
         return try {
             val response = httpClient.post("api/v1/playlists/$playlistId/tracks/add") {
                 contentType(ContentType.Application.Json)
-                setBody(mapOf("ids" to listOf(trackId)))
+                setBody(TrackIdsRequest(listOf(trackId)))
             }
+            if (response.status.isSuccess()) {
+                ApiResult.Success(Unit)
+            } else {
+                ApiResult.NetworkError(RuntimeException("Unexpected status: ${response.status}"))
+            }
+        } catch (e: Exception) {
+            ApiResult.NetworkError(e)
+        }
+    }
+
+    /**
+     * Real endpoint is `POST api/v1/playlists/{id}/tracks/remove`
+     * (`PlaylistTracksController::remove`), same `ids` array shape as add.
+     */
+    suspend fun removeTrackFromPlaylist(playlistId: Int, trackId: Int): ApiResult<Unit> {
+        return try {
+            val response = httpClient.post("api/v1/playlists/$playlistId/tracks/remove") {
+                contentType(ContentType.Application.Json)
+                setBody(TrackIdsRequest(listOf(trackId)))
+            }
+            if (response.status.isSuccess()) {
+                ApiResult.Success(Unit)
+            } else {
+                ApiResult.NetworkError(RuntimeException("Unexpected status: ${response.status}"))
+            }
+        } catch (e: Exception) {
+            ApiResult.NetworkError(e)
+        }
+    }
+
+    /**
+     * Real endpoint (`PlaylistController::update`): `PUT api/v1/playlists/{id}`. Allowed
+     * for the playlist owner/editor (`PlaylistPolicy::update`) without any special
+     * permission grant.
+     */
+    suspend fun updatePlaylist(id: Int, name: String): ApiResult<PlaylistInfo> {
+        return try {
+            val response = httpClient.put("api/v1/playlists/$id") {
+                contentType(ContentType.Application.Json)
+                setBody(CreatePlaylistRequest(name))
+            }
+            when {
+                response.status.isSuccess() ->
+                    ApiResult.Success(response.body<PlaylistInfoDetail>().playlist)
+                response.status == HttpStatusCode.UnprocessableEntity -> {
+                    val error = response.body<LaravelValidationError>()
+                    ApiResult.ValidationError(error.errors)
+                }
+                else -> ApiResult.NetworkError(RuntimeException("Unexpected status: ${response.status}"))
+            }
+        } catch (e: Exception) {
+            ApiResult.NetworkError(e)
+        }
+    }
+
+    /**
+     * Real endpoint (`PlaylistController::destroy`): `DELETE api/v1/playlists/{id}`.
+     * Allowed for the playlist owner/editor (`PlaylistPolicy::destroy`) without any
+     * special permission grant.
+     */
+    suspend fun deletePlaylist(id: Int): ApiResult<Unit> {
+        return try {
+            val response = httpClient.delete("api/v1/playlists/$id")
+            if (response.status.isSuccess()) {
+                ApiResult.Success(Unit)
+            } else {
+                ApiResult.NetworkError(RuntimeException("Unexpected status: ${response.status}"))
+            }
+        } catch (e: Exception) {
+            ApiResult.NetworkError(e)
+        }
+    }
+
+    /** Real endpoint (`PlaylistController::follow`): `POST api/v1/playlists/{id}/follow`. */
+    suspend fun followPlaylist(id: Int): ApiResult<Unit> {
+        return try {
+            val response = httpClient.post("api/v1/playlists/$id/follow")
+            if (response.status.isSuccess()) {
+                ApiResult.Success(Unit)
+            } else {
+                ApiResult.NetworkError(RuntimeException("Unexpected status: ${response.status}"))
+            }
+        } catch (e: Exception) {
+            ApiResult.NetworkError(e)
+        }
+    }
+
+    /** Real endpoint (`PlaylistController::unfollow`): `POST api/v1/playlists/{id}/unfollow`. */
+    suspend fun unfollowPlaylist(id: Int): ApiResult<Unit> {
+        return try {
+            val response = httpClient.post("api/v1/playlists/$id/unfollow")
             if (response.status.isSuccess()) {
                 ApiResult.Success(Unit)
             } else {

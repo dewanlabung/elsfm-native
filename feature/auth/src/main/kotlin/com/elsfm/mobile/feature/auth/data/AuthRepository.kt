@@ -15,6 +15,7 @@ class AuthRepository @Inject constructor(
     private val authApi: AuthApiLike,
     private val sessionManager: SessionManager,
     private val userDao: UserDao,
+    private val googleSignInService: GoogleSignInServiceLike,
 ) {
     suspend fun login(email: String, password: String): ApiResult<User> {
         val tokenName = "android-${UUID.randomUUID()}"
@@ -28,6 +29,28 @@ class AuthRepository @Inject constructor(
         }
         return result
     }
+
+    /**
+     * Creates a new account via the real `POST auth/register` endpoint, then stores the
+     * session exactly like [login] does on success (the register endpoint issues a real
+     * API token too when a `token_name` is sent).
+     */
+    suspend fun register(email: String, password: String): ApiResult<User> {
+        val tokenName = "android-${UUID.randomUUID()}"
+        val result = authApi.register(email, password, tokenName)
+        if (result is ApiResult.Success) {
+            val token = result.data.accessToken
+            if (token != null) {
+                sessionManager.saveToken(token)
+                userDao.upsert(result.data.toEntity())
+            }
+        }
+        return result
+    }
+
+    /** Requests a password-reset email via the real `POST auth/password/email` endpoint. */
+    suspend fun requestPasswordReset(email: String): ApiResult<Unit> =
+        authApi.requestPasswordReset(email)
 
     /** Same session-storage flow as [login], just backed by a Google OAuth access token. */
     suspend fun loginWithGoogle(googleAccessToken: String): ApiResult<User> {
@@ -43,9 +66,16 @@ class AuthRepository @Inject constructor(
         return result
     }
 
+    /**
+     * Also signs out of the cached Google account ([GoogleSignInServiceLike.signOut]) -
+     * without this, `GoogleSignInClient` keeps the last-used account cached, so the
+     * next "Sign in with Google" tap silently resolves to that same account instead
+     * of showing the account picker again.
+     */
     suspend fun logout() {
         sessionManager.clear()
         userDao.clear()
+        googleSignInService.signOut()
     }
 
     suspend fun restoredUser(): User? {

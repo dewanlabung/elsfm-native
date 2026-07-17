@@ -25,7 +25,7 @@ private const val USERINFO_PROFILE_SCOPE = "https://www.googleapis.com/auth/user
 @Singleton
 class GoogleSignInService @Inject constructor(
     @ApplicationContext private val context: Context,
-) {
+) : GoogleSignInServiceLike {
     val signInClient: GoogleSignInClient by lazy {
         val options = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestEmail()
@@ -43,7 +43,7 @@ class GoogleSignInService @Inject constructor(
         GoogleAuthUtil.getToken(context, accountEmail, scope)
     }
 
-    fun signOut() {
+    override fun signOut() {
         signInClient.signOut()
     }
 }
