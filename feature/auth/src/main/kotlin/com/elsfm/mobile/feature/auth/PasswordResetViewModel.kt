@@ -73,7 +73,7 @@ class PasswordResetViewModel @Inject constructor(
                 is ApiResult.Unauthorized -> {
                     _state.value = _state.value.copy(
                         isLoading = false,
-                        error = "Could not request a password reset"
+                        error = "Could not process password reset. Please try again or contact support."
                     )
                 }
             }

@@ -486,6 +486,7 @@ fun ElsfmNavHost(
                                     navController.navigate(ROUTE_LOGIN) { popUpTo(0) }
                                 },
                                 onManageSubscriptionClicked = { navController.navigate(ROUTE_SUBSCRIPTIONS) },
+                                onChangePasswordClicked = { navController.navigate(ROUTE_PASSWORD_RESET) },
                             )
                         }
                         composable(ROUTE_SUBSCRIPTIONS) {

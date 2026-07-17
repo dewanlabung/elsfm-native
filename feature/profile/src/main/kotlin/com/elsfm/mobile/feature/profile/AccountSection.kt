@@ -40,6 +40,7 @@ fun AccountSection(
     onCancelEdit: () -> Unit,
     isDarkMode: Boolean,
     onToggleDarkMode: (Boolean) -> Unit,
+    onChangePasswordClicked: () -> Unit = {},
     onLogout: () -> Unit,
     onManageSubscriptionClicked: () -> Unit = {},
 ) {
@@ -68,6 +69,15 @@ fun AccountSection(
         ) {
             Text("Dark Mode", style = MaterialTheme.typography.bodyLarge)
             Switch(checked = isDarkMode, onCheckedChange = onToggleDarkMode)
+        }
+
+        HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+
+        TextButton(
+            onClick = onChangePasswordClicked,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text("Change Password")
         }
 
         HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
