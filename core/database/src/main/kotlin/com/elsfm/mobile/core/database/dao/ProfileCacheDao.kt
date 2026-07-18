@@ -16,4 +16,7 @@ interface ProfileCacheDao {
 
     @Query("DELETE FROM profile_cache")
     suspend fun clear()
+
+    @Query("SELECT LENGTH(CAST(payloadJson AS BLOB)) FROM profile_cache WHERE id = 0")
+    suspend fun getSizeBytes(): Long?
 }

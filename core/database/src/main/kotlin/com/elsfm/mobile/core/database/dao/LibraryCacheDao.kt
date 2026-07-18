@@ -13,4 +13,10 @@ interface LibraryCacheDao {
 
     @Query("SELECT * FROM library_cache WHERE id = 0")
     suspend fun get(): LibraryCache?
+
+    @Query("SELECT LENGTH(CAST(payloadJson AS BLOB)) FROM library_cache WHERE id = 0")
+    suspend fun getSizeBytes(): Long?
+
+    @Query("DELETE FROM library_cache")
+    suspend fun clear()
 }

@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.elsfm.mobile.core.media.ShakeSensitivity
+import com.elsfm.mobile.feature.profile.storage.StorageSection
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -135,6 +136,8 @@ fun SettingsScreen(
                     )
                 },
             )
+
+            StorageSection()
 
             Spacer(modifier = Modifier.height(24.dp))
         }

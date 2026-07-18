@@ -13,4 +13,10 @@ interface DiscoveryCacheDao {
 
     @Query("SELECT * FROM discovery_cache WHERE id = 0")
     suspend fun get(): DiscoveryCache?
+
+    @Query("SELECT LENGTH(CAST(payloadJson AS BLOB)) FROM discovery_cache WHERE id = 0")
+    suspend fun getSizeBytes(): Long?
+
+    @Query("DELETE FROM discovery_cache")
+    suspend fun clear()
 }
