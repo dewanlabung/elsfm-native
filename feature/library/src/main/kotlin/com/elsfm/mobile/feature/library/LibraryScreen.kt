@@ -48,6 +48,7 @@ import com.elsfm.mobile.core.model.Album
 import com.elsfm.mobile.core.model.Artist
 import com.elsfm.mobile.core.model.Channel
 import com.elsfm.mobile.core.model.Playlist
+import com.elsfm.mobile.core.designsystem.OfflineBanner
 import com.elsfm.mobile.feature.library.composables.AlbumCard
 import com.elsfm.mobile.feature.library.composables.ArtistCard
 import com.elsfm.mobile.feature.library.composables.PlaylistCard
@@ -177,22 +178,22 @@ internal fun LibraryContent(
             onFilterSelected = onFilterSelected,
         )
 
-        if (state.isLoading) {
+        if (state.isLoading && state.isEmpty) {
             LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
         }
 
-        if (state.error != null) {
+        if (state.isOffline) {
+            OfflineBanner()
+        } else if (state.error != null && state.isEmpty) {
             LibraryErrorBanner(
                 error = state.error,
-                onRetry = onRetry
+                onRetry = onRetry,
             )
         }
 
         when {
-            state.isLoading -> LibraryLoading()
-            state.error != null -> {
-                Box(modifier = Modifier.fillMaxSize())
-            }
+            state.isLoading && state.isEmpty -> LibraryLoading()
+            state.error != null && state.isEmpty -> Box(modifier = Modifier.fillMaxSize())
             state.isEmpty -> LibraryEmpty(filter = state.selectedFilter)
             else -> LibraryGrid(
                 state = state,
