@@ -1,9 +1,10 @@
 package com.elsfm.mobile.feature.profile.storage
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
@@ -29,7 +30,7 @@ fun StorageSection(viewModel: StorageViewModel = hiltViewModel()) {
         supportingContent = { Text(formatBytes(state.totalCacheBytes)) },
         trailingContent = {
             Icon(
-                if (state.isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                if (state.isExpanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
                 contentDescription = null,
             )
         },
