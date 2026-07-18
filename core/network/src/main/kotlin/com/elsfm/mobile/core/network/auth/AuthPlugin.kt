@@ -35,7 +35,15 @@ val AuthPlugin = createClientPlugin("AuthPlugin", ::AuthPluginConfig) {
 
     onResponse { response ->
         if (response.status == HttpStatusCode.Unauthorized) {
-            sessionManager.notifyExpired()
+            // Only treat 401 as session expiry for authenticated routes.
+            // Guest routes (password reset, email verify, etc.) legitimately return
+            // 401 for non-auth reasons (e.g. email not found), so notifyExpired()
+            // must not fire there or the user gets kicked to the login screen.
+            val path = response.call.request.url.pathSegments.joinToString("/", "/")
+            val isGuestRoute = GUEST_ONLY_PATHS.any { path.contains(it) }
+            if (!isGuestRoute) {
+                sessionManager.notifyExpired()
+            }
         }
     }
 }

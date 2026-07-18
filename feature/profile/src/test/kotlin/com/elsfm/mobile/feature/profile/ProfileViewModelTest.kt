@@ -3,6 +3,8 @@ package com.elsfm.mobile.feature.profile
 import com.elsfm.mobile.core.common.DispatcherProvider
 import com.elsfm.mobile.core.database.UserDao
 import com.elsfm.mobile.core.database.UserEntity
+import com.elsfm.mobile.core.database.dao.ProfileCacheDao
+import com.elsfm.mobile.core.database.entity.ProfileCache
 import com.elsfm.mobile.core.model.Track
 import com.elsfm.mobile.core.model.UserProfile
 import com.elsfm.mobile.core.network.ApiResult
@@ -27,6 +29,12 @@ private class FakeDispatcherProvider(dispatcher: CoroutineDispatcher) : Dispatch
     override val io: CoroutineDispatcher = dispatcher
     override val main: CoroutineDispatcher = dispatcher
     override val default: CoroutineDispatcher = dispatcher
+}
+
+private class FakeProfileCacheDao : ProfileCacheDao {
+    override suspend fun save(cache: ProfileCache) {}
+    override suspend fun get(): ProfileCache? = null
+    override suspend fun clear() {}
 }
 
 private class FakeUserDao(private val userId: Int? = 1) : UserDao {
@@ -98,7 +106,7 @@ class ProfileViewModelTest {
     fun loadProfileSuccess() = runTest(testDispatcher) {
         val profile = UserProfile(id = 1, name = "John", email = "john@example.com")
         val api = FakeProfileApi(profile = profile)
-        val viewModel = ProfileViewModel(api, FakeUserDao(), FakeDispatcherProvider(testDispatcher))
+        val viewModel = ProfileViewModel(api, FakeUserDao(), FakeProfileCacheDao(), FakeDispatcherProvider(testDispatcher))
 
         delay(100) // Allow coroutines to execute
 
@@ -111,7 +119,7 @@ class ProfileViewModelTest {
     fun `setEditMode true enables edit mode`() = runTest(testDispatcher) {
         val profile = UserProfile(id = 1, name = "John", email = "john@example.com")
         val api = FakeProfileApi(profile = profile)
-        val viewModel = ProfileViewModel(api, FakeUserDao(), FakeDispatcherProvider(testDispatcher))
+        val viewModel = ProfileViewModel(api, FakeUserDao(), FakeProfileCacheDao(), FakeDispatcherProvider(testDispatcher))
         delay(100)
 
         viewModel.setEditMode(true)
@@ -123,7 +131,7 @@ class ProfileViewModelTest {
     fun `setEditMode false disables edit mode`() = runTest(testDispatcher) {
         val profile = UserProfile(id = 1, name = "John", email = "john@example.com")
         val api = FakeProfileApi(profile = profile)
-        val viewModel = ProfileViewModel(api, FakeUserDao(), FakeDispatcherProvider(testDispatcher))
+        val viewModel = ProfileViewModel(api, FakeUserDao(), FakeProfileCacheDao(), FakeDispatcherProvider(testDispatcher))
         delay(100)
         viewModel.setEditMode(true)
 
@@ -136,7 +144,7 @@ class ProfileViewModelTest {
     fun `updateProfile success updates profile and exits edit mode`() = runTest(testDispatcher) {
         val profile = UserProfile(id = 1, name = "John", email = "john@example.com", bio = "old bio")
         val api = FakeProfileApi(profile = profile)
-        val viewModel = ProfileViewModel(api, FakeUserDao(), FakeDispatcherProvider(testDispatcher))
+        val viewModel = ProfileViewModel(api, FakeUserDao(), FakeProfileCacheDao(), FakeDispatcherProvider(testDispatcher))
         delay(100)
         viewModel.setEditMode(true)
 
@@ -153,7 +161,7 @@ class ProfileViewModelTest {
     fun `updateProfile network error surfaces error and stays in edit mode`() = runTest(testDispatcher) {
         val profile = UserProfile(id = 1, name = "John", email = "john@example.com")
         val api = FakeFailingProfileApi(profile = profile)
-        val viewModel = ProfileViewModel(api, FakeUserDao(), FakeDispatcherProvider(testDispatcher))
+        val viewModel = ProfileViewModel(api, FakeUserDao(), FakeProfileCacheDao(), FakeDispatcherProvider(testDispatcher))
         delay(100)
         viewModel.setEditMode(true)
 

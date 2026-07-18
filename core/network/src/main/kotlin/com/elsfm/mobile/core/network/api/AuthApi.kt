@@ -15,8 +15,10 @@ import io.ktor.client.request.parameter
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
+import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.Serializable
 import java.io.IOException
 import javax.inject.Inject
@@ -42,7 +44,9 @@ class AuthApi @Inject constructor(
                 HttpStatusCode.Unauthorized, HttpStatusCode.Forbidden -> ApiResult.Unauthorized
                 else -> ApiResult.NetworkError(IllegalStateException("Unexpected status ${response.status}"))
             }
-        } catch (e: IOException) {
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
             ApiResult.NetworkError(e)
         }
     }
@@ -81,7 +85,9 @@ class AuthApi @Inject constructor(
                 }
                 else -> ApiResult.NetworkError(IllegalStateException("Unexpected status ${response.status}"))
             }
-        } catch (e: IOException) {
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
             ApiResult.NetworkError(e)
         }
     }
@@ -101,8 +107,15 @@ class AuthApi @Inject constructor(
             }
             when (response.status) {
                 // The real backend returns 201 Created (not 200 OK) for successful registration.
-                HttpStatusCode.OK, HttpStatusCode.Created ->
-                    ApiResult.Success(response.body<RegisterResponse>().bootstrapData.user)
+                // Use runCatching for body parsing: if the backend accepted the registration
+                // but returned an unexpected JSON shape (ContentConvertException), we still
+                // treat the outcome as a success so SignupViewModel navigates to the email
+                // verification screen — the backend already sent the OTP at this point.
+                HttpStatusCode.OK, HttpStatusCode.Created -> {
+                    val user = runCatching { response.body<RegisterResponse>().bootstrapData.user }
+                        .getOrElse { User(id = -1, email = email) }
+                    ApiResult.Success(user)
+                }
                 HttpStatusCode.UnprocessableEntity -> {
                     val error = response.body<LaravelValidationError>()
                     ApiResult.ValidationError(error.errors)
@@ -110,7 +123,9 @@ class AuthApi @Inject constructor(
                 HttpStatusCode.Unauthorized, HttpStatusCode.Forbidden -> ApiResult.Unauthorized
                 else -> ApiResult.NetworkError(IllegalStateException("Unexpected status ${response.status}"))
             }
-        } catch (e: IOException) {
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
             ApiResult.NetworkError(e)
         }
     }
@@ -119,6 +134,9 @@ class AuthApi @Inject constructor(
         return try {
             val response = httpClient.post("api/v1/auth/password/email") {
                 contentType(ContentType.Application.Json)
+                // Accept: application/json tells Laravel Fortify to return JSON errors
+                // instead of HTML redirect responses, which can appear as 401/403.
+                headers.append(HttpHeaders.Accept, "application/json")
                 setBody(PasswordResetRequest(email = email))
             }
             when (response.status) {
@@ -130,7 +148,9 @@ class AuthApi @Inject constructor(
                 HttpStatusCode.Unauthorized, HttpStatusCode.Forbidden -> ApiResult.Unauthorized
                 else -> ApiResult.NetworkError(IllegalStateException("Unexpected status ${response.status}"))
             }
-        } catch (e: IOException) {
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
             ApiResult.NetworkError(e)
         }
     }
@@ -139,6 +159,7 @@ class AuthApi @Inject constructor(
         return try {
             val response = httpClient.post("api/v1/auth/email/verify") {
                 contentType(ContentType.Application.Json)
+                headers.append(HttpHeaders.Accept, "application/json")
                 setBody(EmailVerifyRequest(code = code))
             }
             when (response.status) {
@@ -150,7 +171,9 @@ class AuthApi @Inject constructor(
                 HttpStatusCode.Unauthorized, HttpStatusCode.Forbidden -> ApiResult.Unauthorized
                 else -> ApiResult.NetworkError(IllegalStateException("Unexpected status ${response.status}"))
             }
-        } catch (e: IOException) {
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
             ApiResult.NetworkError(e)
         }
     }

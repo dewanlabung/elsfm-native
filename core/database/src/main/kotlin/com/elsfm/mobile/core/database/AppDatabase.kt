@@ -7,12 +7,14 @@ import com.elsfm.mobile.core.database.dao.DownloadedTrackDao
 import com.elsfm.mobile.core.database.dao.FollowStateDao
 import com.elsfm.mobile.core.database.dao.LibraryCacheDao
 import com.elsfm.mobile.core.database.dao.PlaybackStateDao
+import com.elsfm.mobile.core.database.dao.ProfileCacheDao
 import com.elsfm.mobile.core.database.dao.TokenDao
 import com.elsfm.mobile.core.database.entity.DiscoveryCache
 import com.elsfm.mobile.core.database.entity.DownloadedTrack
 import com.elsfm.mobile.core.database.entity.FollowedArtistEntity
 import com.elsfm.mobile.core.database.entity.LibraryCache
 import com.elsfm.mobile.core.database.entity.PlaybackStateEntity
+import com.elsfm.mobile.core.database.entity.ProfileCache
 import com.elsfm.mobile.core.database.entity.TokenEntity
 
 @Database(
@@ -24,6 +26,7 @@ import com.elsfm.mobile.core.database.entity.TokenEntity
         PlaybackStateEntity::class,
         DiscoveryCache::class,
         LibraryCache::class,
+        ProfileCache::class,
     ],
     version = 7,
     exportSchema = true
@@ -36,4 +39,5 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun playbackStateDao(): PlaybackStateDao
     abstract fun discoveryCacheDao(): DiscoveryCacheDao
     abstract fun libraryCacheDao(): LibraryCacheDao
+    abstract fun profileCacheDao(): ProfileCacheDao
 }

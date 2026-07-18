@@ -17,6 +17,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,8 +37,8 @@ fun EmailVerificationScreen(
 ) {
     val state = viewModel.state.collectAsState().value
 
-    if (state.isVerified) {
-        onVerified()
+    LaunchedEffect(state.isVerified) {
+        if (state.isVerified) onVerified()
     }
 
     Column(

@@ -23,6 +23,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -49,11 +50,11 @@ fun SignupScreen(
     var isPasswordVisible by remember { mutableStateOf(false) }
     var isConfirmPasswordVisible by remember { mutableStateOf(false) }
 
-    if (state.isSignedUp) {
-        onSignupSuccess()
+    LaunchedEffect(state.isSignedUp) {
+        if (state.isSignedUp) onSignupSuccess()
     }
-    if (state.needsEmailVerification) {
-        onNeedsEmailVerification(state.email)
+    LaunchedEffect(state.needsEmailVerification) {
+        if (state.needsEmailVerification) onNeedsEmailVerification(state.email)
     }
 
     Column(

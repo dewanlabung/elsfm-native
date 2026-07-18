@@ -1,13 +1,20 @@
 package com.elsfm.mobile.feature.library
 
 import app.cash.turbine.test
+import com.elsfm.mobile.core.common.DispatcherProvider
+import com.elsfm.mobile.core.database.dao.LibraryCacheDao
+import com.elsfm.mobile.core.database.entity.LibraryCache
 import com.elsfm.mobile.core.model.Album
 import com.elsfm.mobile.core.model.Artist
 import com.elsfm.mobile.core.model.Channel
 import com.elsfm.mobile.core.model.Playlist
 import com.elsfm.mobile.core.network.ApiResult
+import com.elsfm.mobile.core.network.connectivity.NetworkMonitor
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -19,6 +26,21 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+
+private class FakeLibraryCacheDao : LibraryCacheDao {
+    override suspend fun save(cache: LibraryCache) {}
+    override suspend fun get(): LibraryCache? = null
+}
+
+private class FakeNetworkMonitor : NetworkMonitor {
+    override val isOnline: Flow<Boolean> = emptyFlow()
+}
+
+private class FakeDispatcherProvider(dispatcher: CoroutineDispatcher) : DispatcherProvider {
+    override val io: CoroutineDispatcher = dispatcher
+    override val main: CoroutineDispatcher = dispatcher
+    override val default: CoroutineDispatcher = dispatcher
+}
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class LibraryViewModelTest {
@@ -35,6 +57,9 @@ class LibraryViewModelTest {
         Dispatchers.resetMain()
     }
 
+    private fun viewModel(repository: FakeLibraryApiRepository) =
+        LibraryViewModel(repository, FakeLibraryCacheDao(), FakeNetworkMonitor(), FakeDispatcherProvider(testDispatcher))
+
     @Test
     fun `loadLibrary updates state with playlists, albums, artists and channels`() = runTest {
         val testArtist = Artist(id = 1, name = "ELShaddai Kalimpong")
@@ -45,7 +70,7 @@ class LibraryViewModelTest {
             artists = listOf(testArtist),
             channels = listOf(testChannel),
         )
-        val viewModel = LibraryViewModel(repository)
+        val viewModel = viewModel(repository)
 
         viewModel.state.test {
             // Initial state (empty)
@@ -73,7 +98,7 @@ class LibraryViewModelTest {
         val repository = FakeLibraryApiRepository(
             error = RuntimeException("Network error"),
         )
-        val viewModel = LibraryViewModel(repository)
+        val viewModel = viewModel(repository)
 
         viewModel.state.test {
             assertEquals(LibraryState(), awaitItem())
@@ -89,7 +114,7 @@ class LibraryViewModelTest {
     @Test
     fun `selectFilter updates selectedFilter in state`() = runTest {
         val repository = FakeLibraryApiRepository()
-        val viewModel = LibraryViewModel(repository)
+        val viewModel = viewModel(repository)
 
         viewModel.selectFilter(LibraryFilter.PLAYLISTS)
 
@@ -102,7 +127,7 @@ class LibraryViewModelTest {
         val repository = FakeLibraryApiRepository(
             createPlaylistResult = ApiResult.Success(newPlaylist),
         )
-        val viewModel = LibraryViewModel(repository)
+        val viewModel = viewModel(repository)
 
         viewModel.state.test {
             awaitItem() // initial
@@ -131,7 +156,7 @@ class LibraryViewModelTest {
         val repository = FakeLibraryApiRepository(
             createPlaylistResult = ApiResult.ValidationError(errors),
         )
-        val viewModel = LibraryViewModel(repository)
+        val viewModel = viewModel(repository)
 
         viewModel.state.test {
             awaitItem() // initial

@@ -10,6 +10,7 @@ import com.elsfm.mobile.core.database.dao.DownloadedTrackDao
 import com.elsfm.mobile.core.database.dao.FollowStateDao
 import com.elsfm.mobile.core.database.dao.LibraryCacheDao
 import com.elsfm.mobile.core.database.dao.PlaybackStateDao
+import com.elsfm.mobile.core.database.dao.ProfileCacheDao
 import com.elsfm.mobile.core.database.repository.RoomPlaybackStateStore
 import dagger.Module
 import dagger.Provides
@@ -47,6 +48,9 @@ object DatabaseModule {
 
     @Provides
     fun provideLibraryCacheDao(database: AppDatabase): LibraryCacheDao = database.libraryCacheDao()
+
+    @Provides
+    fun provideProfileCacheDao(database: AppDatabase): ProfileCacheDao = database.profileCacheDao()
 
     @Provides
     @Singleton

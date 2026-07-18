@@ -14,7 +14,6 @@ import com.elsfm.mobile.core.network.ApiResult
 import com.elsfm.mobile.core.network.connectivity.NetworkMonitor
 import com.elsfm.mobile.core.network.elsfmJson
 import com.elsfm.mobile.feature.library.data.LibraryApiRepository
-import com.elsfm.mobile.feature.library.data.LibraryData
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -33,12 +32,6 @@ enum class LibraryFilter {
     CHANNELS,
 }
 
-/**
- * Immutable, hoisted UI state for [LibraryScreen].
- *
- * Playlists, albums and artists are all backed by real, per-user API data via
- * [LibraryApiRepository]; channels are the app's home/discovery channel list.
- */
 data class LibraryState(
     val playlists: List<Playlist> = emptyList(),
     val albums: List<Album> = emptyList(),
@@ -50,7 +43,6 @@ data class LibraryState(
     val isOffline: Boolean = false,
     val isCreatingPlaylist: Boolean = false,
     val createPlaylistError: String? = null,
-    /** One-shot signal the screen consumes to dismiss the create-playlist dialog. */
     val playlistCreated: Boolean = false,
 ) {
     val isEmpty: Boolean
@@ -73,7 +65,6 @@ class LibraryViewModel @Inject constructor(
             performLoad()
         }
 
-        // Silent refresh when connectivity is restored mid-session.
         viewModelScope.launch(dispatcherProvider.io) {
             networkMonitor.isOnline
                 .drop(1)
@@ -117,7 +108,7 @@ class LibraryViewModel @Inject constructor(
                     error = null,
                     isOffline = false,
                 )
-                cacheLibrary(result.data)
+                cacheLibrary(_state.value)
             }
             is ApiResult.NetworkError -> {
                 val hasCached = !_state.value.isEmpty
@@ -136,12 +127,12 @@ class LibraryViewModel @Inject constructor(
         }
     }
 
-    private suspend fun cacheLibrary(data: LibraryData) {
+    private suspend fun cacheLibrary(state: LibraryState) {
         val sections = LibrarySections(
-            playlists = data.playlists,
-            albums = data.albums,
-            artists = data.artists,
-            channels = data.channels,
+            playlists = state.playlists,
+            albums = state.albums,
+            artists = state.artists,
+            channels = state.channels,
         )
         val json = elsfmJson().encodeToString(LibrarySections.serializer(), sections)
         libraryCacheDao.save(LibraryCache(payloadJson = json))
@@ -162,6 +153,7 @@ class LibraryViewModel @Inject constructor(
                         isCreatingPlaylist = false,
                         playlistCreated = true,
                     )
+                    cacheLibrary(_state.value)
                 }
                 is ApiResult.ValidationError -> {
                     val errorMessages = result.fields.values.flatten().joinToString(", ")
@@ -180,7 +172,6 @@ class LibraryViewModel @Inject constructor(
         }
     }
 
-    /** Called by the screen once it has reacted to [LibraryState.playlistCreated]. */
     fun consumePlaylistCreatedEvent() {
         _state.value = _state.value.copy(playlistCreated = false)
     }

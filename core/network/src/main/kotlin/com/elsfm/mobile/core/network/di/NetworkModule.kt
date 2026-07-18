@@ -79,7 +79,12 @@ object NetworkModule {
                     response.status == HttpStatusCode.Unauthorized &&
                         !request.url.encodedPath.contains("/auth/login") &&
                         !request.url.encodedPath.contains("/auth/register") &&
-                        !request.url.encodedPath.contains("/auth/social")
+                        !request.url.encodedPath.contains("/auth/social") &&
+                        // Guest routes must never be retried on 401: their 401s are
+                        // permanent (e.g. "email not found") and retrying wastes
+                        // requests while also triggering notifyExpired() in AuthPlugin.
+                        !request.url.encodedPath.contains("/auth/password") &&
+                        !request.url.encodedPath.contains("/auth/email")
                 }
                 constantDelay(millis = 500)
             }
