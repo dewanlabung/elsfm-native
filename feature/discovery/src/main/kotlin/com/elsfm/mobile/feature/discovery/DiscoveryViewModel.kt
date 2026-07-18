@@ -75,6 +75,7 @@ data class DiscoveryUiState(
     val recentlyPlayed: List<Track> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null,
+    val isOffline: Boolean = false,
 )
 
 @HiltViewModel
@@ -142,7 +143,7 @@ class DiscoveryViewModel @Inject constructor(
      */
     private suspend fun performLoad() {
         val hadContentAlready = _state.value.hasAnySection()
-        _state.value = _state.value.copy(isLoading = !hadContentAlready, error = null)
+        _state.value = _state.value.copy(isLoading = !hadContentAlready, error = null, isOffline = false)
 
         var loadError: String? = null
 
@@ -182,7 +183,12 @@ class DiscoveryViewModel @Inject constructor(
             }
         }
 
-        _state.value = _state.value.copy(isLoading = false, error = loadError)
+        val hasContent = _state.value.hasAnySection()
+        _state.value = _state.value.copy(
+            isLoading = false,
+            error = if (loadError != null && hasContent) null else loadError,
+            isOffline = loadError != null && hasContent,
+        )
     }
 
     private fun DiscoveryUiState.hasAnySection(): Boolean {

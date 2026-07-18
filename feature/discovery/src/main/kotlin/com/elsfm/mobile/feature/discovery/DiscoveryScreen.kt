@@ -22,6 +22,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.elsfm.mobile.core.model.Album
 import com.elsfm.mobile.core.model.Playlist
 import com.elsfm.mobile.core.model.Track
+import com.elsfm.mobile.core.designsystem.OfflineBanner
 import com.elsfm.mobile.feature.discovery.sections.FeaturedPlaylistsSection
 import com.elsfm.mobile.feature.discovery.sections.NewReleasesSection
 import com.elsfm.mobile.feature.discovery.sections.TrackListSection
@@ -57,7 +58,7 @@ fun DiscoveryScreen(
         ) { isLoading ->
             when {
                 isLoading -> DiscoveryLoading()
-                state.isEmpty() && state.error != null -> DiscoveryError(state.error)
+                state.isEmpty() && (state.error != null || state.isOffline) -> DiscoveryError(state.error)
                 else -> DiscoveryContent(
                     state = state,
                     onTrackClicked = onTrackClicked,
@@ -126,6 +127,9 @@ internal fun DiscoveryContent(
             .padding(vertical = 16.dp)
             .testTag(DISCOVERY_CONTENT_LIST_TEST_TAG),
     ) {
+        if (state.isOffline) {
+            item { OfflineBanner() }
+        }
         if (state.kidsZone.isNotEmpty()) {
             item {
                 SectionHeader(title = state.kidsZoneTitle, onSeeAllClick = onSeeAllKidsZone)
@@ -166,16 +170,6 @@ internal fun DiscoveryContent(
                     tracks = state.mostlyPlayedSongs,
                     onTrackClick = { track -> onTrackClicked(track, state.mostlyPlayedSongs) },
                     onTrackMoreClick = onTrackMoreClicked,
-                )
-            }
-        }
-        if (state.error != null) {
-            item {
-                Text(
-                    text = state.error,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.padding(horizontal = 16.dp),
                 )
             }
         }

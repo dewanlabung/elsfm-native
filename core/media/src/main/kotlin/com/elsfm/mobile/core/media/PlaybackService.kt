@@ -1,6 +1,11 @@
 package com.elsfm.mobile.core.media
 
+import android.app.KeyguardManager
 import android.app.PendingIntent
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.hardware.SensorManager
 import android.media.audiofx.Equalizer
 import androidx.media3.common.AudioAttributes
@@ -25,9 +30,38 @@ class PlaybackService : MediaSessionService() {
     @Inject
     lateinit var sessionManager: SessionManager
 
+    @Inject
+    lateinit var shakePreferences: ShakePreferences
+
     private var mediaSession: MediaSession? = null
     private var shakeDetector: ShakeDetector? = null
     private var headsetMonitor: HeadsetEventMonitor? = null
+    private var keyguardManager: KeyguardManager? = null
+
+    // Tracks latest screen-on/off state for the shake-detection gate.
+    private var isScreenOn = true
+
+    // Re-evaluates whether shake detection should run whenever the relevant
+    // conditions change: playback state, screen state, lock state, or settings.
+    private fun updateShakeDetector(player: Player) {
+        val isLocked = keyguardManager?.isKeyguardLocked == true
+        val shouldRun = shakePreferences.isEnabled &&
+            player.isPlaying &&
+            isScreenOn &&
+            !isLocked
+        if (shouldRun) shakeDetector?.start() else shakeDetector?.stop()
+    }
+
+    // Receives screen-off / screen-on / keyguard-dismissed broadcasts.
+    private val screenReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            when (intent.action) {
+                Intent.ACTION_SCREEN_OFF -> isScreenOn = false
+                Intent.ACTION_SCREEN_ON, Intent.ACTION_USER_PRESENT -> isScreenOn = true
+            }
+            mediaSession?.player?.let { updateShakeDetector(it) }
+        }
+    }
 
     // Kept so a future settings screen can expose band-level EQ controls off this same
     // audio-session-scoped instance; re-created whenever the session id changes (e.g. on
@@ -90,13 +124,41 @@ class PlaybackService : MediaSessionService() {
         }
         mediaSession = sessionBuilder.build()
 
+        keyguardManager = getSystemService(KeyguardManager::class.java)
+
         shakeDetector = ShakeDetector(
             sensorManager = getSystemService(SensorManager::class.java),
+            initialSensitivity = shakePreferences.sensitivity,
             onShake = {
                 player.seekToNextMediaItem()
                 if (!player.isPlaying) player.play()
             },
-        ).also { it.start() }
+        )
+
+        // Pause/resume detection as playback state changes so the sensor is
+        // off whenever music is paused (saves battery and avoids false triggers).
+        player.addListener(object : Player.Listener {
+            override fun onIsPlayingChanged(isPlaying: Boolean) {
+                // Also sync sensitivity in case the user changed it while paused.
+                shakeDetector?.sensitivity = shakePreferences.sensitivity
+                updateShakeDetector(player)
+            }
+        })
+
+        // React to screen-off / screen-on / keyguard-dismissed events.
+        // These broadcasts are not deliverable via the manifest, so dynamic
+        // registration is required.
+        registerReceiver(
+            screenReceiver,
+            IntentFilter().apply {
+                addAction(Intent.ACTION_SCREEN_OFF)
+                addAction(Intent.ACTION_SCREEN_ON)
+                addAction(Intent.ACTION_USER_PRESENT)
+            },
+        )
+
+        // Kick off detection immediately if all conditions are already met.
+        updateShakeDetector(player)
 
         headsetMonitor = HeadsetEventMonitor(
             getIsPlaying = { player.isPlaying },
@@ -108,6 +170,7 @@ class PlaybackService : MediaSessionService() {
 
     override fun onDestroy() {
         shakeDetector?.stop()
+        runCatching { unregisterReceiver(screenReceiver) }
         headsetMonitor?.stop(this)
         equalizer?.release()
         equalizer = null

@@ -2,16 +2,26 @@ package com.elsfm.mobile.feature.library
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.elsfm.mobile.core.common.DispatcherProvider
+import com.elsfm.mobile.core.database.dao.LibraryCacheDao
+import com.elsfm.mobile.core.database.entity.LibraryCache
 import com.elsfm.mobile.core.model.Album
 import com.elsfm.mobile.core.model.Artist
 import com.elsfm.mobile.core.model.Channel
+import com.elsfm.mobile.core.model.LibrarySections
 import com.elsfm.mobile.core.model.Playlist
 import com.elsfm.mobile.core.network.ApiResult
+import com.elsfm.mobile.core.network.connectivity.NetworkMonitor
+import com.elsfm.mobile.core.network.elsfmJson
 import com.elsfm.mobile.feature.library.data.LibraryApiRepository
+import com.elsfm.mobile.feature.library.data.LibraryData
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -37,6 +47,7 @@ data class LibraryState(
     val selectedFilter: LibraryFilter = LibraryFilter.ALL,
     val isLoading: Boolean = false,
     val error: String? = null,
+    val isOffline: Boolean = false,
     val isCreatingPlaylist: Boolean = false,
     val createPlaylistError: String? = null,
     /** One-shot signal the screen consumes to dismiss the create-playlist dialog. */
@@ -49,33 +60,91 @@ data class LibraryState(
 @HiltViewModel
 class LibraryViewModel @Inject constructor(
     private val libraryRepository: LibraryApiRepository,
+    private val libraryCacheDao: LibraryCacheDao,
+    private val networkMonitor: NetworkMonitor,
+    private val dispatcherProvider: DispatcherProvider,
 ) : ViewModel() {
     private val _state = MutableStateFlow(LibraryState())
     val state: StateFlow<LibraryState> = _state.asStateFlow()
 
     init {
-        loadLibrary()
+        viewModelScope.launch(dispatcherProvider.io) {
+            loadCachedIfAvailable()
+            performLoad()
+        }
+
+        // Silent refresh when connectivity is restored mid-session.
+        viewModelScope.launch(dispatcherProvider.io) {
+            networkMonitor.isOnline
+                .drop(1)
+                .distinctUntilChanged()
+                .filter { it }
+                .collect { performLoad() }
+        }
     }
 
     fun loadLibrary() {
-        viewModelScope.launch {
-            _state.value = _state.value.copy(isLoading = true, error = null)
-            val result = libraryRepository.loadLibrary()
-            if (result is ApiResult.Success) {
+        viewModelScope.launch(dispatcherProvider.io) { performLoad() }
+    }
+
+    private suspend fun loadCachedIfAvailable() {
+        val cached = libraryCacheDao.get() ?: return
+        val sections = runCatching {
+            elsfmJson().decodeFromString(LibrarySections.serializer(), cached.payloadJson)
+        }.getOrNull() ?: return
+
+        _state.value = _state.value.copy(
+            playlists = sections.playlists,
+            albums = sections.albums,
+            artists = sections.artists,
+            channels = sections.channels,
+            isLoading = false,
+        )
+    }
+
+    private suspend fun performLoad() {
+        val hadContent = !_state.value.isEmpty
+        _state.value = _state.value.copy(isLoading = !hadContent, error = null, isOffline = false)
+
+        when (val result = libraryRepository.loadLibrary()) {
+            is ApiResult.Success -> {
                 _state.value = _state.value.copy(
                     playlists = result.data.playlists,
                     albums = result.data.albums,
                     artists = result.data.artists,
                     channels = result.data.channels,
                     isLoading = false,
+                    error = null,
+                    isOffline = false,
                 )
-            } else {
+                cacheLibrary(result.data)
+            }
+            is ApiResult.NetworkError -> {
+                val hasCached = !_state.value.isEmpty
                 _state.value = _state.value.copy(
                     isLoading = false,
-                    error = "Failed to load library",
+                    error = if (hasCached) null else "Failed to load library",
+                    isOffline = hasCached,
+                )
+            }
+            is ApiResult.ValidationError, is ApiResult.Unauthorized -> {
+                _state.value = _state.value.copy(
+                    isLoading = false,
+                    error = if (_state.value.isEmpty) "Failed to load library" else null,
                 )
             }
         }
+    }
+
+    private suspend fun cacheLibrary(data: LibraryData) {
+        val sections = LibrarySections(
+            playlists = data.playlists,
+            albums = data.albums,
+            artists = data.artists,
+            channels = data.channels,
+        )
+        val json = elsfmJson().encodeToString(LibrarySections.serializer(), sections)
+        libraryCacheDao.save(LibraryCache(payloadJson = json))
     }
 
     fun selectFilter(filter: LibraryFilter) {

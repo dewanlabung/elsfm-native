@@ -1,6 +1,7 @@
 package com.elsfm.mobile.core.network.api
 
 import com.elsfm.mobile.core.model.FileEntry
+import com.elsfm.mobile.core.model.LaravelValidationError
 import com.elsfm.mobile.core.model.UserProfile
 import com.elsfm.mobile.core.network.ApiResult
 import io.ktor.client.HttpClient
@@ -32,6 +33,13 @@ private data class UpdateAccountDetailsRequest(
     val name: String? = null,
     val image: String? = null,
     val image_entry_id: Int? = null,
+)
+
+@Serializable
+private data class ChangePasswordRequest(
+    val current_password: String,
+    val password: String,
+    val password_confirmation: String,
 )
 
 /**
@@ -108,6 +116,44 @@ open class AccountApi @Inject constructor(
                 ApiResult.Unauthorized
             } else {
                 ApiResult.NetworkError(RuntimeException("Unexpected status: ${response.status}"))
+            }
+        } catch (e: Exception) {
+            ApiResult.NetworkError(e)
+        }
+    }
+
+    /**
+     * Mirrors the PWA's "Update password" panel
+     * (`common/foundation/resources/client/auth/ui/account-settings/password-panel`).
+     * Sends [currentPassword], [newPassword], and its confirmation to
+     * `PUT api/v1/users/{userId}`, which the backend's UserController::update handles
+     * alongside name and avatar updates.
+     */
+    open suspend fun changePassword(
+        userId: Int,
+        currentPassword: String,
+        newPassword: String,
+    ): ApiResult<Unit> {
+        return try {
+            val response = httpClient.put("api/v1/users/$userId") {
+                contentType(ContentType.Application.Json)
+                setBody(
+                    ChangePasswordRequest(
+                        current_password = currentPassword,
+                        password = newPassword,
+                        password_confirmation = newPassword,
+                    ),
+                )
+            }
+            when {
+                response.status.isSuccess() -> ApiResult.Success(Unit)
+                response.status == HttpStatusCode.UnprocessableEntity -> {
+                    val error = response.body<LaravelValidationError>()
+                    ApiResult.ValidationError(error.errors)
+                }
+                response.status == HttpStatusCode.Unauthorized ||
+                    response.status == HttpStatusCode.Forbidden -> ApiResult.Unauthorized
+                else -> ApiResult.NetworkError(RuntimeException("Unexpected status: ${response.status}"))
             }
         } catch (e: Exception) {
             ApiResult.NetworkError(e)
