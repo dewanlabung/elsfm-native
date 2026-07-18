@@ -17,6 +17,8 @@ data class SignupState(
     val isLoading: Boolean = false,
     val error: String? = null,
     val isSignedUp: Boolean = false,
+    /** True after successful registration: navigate to email verification screen. */
+    val needsEmailVerification: Boolean = false,
     val acceptTerms: Boolean = false,
     val acceptPrivacy: Boolean = false,
 )
@@ -81,9 +83,11 @@ class SignupViewModel @Inject constructor(
                 currentState.password
             )) {
                 is ApiResult.Success -> {
+                    // Registration succeeded — backend sent a 6-digit verification code
+                    // to the user's email. Navigate to the verification screen.
                     _state.value = _state.value.copy(
                         isLoading = false,
-                        isSignedUp = true
+                        needsEmailVerification = true,
                     )
                 }
                 is ApiResult.ValidationError -> {

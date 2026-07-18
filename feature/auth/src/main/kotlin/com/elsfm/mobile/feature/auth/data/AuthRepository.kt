@@ -34,6 +34,8 @@ class AuthRepository @Inject constructor(
      * Creates a new account via the real `POST auth/register` endpoint, then stores the
      * session exactly like [login] does on success (the register endpoint issues a real
      * API token too when a `token_name` is sent).
+     * The backend returns 201 Created; after success the server also sends an email
+     * verification code — the caller must navigate to the email verification screen.
      */
     suspend fun register(email: String, password: String): ApiResult<User> {
         val tokenName = "android-${UUID.randomUUID()}"
@@ -51,6 +53,14 @@ class AuthRepository @Inject constructor(
     /** Requests a password-reset email via the real `POST auth/password/email` endpoint. */
     suspend fun requestPasswordReset(email: String): ApiResult<Unit> =
         authApi.requestPasswordReset(email)
+
+    /**
+     * Verifies the email address using the 6-digit code the server emailed after registration.
+     * Backed by `POST api/v1/auth/email/verify`. On success the account is considered verified
+     * and the user can proceed into the app.
+     */
+    suspend fun verifyEmail(code: String): ApiResult<Unit> =
+        authApi.verifyEmail(code)
 
     /** Same session-storage flow as [login], just backed by a Google OAuth access token. */
     suspend fun loginWithGoogle(googleAccessToken: String): ApiResult<User> {

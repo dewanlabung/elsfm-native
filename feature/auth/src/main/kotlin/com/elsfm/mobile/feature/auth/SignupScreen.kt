@@ -42,6 +42,7 @@ import androidx.compose.foundation.Image
 fun SignupScreen(
     viewModel: SignupViewModel = hiltViewModel(),
     onSignupSuccess: () -> Unit = {},
+    onNeedsEmailVerification: (email: String) -> Unit = {},
     onSigninClick: () -> Unit = {},
 ) {
     val state = viewModel.state.collectAsState().value
@@ -50,6 +51,9 @@ fun SignupScreen(
 
     if (state.isSignedUp) {
         onSignupSuccess()
+    }
+    if (state.needsEmailVerification) {
+        onNeedsEmailVerification(state.email)
     }
 
     Column(
@@ -172,7 +176,7 @@ fun SignupScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 24.dp),
-            enabled = !state.isLoading && state.email.isNotBlank() && 
+            enabled = !state.isLoading && state.email.isNotBlank() &&
                       state.password.isNotBlank() && state.acceptTerms && state.acceptPrivacy
         ) {
             if (state.isLoading) {

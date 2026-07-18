@@ -17,8 +17,12 @@ import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
+import kotlinx.serialization.Serializable
 import java.io.IOException
 import javax.inject.Inject
+
+@Serializable
+private data class EmailVerifyRequest(val code: String)
 
 class AuthApi @Inject constructor(
     private val httpClient: HttpClient,
@@ -96,7 +100,9 @@ class AuthApi @Inject constructor(
                 )
             }
             when (response.status) {
-                HttpStatusCode.OK -> ApiResult.Success(response.body<RegisterResponse>().bootstrapData.user)
+                // The real backend returns 201 Created (not 200 OK) for successful registration.
+                HttpStatusCode.OK, HttpStatusCode.Created ->
+                    ApiResult.Success(response.body<RegisterResponse>().bootstrapData.user)
                 HttpStatusCode.UnprocessableEntity -> {
                     val error = response.body<LaravelValidationError>()
                     ApiResult.ValidationError(error.errors)
@@ -117,6 +123,26 @@ class AuthApi @Inject constructor(
             }
             when (response.status) {
                 HttpStatusCode.OK -> ApiResult.Success(Unit)
+                HttpStatusCode.UnprocessableEntity -> {
+                    val error = response.body<LaravelValidationError>()
+                    ApiResult.ValidationError(error.errors)
+                }
+                HttpStatusCode.Unauthorized, HttpStatusCode.Forbidden -> ApiResult.Unauthorized
+                else -> ApiResult.NetworkError(IllegalStateException("Unexpected status ${response.status}"))
+            }
+        } catch (e: IOException) {
+            ApiResult.NetworkError(e)
+        }
+    }
+
+    override suspend fun verifyEmail(code: String): ApiResult<Unit> {
+        return try {
+            val response = httpClient.post("api/v1/auth/email/verify") {
+                contentType(ContentType.Application.Json)
+                setBody(EmailVerifyRequest(code = code))
+            }
+            when (response.status) {
+                HttpStatusCode.OK, HttpStatusCode.Created -> ApiResult.Success(Unit)
                 HttpStatusCode.UnprocessableEntity -> {
                     val error = response.body<LaravelValidationError>()
                     ApiResult.ValidationError(error.errors)

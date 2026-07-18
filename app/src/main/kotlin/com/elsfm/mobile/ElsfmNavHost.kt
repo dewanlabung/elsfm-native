@@ -39,6 +39,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.elsfm.mobile.core.network.auth.SessionEvent
 import com.elsfm.mobile.feature.artist.ArtistDetailScreen
+import com.elsfm.mobile.feature.auth.EmailVerificationScreen
 import com.elsfm.mobile.feature.auth.LoginScreen
 import com.elsfm.mobile.feature.auth.PasswordResetScreen
 import com.elsfm.mobile.feature.auth.SignupScreen
@@ -76,6 +77,8 @@ private const val ROUTE_PROFILE = "profile"
 private const val ROUTE_DOWNLOADS = "downloads"
 private const val ROUTE_SIGNUP = "signup"
 private const val ROUTE_PASSWORD_RESET = "password_reset"
+private const val ROUTE_EMAIL_VERIFY = "email_verify/{email}"
+private const val EMAIL_VERIFY_ARG = "email"
 private const val ROUTE_CHANNEL = "channel/{channelId}"
 private const val ROUTE_NOTIFICATIONS = "notifications"
 private const val ROUTE_LIKED_SONGS = "liked_songs"
@@ -146,7 +149,14 @@ private val bottomTabs = listOf(
 private val primaryRoutesForTopBar = bottomTabs.map { it.route }.toSet() + ROUTE_SEARCH
 
 /** Routes with no bottom nav: the pre-auth flow and the full-screen Now Playing player. */
-private val routesWithoutBottomBar = setOf(ROUTE_LOGIN, ROUTE_SIGNUP, ROUTE_PASSWORD_RESET, ROUTE_HOME, ROUTE_PLAYER)
+private val routesWithoutBottomBar = setOf(
+    ROUTE_LOGIN,
+    ROUTE_SIGNUP,
+    ROUTE_PASSWORD_RESET,
+    ROUTE_EMAIL_VERIFY,
+    ROUTE_HOME,
+    ROUTE_PLAYER,
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -269,7 +279,27 @@ fun ElsfmNavHost(
                         composable(ROUTE_SIGNUP) {
                             SignupScreen(
                                 onSignupSuccess = { navController.navigate(ROUTE_DISCOVERY) { popUpTo(0) } },
+                                onNeedsEmailVerification = { email ->
+                                    val encoded = URLEncoder.encode(email, "UTF-8")
+                                    navController.navigate("email_verify/$encoded") {
+                                        // Keep signup in back stack so user can go back
+                                    }
+                                },
                                 onSigninClick = { navController.popBackStack() },
+                            )
+                        }
+                        composable(
+                            route = ROUTE_EMAIL_VERIFY,
+                            arguments = listOf(navArgument(EMAIL_VERIFY_ARG) { type = NavType.StringType }),
+                        ) { backStackEntry ->
+                            val encodedEmail = backStackEntry.arguments?.getString(EMAIL_VERIFY_ARG) ?: ""
+                            val email = URLDecoder.decode(encodedEmail, "UTF-8")
+                            EmailVerificationScreen(
+                                email = email,
+                                onVerified = {
+                                    navController.navigate(ROUTE_DISCOVERY) { popUpTo(0) }
+                                },
+                                onBackClick = { navController.popBackStack() },
                             )
                         }
                         composable(ROUTE_PASSWORD_RESET) {

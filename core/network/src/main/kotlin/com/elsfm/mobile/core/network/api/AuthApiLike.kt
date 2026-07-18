@@ -19,6 +19,7 @@ interface AuthApiLike {
      * Backed by the real `POST auth/register` route (`MobileAuthController::register` ->
      * `FortifyRegisterUser::create`). The backend requires `password_confirmation` (Fortify's
      * default password rules append `confirmed`) - callers must pass a matching value.
+     * Returns 201 Created (not 200 OK) on the real backend.
      */
     suspend fun register(email: String, password: String, tokenName: String): ApiResult<User>
 
@@ -28,4 +29,11 @@ interface AuthApiLike {
      * is `guest`-only on the backend (rejects requests carrying a valid session/token).
      */
     suspend fun requestPasswordReset(email: String): ApiResult<Unit>
+
+    /**
+     * Verifies the user's email address using the 6-digit code sent by the server after
+     * registration. Backed by `POST api/v1/auth/email/verify` on the BeMusic backend.
+     * This route is `guest`-only (the account has no verified session yet at this point).
+     */
+    suspend fun verifyEmail(code: String): ApiResult<Unit>
 }
