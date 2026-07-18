@@ -28,6 +28,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.elsfm.mobile.core.media.DownloadQuality
 import com.elsfm.mobile.core.media.ShakeSensitivity
 import com.elsfm.mobile.feature.profile.storage.StorageSection
 
@@ -138,6 +139,38 @@ fun SettingsScreen(
             )
 
             StorageSection()
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            SettingsSectionHeader("Downloads")
+
+            ListItem(
+                headlineContent = { Text("Offline mode") },
+                supportingContent = { Text("Only play downloaded tracks") },
+                trailingContent = {
+                    Switch(
+                        checked = state.isOfflineModeEnabled,
+                        onCheckedChange = { viewModel.toggleOfflineMode() },
+                    )
+                },
+            )
+
+            ListItem(
+                headlineContent = { Text("Download quality") },
+                supportingContent = {
+                    Row(modifier = Modifier.padding(top = 4.dp)) {
+                        DownloadQuality.entries.forEach { quality ->
+                            FilterChip(
+                                selected = state.downloadQuality == quality,
+                                onClick = { viewModel.setDownloadQuality(quality) },
+                                label = {
+                                    Text("${quality.kbps} kbps")
+                                },
+                                modifier = Modifier.padding(end = 8.dp),
+                            )
+                        }
+                    }
+                },
+            )
 
             Spacer(modifier = Modifier.height(24.dp))
         }

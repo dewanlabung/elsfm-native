@@ -6,10 +6,18 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
+enum class DownloadQuality(val kbps: Int) {
+    LOW(128),
+    MEDIUM(256),
+    HIGH(320),
+}
+
 private const val PREFS_NAME = "elsfm_session_prefs"
 private const val KEY_PRIVATE_SESSION = "private_session_enabled"
 private const val KEY_AUTOPLAY = "autoplay_enabled"
 private const val KEY_VOLUME_NORMALIZATION = "volume_normalization_enabled"
+private const val KEY_OFFLINE_MODE = "offline_mode_enabled"
+private const val KEY_DOWNLOAD_QUALITY = "download_quality"
 
 /**
  * Persists session-level behavior flags across app restarts.
@@ -36,4 +44,17 @@ class SessionPreferences @Inject constructor(
     var isVolumeNormalizationEnabled: Boolean
         get() = prefs.getBoolean(KEY_VOLUME_NORMALIZATION, false)
         set(value) = prefs.edit().putBoolean(KEY_VOLUME_NORMALIZATION, value).apply()
+
+    /** When true, only plays downloaded tracks and disables streaming. */
+    var isOfflineModeEnabled: Boolean
+        get() = prefs.getBoolean(KEY_OFFLINE_MODE, false)
+        set(value) = prefs.edit().putBoolean(KEY_OFFLINE_MODE, value).apply()
+
+    /** Default quality for new downloads. */
+    var downloadQuality: DownloadQuality
+        get() {
+            val kbps = prefs.getInt(KEY_DOWNLOAD_QUALITY, DownloadQuality.HIGH.kbps)
+            return DownloadQuality.entries.find { it.kbps == kbps } ?: DownloadQuality.HIGH
+        }
+        set(value) = prefs.edit().putInt(KEY_DOWNLOAD_QUALITY, value.kbps).apply()
 }

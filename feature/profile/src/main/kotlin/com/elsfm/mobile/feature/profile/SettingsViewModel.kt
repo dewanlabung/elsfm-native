@@ -1,6 +1,7 @@
 package com.elsfm.mobile.feature.profile
 
 import androidx.lifecycle.ViewModel
+import com.elsfm.mobile.core.media.DownloadQuality
 import com.elsfm.mobile.core.media.SessionPreferences
 import com.elsfm.mobile.core.media.ShakePreferences
 import com.elsfm.mobile.core.media.ShakeSensitivity
@@ -16,6 +17,8 @@ data class SettingsState(
     val isPrivateSession: Boolean = false,
     val isAutoplayEnabled: Boolean = true,
     val isVolumeNormalizationEnabled: Boolean = false,
+    val isOfflineModeEnabled: Boolean = false,
+    val downloadQuality: DownloadQuality = DownloadQuality.HIGH,
 )
 
 @HiltViewModel
@@ -31,6 +34,8 @@ class SettingsViewModel @Inject constructor(
             isPrivateSession = sessionPreferences.isPrivateSession,
             isAutoplayEnabled = sessionPreferences.isAutoplayEnabled,
             isVolumeNormalizationEnabled = sessionPreferences.isVolumeNormalizationEnabled,
+            isOfflineModeEnabled = sessionPreferences.isOfflineModeEnabled,
+            downloadQuality = sessionPreferences.downloadQuality,
         )
     )
     val state: StateFlow<SettingsState> = _state.asStateFlow()
@@ -62,5 +67,16 @@ class SettingsViewModel @Inject constructor(
         val newValue = !_state.value.isVolumeNormalizationEnabled
         sessionPreferences.isVolumeNormalizationEnabled = newValue
         _state.value = _state.value.copy(isVolumeNormalizationEnabled = newValue)
+    }
+
+    fun toggleOfflineMode() {
+        val newValue = !_state.value.isOfflineModeEnabled
+        sessionPreferences.isOfflineModeEnabled = newValue
+        _state.value = _state.value.copy(isOfflineModeEnabled = newValue)
+    }
+
+    fun setDownloadQuality(quality: DownloadQuality) {
+        sessionPreferences.downloadQuality = quality
+        _state.value = _state.value.copy(downloadQuality = quality)
     }
 }
