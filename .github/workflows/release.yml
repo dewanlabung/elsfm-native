@@ -8,6 +8,8 @@ on:
         required: true
         default: 'v1.0.0'
   push:
+    branches:
+      - main
     tags:
       - 'v*'
 
@@ -27,26 +29,23 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Cache Gradle packages
+      - name: Cache Gradle
         uses: actions/cache@v4
         with:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle.kts', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
-
-      - name: Grant execute permission to gradlew
-        run: chmod +x gradlew
+          restore-keys: ${{ runner.os }}-gradle-
 
       - name: Build release APK
-        run: ./gradlew assembleRelease --no-daemon
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon
         env:
           GRADLE_OPTS: "-Xmx4g -XX:+UseG1GC"
+          ANDROID_HOME: /usr/local/lib/android/sdk
+          ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
 
       - name: Sign APK
         uses: r0adkll/sign-android-release@v1
@@ -61,7 +60,25 @@ jobs:
         env:
           BUILD_TOOLS_VERSION: "35.0.0"
 
+      - name: Pick APK path
+        id: apk
+        run: |
+          SIGNED="${{ steps.sign_apk.outputs.signedReleaseFile }}"
+          if [ -n "$SIGNED" ]; then
+            echo "path=$SIGNED" >> $GITHUB_OUTPUT
+          else
+            echo "path=app/build/outputs/apk/release/app-release-unsigned.apk" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: elsfm-release-apk
+          path: ${{ steps.apk.outputs.path }}
+          retention-days: 30
+
       - name: Determine release tag
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
         id: tag
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
@@ -70,23 +87,8 @@ jobs:
             echo "value=${{ github.ref_name }}" >> $GITHUB_OUTPUT
           fi
 
-      - name: Pick APK to release
-        id: apk
-        run: |
-          if [ -n "${{ steps.sign_apk.outputs.signedReleaseFile }}" ]; then
-            echo "path=${{ steps.sign_apk.outputs.signedReleaseFile }}" >> $GITHUB_OUTPUT
-          else
-            echo "path=app/build/outputs/apk/release/app-release-unsigned.apk" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Upload APK as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: elsfm-release-apk
-          path: ${{ steps.apk.outputs.path }}
-          retention-days: 30
-
       - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.tag.outputs.value }}
