@@ -106,6 +106,11 @@ class PlaybackService : MediaSessionService() {
             .setMediaSourceFactory(DefaultMediaSourceFactory(dataSourceFactory))
             .setAudioAttributes(audioAttributes, /* handleAudioFocus = */ true)
             .setHandleAudioBecomingNoisy(true)
+            // Improves render-loop timing precision, reducing the chance of a scheduler
+            // gap between consecutive media items. ExoPlayer already strips gapless
+            // metadata from LAME-MP3 and AAC frames; this flag tightens the scheduling
+            // side so the transition arrives at the DAC on time.
+            .experimentalSetDynamicSchedulingEnabled(true)
             .build()
         attachEqualizer(player)
         val sessionBuilder = MediaSession.Builder(this, player)

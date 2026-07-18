@@ -213,6 +213,14 @@ class Media3PlayerController @Inject constructor(
         mediaController?.addMediaItem(track.toMediaItem())
     }
 
+    override fun playNext(track: Track) {
+        val insertIndex = ((mediaController?.currentMediaItemIndex ?: -1) + 1)
+            .coerceIn(0, currentQueue.size)
+        currentQueue = currentQueue.toMutableList().apply { add(insertIndex, track) }
+        _state.value = _state.value.copy(queue = currentQueue)
+        mediaController?.addMediaItem(insertIndex, track.toMediaItem())
+    }
+
     override fun toggleShuffle() {
         val newValue = !_state.value.shuffleEnabled
         mediaController?.shuffleModeEnabled = newValue

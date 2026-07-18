@@ -21,6 +21,7 @@ fun TrackContextMenu(
     trackId: Int,
     isVisible: Boolean,
     onDismiss: () -> Unit,
+    onPlayNext: (Int) -> Unit = {},
     onAddToQueue: (Int) -> Unit,
     onAddToLibrary: (Int) -> Unit,
     onAddToPlaylist: (Int) -> Unit,
@@ -44,6 +45,10 @@ fun TrackContextMenu(
         onDismissRequest = onDismiss,
         modifier = modifier,
     ) {
+        DropdownMenuItem(
+            text = { Text("Play next") },
+            onClick = { onPlayNext(trackId); onDismiss() },
+        )
         DropdownMenuItem(
             text = { Text("Add to queue") },
             onClick = { onAddToQueue(trackId); onDismiss() },

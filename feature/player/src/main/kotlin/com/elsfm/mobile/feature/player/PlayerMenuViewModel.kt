@@ -30,6 +30,7 @@ class PlayerMenuViewModel @Inject constructor(
             PlayerMenuEvent.HideMenu -> {
                 _state.value = _state.value.copy(isMenuVisible = false)
             }
+            is PlayerMenuEvent.PlayNext -> { /* not actionable here — see PlayerViewModel */ }
             is PlayerMenuEvent.AddToQueue -> {
                 // Not actionable here: this ViewModel has no PlayerController dependency and
                 // is currently unused by PlayerScreen (see PlayerViewModel.onMenuEvent, which
@@ -55,6 +56,7 @@ class PlayerMenuViewModel @Inject constructor(
                 // Not actionable here: see the AddToQueue comment above - this
                 // ViewModel is unused by PlayerScreen.
             }
+            PlayerMenuEvent.TogglePrivateSession -> { /* not actionable here — see PlayerViewModel */ }
         }
     }
 

@@ -38,7 +38,9 @@ class PlayerViewModel @Inject constructor(
         _menuState.value = _menuState.value.copy(isLiked = false, isLikeLoading = false)
         playerController.play(track, queue)
         playHistoryApi.startNewQueueSession()
-        viewModelScope.launch { playHistoryApi.recordPlay(track.id) }
+        if (!_menuState.value.isPrivateSession) {
+            viewModelScope.launch { playHistoryApi.recordPlay(track.id) }
+        }
         viewModelScope.launch {
             if (downloadRepository.isDownloaded(track.id)) {
                 _menuState.value = _menuState.value.copy(
@@ -48,6 +50,7 @@ class PlayerViewModel @Inject constructor(
         }
     }
 
+    fun playNext(track: Track) = playerController.playNext(track)
     fun togglePlayPause() = playerController.togglePlayPause()
     fun seekTo(positionMs: Long) = playerController.seekTo(positionMs)
     fun skipNext() = playerController.skipNext()
@@ -99,6 +102,12 @@ class PlayerViewModel @Inject constructor(
                 )
             }
             PlayerMenuEvent.HideMenu -> {
+                _menuState.value = _menuState.value.copy(isMenuVisible = false)
+            }
+            is PlayerMenuEvent.PlayNext -> {
+                state.value.currentTrack?.takeIf { it.id == event.trackId }?.let { track ->
+                    playerController.playNext(track)
+                }
                 _menuState.value = _menuState.value.copy(isMenuVisible = false)
             }
             is PlayerMenuEvent.AddToQueue -> {
@@ -203,6 +212,12 @@ class PlayerViewModel @Inject constructor(
                         else -> {}
                     }
                 }
+            }
+            PlayerMenuEvent.TogglePrivateSession -> {
+                _menuState.value = _menuState.value.copy(
+                    isPrivateSession = !_menuState.value.isPrivateSession,
+                    isMenuVisible = false,
+                )
             }
             is PlayerMenuEvent.MakeAvailableOffline -> {
                 val track = state.value.currentTrack?.takeIf { it.id == event.trackId }
