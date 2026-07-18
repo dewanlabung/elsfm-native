@@ -47,4 +47,27 @@ class TrackApiTest {
 
         assertTrue(result is ApiResult.NetworkError)
     }
+
+    @Test
+    fun `getRelatedTracks returns the list of related tracks on success`() = runTest {
+        val body = """
+            {"pagination":{"data":[{"id":100,"name":"Track 1","image":null,"duration":200000,"artists":[]},{"id":101,"name":"Track 2","image":null,"duration":210000,"artists":[]}]}}
+        """.trimIndent()
+        val api = TrackApi(clientReturning(HttpStatusCode.OK, body))
+
+        val result = api.getRelatedTracks(1192)
+
+        assertTrue(result is ApiResult.Success)
+        assertEquals(2, (result as ApiResult.Success).data.size)
+        assertEquals("Track 1", result.data[0].name)
+    }
+
+    @Test
+    fun `getRelatedTracks returns NetworkError on failure`() = runTest {
+        val api = TrackApi(clientReturning(HttpStatusCode.NotFound, "{}"))
+
+        val result = api.getRelatedTracks(1192)
+
+        assertTrue(result is ApiResult.NetworkError)
+    }
 }

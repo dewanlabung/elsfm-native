@@ -12,6 +12,12 @@ import javax.inject.Inject
 @Serializable
 private data class TrackDetailResponse(val track: Track)
 
+@Serializable
+private data class RelatedTracksPagination(val data: List<Track>)
+
+@Serializable
+private data class RelatedTracksResponse(val pagination: RelatedTracksPagination)
+
 /**
  * Real endpoint (`TrackController::show` + `TrackLoader::load`): `GET api/v1/tracks/{id}`.
  * Used for track deep links (`https://www.elsfm.com/track/{id}/{slug}`) - there is no
@@ -26,6 +32,19 @@ class TrackApi @Inject constructor(
             val response = httpClient.get("api/v1/tracks/$id")
             if (response.status.isSuccess()) {
                 ApiResult.Success(response.body<TrackDetailResponse>().track)
+            } else {
+                ApiResult.NetworkError(RuntimeException("Unexpected status: ${response.status}"))
+            }
+        } catch (e: Exception) {
+            ApiResult.NetworkError(e)
+        }
+    }
+
+    suspend fun getRelatedTracks(id: Int): ApiResult<List<Track>> {
+        return try {
+            val response = httpClient.get("api/v1/tracks?related_to=$id")
+            if (response.status.isSuccess()) {
+                ApiResult.Success(response.body<RelatedTracksResponse>().pagination.data)
             } else {
                 ApiResult.NetworkError(RuntimeException("Unexpected status: ${response.status}"))
             }
