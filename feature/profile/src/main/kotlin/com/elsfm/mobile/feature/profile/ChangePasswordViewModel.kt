@@ -77,7 +77,7 @@ class ChangePasswordViewModel @Inject constructor(
                 }
                 is ApiResult.ValidationError -> {
                     // Flatten backend validation lists to single strings for each field.
-                    val fieldErrors = result.errors.mapValues { (_, msgs) -> msgs.firstOrNull().orEmpty() }
+                    val fieldErrors = result.fields.mapValues { (_, msgs) -> msgs.firstOrNull().orEmpty() }
                     _state.update { it.copy(isLoading = false, fieldErrors = fieldErrors) }
                 }
                 is ApiResult.NetworkError -> {
