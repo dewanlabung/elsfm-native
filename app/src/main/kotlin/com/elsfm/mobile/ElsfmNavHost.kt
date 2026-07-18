@@ -37,6 +37,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.elsfm.mobile.core.designsystem.ConnectivityBanner
 import com.elsfm.mobile.core.network.auth.SessionEvent
 import com.elsfm.mobile.feature.artist.ArtistDetailScreen
 import com.elsfm.mobile.feature.auth.EmailVerificationScreen
@@ -164,11 +165,13 @@ fun ElsfmNavHost(
     navController: NavHostController = rememberNavController(),
     startDestinationViewModel: StartDestinationViewModel = hiltViewModel(),
     themeViewModel: ThemeViewModel = hiltViewModel(),
+    connectivityViewModel: ConnectivityViewModel = hiltViewModel(),
     deepLinkTrackId: Int? = null,
     onDeepLinkConsumed: () -> Unit = {},
 ) {
     val startState by startDestinationViewModel.state.collectAsState()
     val isDarkMode by themeViewModel.isDarkMode.collectAsState()
+    val isOnline by connectivityViewModel.isOnline.collectAsState()
 
     LaunchedEffect(Unit) {
         startDestinationViewModel.sessionEvents.collect { event ->
@@ -264,6 +267,7 @@ fun ElsfmNavHost(
                 },
             ) { innerPadding ->
                 Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+                    ConnectivityBanner(isOnline = isOnline)
                     NavHost(
                         navController = navController,
                         startDestination = if (current.route == ROUTE_LOGIN) ROUTE_LOGIN else ROUTE_DISCOVERY,
