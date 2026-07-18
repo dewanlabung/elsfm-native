@@ -56,6 +56,7 @@ import com.elsfm.mobile.feature.player.MiniPlayer
 import com.elsfm.mobile.feature.player.PlayerScreen
 import com.elsfm.mobile.feature.player.PlayerViewModel
 import com.elsfm.mobile.feature.player.lyrics.LyricsScreen
+import com.elsfm.mobile.feature.profile.ChangePasswordScreen
 import com.elsfm.mobile.feature.profile.ProfileScreen
 import com.elsfm.mobile.feature.profile.ThemeViewModel
 import com.elsfm.mobile.feature.search.SearchScreen
@@ -76,6 +77,7 @@ private const val ROUTE_PROFILE = "profile"
 private const val ROUTE_DOWNLOADS = "downloads"
 private const val ROUTE_SIGNUP = "signup"
 private const val ROUTE_PASSWORD_RESET = "password_reset"
+private const val ROUTE_CHANGE_PASSWORD = "change_password"
 private const val ROUTE_CHANNEL = "channel/{channelId}"
 private const val ROUTE_NOTIFICATIONS = "notifications"
 private const val ROUTE_LIKED_SONGS = "liked_songs"
@@ -146,7 +148,7 @@ private val bottomTabs = listOf(
 private val primaryRoutesForTopBar = bottomTabs.map { it.route }.toSet() + ROUTE_SEARCH
 
 /** Routes with no bottom nav: the pre-auth flow and the full-screen Now Playing player. */
-private val routesWithoutBottomBar = setOf(ROUTE_LOGIN, ROUTE_SIGNUP, ROUTE_PASSWORD_RESET, ROUTE_HOME, ROUTE_PLAYER)
+private val routesWithoutBottomBar = setOf(ROUTE_LOGIN, ROUTE_SIGNUP, ROUTE_PASSWORD_RESET, ROUTE_CHANGE_PASSWORD, ROUTE_HOME, ROUTE_PLAYER)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -486,8 +488,11 @@ fun ElsfmNavHost(
                                     navController.navigate(ROUTE_LOGIN) { popUpTo(0) }
                                 },
                                 onManageSubscriptionClicked = { navController.navigate(ROUTE_SUBSCRIPTIONS) },
-                                onChangePasswordClicked = { navController.navigate(ROUTE_PASSWORD_RESET) },
+                                onChangePasswordClicked = { navController.navigate(ROUTE_CHANGE_PASSWORD) },
                             )
+                        }
+                        composable(ROUTE_CHANGE_PASSWORD) {
+                            ChangePasswordScreen(onBack = { navController.popBackStack() })
                         }
                         composable(ROUTE_SUBSCRIPTIONS) {
                             SubscriptionScreen(onBack = { navController.popBackStack() })
