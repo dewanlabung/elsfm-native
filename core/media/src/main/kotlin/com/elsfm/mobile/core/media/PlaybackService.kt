@@ -9,7 +9,6 @@ import android.content.IntentFilter
 import android.hardware.SensorManager
 import android.media.audiofx.Equalizer
 import android.media.audiofx.LoudnessEnhancer
-import androidx.media.MediaMetadataCompat
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.Player
@@ -135,13 +134,6 @@ class PlaybackService : MediaSessionService() {
         }
         mediaSession = sessionBuilder.build()
 
-        // Update lock screen album art whenever the current media item changes
-        player.addListener(object : Player.Listener {
-            override fun onMediaItemTransition(mediaItem: androidx.media3.common.MediaItem?, reason: Int) {
-                mediaItem?.let { updateLockScreenMetadata(it) }
-            }
-        })
-
         keyguardManager = getSystemService(KeyguardManager::class.java)
 
         shakeDetector = ShakeDetector(
@@ -237,27 +229,5 @@ class PlaybackService : MediaSessionService() {
                 } else null
             }
         })
-    }
-
-    /**
-     * Updates the lock screen notification metadata with album art from the current media item.
-     * Extracts the artwork URI from the media item's metadata and sets it on the MediaSession
-     * using MediaMetadataCompat so Media3 picks it up for the notification.
-     */
-    private fun updateLockScreenMetadata(mediaItem: androidx.media3.common.MediaItem) {
-        mediaSession?.let { session ->
-            val metadata = mediaItem.mediaMetadata
-            val metadataCompat = MediaMetadataCompat.Builder()
-                .putString(MediaMetadataCompat.METADATA_KEY_TITLE, metadata.title?.toString())
-                .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, metadata.artist?.toString())
-                .apply {
-                    // Set album art URI if available
-                    metadata.artworkUri?.let {
-                        putString(MediaMetadataCompat.METADATA_KEY_ART_URI, it.toString())
-                    }
-                }
-                .build()
-            session.setMetadata(metadataCompat)
-        }
     }
 }
