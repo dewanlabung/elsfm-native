@@ -16,8 +16,6 @@ data class PlayerMenuState(
     val downloadingTrackIds: Set<Int> = emptySet(),
     val downloadedTrackIds: Set<Int> = emptySet(),
     val error: String? = null,
-    /** When true, play history is not recorded. Resets to false when the app process restarts. */
-    val isPrivateSession: Boolean = false,
 )
 
 sealed class PlayerMenuEvent {
@@ -35,7 +33,4 @@ sealed class PlayerMenuEvent {
     data class AddToPlaylist(val trackId: Int, val playlistId: Int) : PlayerMenuEvent()
     data class Repost(val trackId: Int) : PlayerMenuEvent()
     data class MakeAvailableOffline(val trackId: Int) : PlayerMenuEvent()
-
-    /** Toggles private-session mode. While active, plays are not recorded to history. */
-    data object TogglePrivateSession : PlayerMenuEvent()
 }

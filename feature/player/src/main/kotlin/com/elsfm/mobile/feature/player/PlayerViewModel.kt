@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.elsfm.mobile.core.database.UserDao
 import com.elsfm.mobile.core.database.repository.DownloadRepository
 import com.elsfm.mobile.core.media.PlayHistoryApi
+import com.elsfm.mobile.core.media.SessionPreferences
 import com.elsfm.mobile.core.model.Track
 import com.elsfm.mobile.core.network.ApiResult
 import com.elsfm.mobile.core.network.api.UserApi
@@ -24,6 +25,7 @@ class PlayerViewModel @Inject constructor(
     private val userApi: UserApi,
     private val userDao: UserDao,
     private val downloadRepository: DownloadRepository,
+    private val sessionPreferences: SessionPreferences,
 ) : ViewModel() {
 
     private val _menuState = MutableStateFlow(PlayerMenuState())
@@ -38,7 +40,7 @@ class PlayerViewModel @Inject constructor(
         _menuState.value = _menuState.value.copy(isLiked = false, isLikeLoading = false)
         playerController.play(track, queue)
         playHistoryApi.startNewQueueSession()
-        if (!_menuState.value.isPrivateSession) {
+        if (!sessionPreferences.isPrivateSession) {
             viewModelScope.launch { playHistoryApi.recordPlay(track.id) }
         }
         viewModelScope.launch {
@@ -212,12 +214,6 @@ class PlayerViewModel @Inject constructor(
                         else -> {}
                     }
                 }
-            }
-            PlayerMenuEvent.TogglePrivateSession -> {
-                _menuState.value = _menuState.value.copy(
-                    isPrivateSession = !_menuState.value.isPrivateSession,
-                    isMenuVisible = false,
-                )
             }
             is PlayerMenuEvent.MakeAvailableOffline -> {
                 val track = state.value.currentTrack?.takeIf { it.id == event.trackId }

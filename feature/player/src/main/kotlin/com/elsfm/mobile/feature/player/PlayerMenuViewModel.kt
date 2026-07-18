@@ -56,7 +56,6 @@ class PlayerMenuViewModel @Inject constructor(
                 // Not actionable here: see the AddToQueue comment above - this
                 // ViewModel is unused by PlayerScreen.
             }
-            PlayerMenuEvent.TogglePrivateSession -> { /* not actionable here — see PlayerViewModel */ }
         }
     }
 

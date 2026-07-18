@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -59,6 +60,7 @@ import com.elsfm.mobile.feature.player.PlayerScreen
 import com.elsfm.mobile.feature.player.PlayerViewModel
 import com.elsfm.mobile.feature.player.lyrics.LyricsScreen
 import com.elsfm.mobile.feature.profile.ProfileScreen
+import com.elsfm.mobile.feature.profile.SettingsScreen
 import com.elsfm.mobile.feature.profile.ThemeViewModel
 import com.elsfm.mobile.feature.search.SearchScreen
 import com.elsfm.mobile.feature.subscriptions.SubscriptionScreen
@@ -82,6 +84,7 @@ private const val ROUTE_EMAIL_VERIFY = "email_verify/{email}"
 private const val EMAIL_VERIFY_ARG = "email"
 private const val ROUTE_CHANNEL = "channel/{channelId}"
 private const val ROUTE_NOTIFICATIONS = "notifications"
+private const val ROUTE_SETTINGS = "settings"
 private const val ROUTE_LIKED_SONGS = "liked_songs"
 private const val ROUTE_LISTENING_HISTORY = "listening_history"
 private const val ROUTE_SUBSCRIPTIONS = "subscriptions"
@@ -230,6 +233,9 @@ fun ElsfmNavHost(
                                         imageVector = if (isDarkMode) Icons.Filled.LightMode else Icons.Filled.DarkMode,
                                         contentDescription = if (isDarkMode) "Switch to light mode" else "Switch to dark mode",
                                     )
+                                }
+                                IconButton(onClick = { navController.navigate(ROUTE_SETTINGS) }) {
+                                    Icon(Icons.Filled.Settings, contentDescription = "Settings")
                                 }
                                 IconButton(onClick = { navController.navigate(ROUTE_NOTIFICATIONS) }) {
                                     Icon(Icons.Filled.Notifications, contentDescription = "Notifications")
@@ -381,6 +387,9 @@ fun ElsfmNavHost(
                         }
                         composable(ROUTE_NOTIFICATIONS) {
                             NotificationsScreen(onBack = { navController.popBackStack() })
+                        }
+                        composable(ROUTE_SETTINGS) {
+                            SettingsScreen(onBack = { navController.popBackStack() })
                         }
                         composable(
                             route = ROUTE_ALBUM,
