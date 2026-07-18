@@ -51,6 +51,7 @@ jobs:
       - name: Sign APK
         uses: r0adkll/sign-android-release@v1
         id: sign_apk
+        if: ${{ secrets.SIGNING_KEY_BASE64 != '' }}
         with:
           releaseDirectory: app/build/outputs/apk/release
           signingKeyBase64: ${{ secrets.SIGNING_KEY_BASE64 }}
@@ -69,10 +70,26 @@ jobs:
             echo "value=${{ github.ref_name }}" >> $GITHUB_OUTPUT
           fi
 
+      - name: Pick APK to release
+        id: apk
+        run: |
+          if [ -n "${{ steps.sign_apk.outputs.signedReleaseFile }}" ]; then
+            echo "path=${{ steps.sign_apk.outputs.signedReleaseFile }}" >> $GITHUB_OUTPUT
+          else
+            echo "path=app/build/outputs/apk/release/app-release-unsigned.apk" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload APK as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: elsfm-release-apk
+          path: ${{ steps.apk.outputs.path }}
+          retention-days: 30
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.tag.outputs.value }}
           name: Release ${{ steps.tag.outputs.value }}
-          files: ${{ steps.sign_apk.outputs.signedReleaseFile }}
+          files: ${{ steps.apk.outputs.path }}
           generate_release_notes: true
