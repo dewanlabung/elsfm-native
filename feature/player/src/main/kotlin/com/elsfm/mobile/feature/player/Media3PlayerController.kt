@@ -12,6 +12,7 @@ import com.elsfm.mobile.core.common.PlaybackStateStore
 import com.elsfm.mobile.core.media.LocalRecommendationEngine
 import com.elsfm.mobile.core.media.PlaybackService
 import com.elsfm.mobile.core.media.RecentTracksStore
+import com.elsfm.mobile.core.media.SessionPreferences
 import com.elsfm.mobile.core.media.toMediaItem
 import com.elsfm.mobile.core.model.Track
 import com.google.common.util.concurrent.MoreExecutors
@@ -36,6 +37,7 @@ class Media3PlayerController @Inject constructor(
     private val playbackStateStore: PlaybackStateStore,
     private val recentTracksStore: RecentTracksStore,
     private val recommendationEngine: LocalRecommendationEngine,
+    private val sessionPreferences: SessionPreferences,
 ) : PlayerController {
 
     private val _state = MutableStateFlow(PlayerState())
@@ -82,7 +84,7 @@ class Media3PlayerController @Inject constructor(
             }
 
             override fun onPlaybackStateChanged(playbackState: Int) {
-                if (playbackState == Player.STATE_ENDED) {
+                if (playbackState == Player.STATE_ENDED && sessionPreferences.isAutoplayEnabled) {
                     autoPlayRecommendations()
                 }
             }

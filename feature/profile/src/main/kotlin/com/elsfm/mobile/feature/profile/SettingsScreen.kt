@@ -92,6 +92,28 @@ fun SettingsScreen(
                 )
             }
 
+            ListItem(
+                headlineContent = { Text("Autoplay") },
+                supportingContent = { Text("Continue playing similar songs when the queue ends") },
+                trailingContent = {
+                    Switch(
+                        checked = state.isAutoplayEnabled,
+                        onCheckedChange = { viewModel.toggleAutoplay() },
+                    )
+                },
+            )
+
+            ListItem(
+                headlineContent = { Text("Volume normalization") },
+                supportingContent = { Text("Equalize volume levels across tracks") },
+                trailingContent = {
+                    Switch(
+                        checked = state.isVolumeNormalizationEnabled,
+                        onCheckedChange = { viewModel.toggleVolumeNormalization() },
+                    )
+                },
+            )
+
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             SettingsSectionHeader("Session")
 

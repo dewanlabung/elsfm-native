@@ -8,6 +8,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.hardware.SensorManager
 import android.media.audiofx.Equalizer
+import android.media.audiofx.LoudnessEnhancer
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.Player
@@ -32,6 +33,9 @@ class PlaybackService : MediaSessionService() {
 
     @Inject
     lateinit var shakePreferences: ShakePreferences
+
+    @Inject
+    lateinit var sessionPreferences: SessionPreferences
 
     private var mediaSession: MediaSession? = null
     private var shakeDetector: ShakeDetector? = null
@@ -63,10 +67,10 @@ class PlaybackService : MediaSessionService() {
         }
     }
 
-    // Kept so a future settings screen can expose band-level EQ controls off this same
-    // audio-session-scoped instance; re-created whenever the session id changes (e.g. on
-    // route changes to a different output device) since an Equalizer is bound to one id.
+    // Re-created whenever the session id changes (e.g. route change to a different output
+    // device) since both effects are bound to one audio-session id.
     private var equalizer: Equalizer? = null
+    private var loudnessEnhancer: LoudnessEnhancer? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -113,6 +117,7 @@ class PlaybackService : MediaSessionService() {
             .experimentalSetDynamicSchedulingEnabled(true)
             .build()
         attachEqualizer(player)
+        attachLoudnessEnhancer(player)
         val sessionBuilder = MediaSession.Builder(this, player)
         // Without this, tapping the media notification does nothing - `core:media` can't
         // reference `app`'s MainActivity directly (that would be a backwards module
@@ -179,6 +184,8 @@ class PlaybackService : MediaSessionService() {
         headsetMonitor?.stop(this)
         equalizer?.release()
         equalizer = null
+        loudnessEnhancer?.release()
+        loudnessEnhancer = null
         mediaSession?.run {
             player.release()
             release()
@@ -199,6 +206,27 @@ class PlaybackService : MediaSessionService() {
             override fun onAudioSessionIdChanged(audioSessionId: Int) {
                 equalizer?.release()
                 equalizer = runCatching { Equalizer(0, audioSessionId) }.getOrNull()?.apply { enabled = true }
+            }
+        })
+    }
+
+    /**
+     * Attaches a [LoudnessEnhancer] to [player]'s audio session when volume normalization is
+     * enabled in settings. Re-created on session-id changes using the same pattern as
+     * [attachEqualizer]. Target gain of 0 mB normalizes peaks to 0 dBFS without boosting.
+     */
+    private fun attachLoudnessEnhancer(player: ExoPlayer) {
+        if (sessionPreferences.isVolumeNormalizationEnabled) {
+            loudnessEnhancer = runCatching { LoudnessEnhancer(player.audioSessionId) }.getOrNull()
+                ?.apply { enabled = true }
+        }
+        player.addListener(object : Player.Listener {
+            override fun onAudioSessionIdChanged(audioSessionId: Int) {
+                loudnessEnhancer?.release()
+                loudnessEnhancer = if (sessionPreferences.isVolumeNormalizationEnabled) {
+                    runCatching { LoudnessEnhancer(audioSessionId) }.getOrNull()
+                        ?.apply { enabled = true }
+                } else null
             }
         })
     }

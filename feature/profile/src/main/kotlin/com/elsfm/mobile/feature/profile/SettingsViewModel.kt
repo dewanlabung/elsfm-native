@@ -14,6 +14,8 @@ data class SettingsState(
     val shakeEnabled: Boolean = true,
     val shakeSensitivity: ShakeSensitivity = ShakeSensitivity.MEDIUM,
     val isPrivateSession: Boolean = false,
+    val isAutoplayEnabled: Boolean = true,
+    val isVolumeNormalizationEnabled: Boolean = false,
 )
 
 @HiltViewModel
@@ -27,6 +29,8 @@ class SettingsViewModel @Inject constructor(
             shakeEnabled = shakePreferences.isEnabled,
             shakeSensitivity = shakePreferences.sensitivity,
             isPrivateSession = sessionPreferences.isPrivateSession,
+            isAutoplayEnabled = sessionPreferences.isAutoplayEnabled,
+            isVolumeNormalizationEnabled = sessionPreferences.isVolumeNormalizationEnabled,
         )
     )
     val state: StateFlow<SettingsState> = _state.asStateFlow()
@@ -46,5 +50,17 @@ class SettingsViewModel @Inject constructor(
         val newValue = !_state.value.isPrivateSession
         sessionPreferences.isPrivateSession = newValue
         _state.value = _state.value.copy(isPrivateSession = newValue)
+    }
+
+    fun toggleAutoplay() {
+        val newValue = !_state.value.isAutoplayEnabled
+        sessionPreferences.isAutoplayEnabled = newValue
+        _state.value = _state.value.copy(isAutoplayEnabled = newValue)
+    }
+
+    fun toggleVolumeNormalization() {
+        val newValue = !_state.value.isVolumeNormalizationEnabled
+        sessionPreferences.isVolumeNormalizationEnabled = newValue
+        _state.value = _state.value.copy(isVolumeNormalizationEnabled = newValue)
     }
 }
