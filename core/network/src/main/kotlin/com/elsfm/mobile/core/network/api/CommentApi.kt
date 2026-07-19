@@ -4,9 +4,11 @@ import com.elsfm.mobile.core.model.Comment
 import com.elsfm.mobile.core.network.ApiResult
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
 import io.ktor.client.request.post
+import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
@@ -30,6 +32,12 @@ private data class CreateCommentRequest(
 
 @Serializable
 private data class CreateCommentResponse(val comment: Comment)
+
+@Serializable
+private data class UpdateCommentRequest(val content: String)
+
+@Serializable
+private data class UpdateCommentResponse(val comment: Comment)
 
 /**
  * Backed by the real Laravel comments feature (`common/foundation/routes/api.php`):
@@ -65,6 +73,37 @@ class CommentApi @Inject constructor(
             }
             if (response.status.isSuccess()) {
                 ApiResult.Success(response.body<CreateCommentResponse>().comment)
+            } else {
+                ApiResult.NetworkError(RuntimeException("Unexpected status: ${response.status}"))
+            }
+        } catch (e: Exception) {
+            ApiResult.NetworkError(e)
+        }
+    }
+
+    /** `PUT api/v1/comment/{id}` — update own comment content. */
+    suspend fun updateComment(commentId: Int, content: String): ApiResult<Comment> {
+        return try {
+            val response = httpClient.put("api/v1/comment/$commentId") {
+                contentType(ContentType.Application.Json)
+                setBody(UpdateCommentRequest(content))
+            }
+            if (response.status.isSuccess()) {
+                ApiResult.Success(response.body<UpdateCommentResponse>().comment)
+            } else {
+                ApiResult.NetworkError(RuntimeException("Unexpected status: ${response.status}"))
+            }
+        } catch (e: Exception) {
+            ApiResult.NetworkError(e)
+        }
+    }
+
+    /** `DELETE api/v1/comment/{id}` — delete own comment. */
+    suspend fun deleteComment(commentId: Int): ApiResult<Unit> {
+        return try {
+            val response = httpClient.delete("api/v1/comment/$commentId")
+            if (response.status.isSuccess()) {
+                ApiResult.Success(Unit)
             } else {
                 ApiResult.NetworkError(RuntimeException("Unexpected status: ${response.status}"))
             }

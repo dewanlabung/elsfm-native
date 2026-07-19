@@ -8,4 +8,9 @@ data class CommentsState(
     val isPosting: Boolean = false,
     val draft: String = "",
     val error: String? = null,
+    val currentUserId: Int? = null,
+    val editingCommentId: Int? = null,
+    val editDraft: String = "",
+    val deletingCommentIds: Set<Int> = emptySet(),
+    val updatingCommentId: Int? = null,
 )

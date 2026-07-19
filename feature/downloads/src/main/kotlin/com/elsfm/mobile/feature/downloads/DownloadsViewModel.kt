@@ -247,10 +247,15 @@ class DownloadsViewModel @Inject constructor(
     private fun shareDownload(trackId: Int) {
         val download = allDownloads.find { it.trackId == trackId } ?: return
         val file = downloadRepository.getLocalFile(download.fileName) ?: return
+        if (!file.exists()) {
+            _state.value = _state.value.copy(error = "File not found")
+            return
+        }
         val uri: Uri = try {
             FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
-        } catch (_: Exception) {
-            Uri.fromFile(file)
+        } catch (e: Exception) {
+            _state.value = _state.value.copy(error = "Cannot share: ${e.message}")
+            return
         }
         val intent = Intent(Intent.ACTION_SEND).apply {
             type = "audio/*"
