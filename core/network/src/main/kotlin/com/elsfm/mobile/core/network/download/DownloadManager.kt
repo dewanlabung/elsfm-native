@@ -7,7 +7,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsChannel
-import io.ktor.http.contentLength
+import io.ktor.http.HttpHeaders
 import io.ktor.http.isSuccess
 import io.ktor.utils.io.readAvailable
 import java.io.File
@@ -18,10 +18,16 @@ import kotlinx.coroutines.withContext
 private const val DOWNLOADS_DIR = "downloads"
 private const val BUFFER_SIZE = 4096
 
+private const val TAG = "ElsfmDownload"
+private const val ELSFM_BASE = "https://www.elsfm.com/"
+
 /**
- * Downloads a track's real audio file (`GET api/v1/tracks/{id}/download`, matching the
- * PWA's "Make available offline" - it does the same thing client-side: fetch the raw
- * file and save it locally, one track at a time) to app-private external storage.
+ * Downloads a track's audio file to app-private external storage.
+ *
+ * URL resolution mirrors MediaItemFactory so download and playback always use
+ * the same source:
+ *  - track.src is set → use it (relative paths are prefixed with ELSFM_BASE)
+ *  - track.src is absent → fall back to the authenticated download endpoint
  */
 @Singleton
 open class DownloadManager @Inject constructor(
@@ -39,13 +45,24 @@ open class DownloadManager @Inject constructor(
                 dir.mkdirs()
                 val file = File(dir, "${track.id}_${track.name.slugify()}.mp3")
 
-                val response = httpClient.get("api/v1/tracks/${track.id}/download")
-                if (!response.status.isSuccess()) {
-                    return@withContext Result.failure(
-                        IllegalStateException("Download failed with status ${response.status}"),
-                    )
+                // Mirror MediaItemFactory's URL resolution so the audio source used for
+                // downloading always matches what Media3 streams.
+                val trackSrc = track.src  // local copy avoids cross-module smart cast failure
+                val audioUrl: String = when {
+                    !trackSrc.isNullOrBlank() ->
+                        if (trackSrc.startsWith("http")) trackSrc
+                        else ELSFM_BASE + trackSrc.removePrefix("/")
+                    else -> "api/v1/tracks/${track.id}/download"
                 }
-                val contentLength = response.contentLength() ?: 0L
+
+                android.util.Log.d(TAG, "Downloading track ${track.id} from: $audioUrl")
+                val response = httpClient.get(audioUrl)
+                if (!response.status.isSuccess()) {
+                    val msg = "HTTP ${response.status} for track ${track.id} ($audioUrl)"
+                    android.util.Log.w(TAG, msg)
+                    return@withContext Result.failure(IllegalStateException(msg))
+                }
+                val totalBytes = response.headers[HttpHeaders.ContentLength]?.toLong() ?: 0L
                 var bytesWritten = 0L
 
                 val channel = response.bodyAsChannel()
@@ -56,13 +73,15 @@ open class DownloadManager @Inject constructor(
                         if (bytesRead <= 0) break
                         fileOut.write(buffer, 0, bytesRead)
                         bytesWritten += bytesRead
-                        if (contentLength > 0) {
-                            onProgress(bytesWritten.toFloat() / contentLength.toFloat())
+                        if (totalBytes > 0) {
+                            onProgress(bytesWritten.toFloat() / totalBytes.toFloat())
                         }
                     }
                 }
+                android.util.Log.d(TAG, "Download complete: track ${track.id}, ${bytesWritten}B -> ${file.name}")
                 Result.success(file)
             } catch (e: Exception) {
+                android.util.Log.e(TAG, "Download exception for track ${track.id}: ${e.message}", e)
                 Result.failure(e)
             }
         }

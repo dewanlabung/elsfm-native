@@ -207,6 +207,7 @@ internal fun PlaylistDetailContent(
                         val playlistUrl = "https://www.elsfm.com/playlist/${playlist.id}"
                         PlaylistHeader(
                             playlist = playlist,
+                            firstTrackImage = state.tracks.firstOrNull()?.image,
                             trackCount = state.tracks.size,
                             onPlayAll = onPlayAll,
                             isDownloading = state.isDownloadingPlaylist,
@@ -401,6 +402,7 @@ private fun AddToPlaylistBottomSheet(
 @Composable
 private fun PlaylistHeader(
     playlist: Playlist,
+    firstTrackImage: String? = null,
     trackCount: Int,
     onPlayAll: () -> Unit,
     isDownloading: Boolean = false,
@@ -433,7 +435,7 @@ private fun PlaylistHeader(
                 .background(MaterialTheme.colorScheme.surfaceVariant),
         ) {
             AsyncImage(
-                model = playlist.image,
+                model = playlist.image ?: firstTrackImage,
                 contentDescription = playlist.name,
                 modifier = Modifier.size(220.dp),
                 contentScale = ContentScale.Crop,
