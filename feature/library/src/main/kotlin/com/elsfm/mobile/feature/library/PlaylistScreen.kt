@@ -645,6 +645,7 @@ private fun PlaylistTrackRow(
     ) {
         TrackListItem(
             track = track,
+            isDownloaded = isDownloaded,
             onClick = onClick,
             onMoreClick = { menuExpanded = true },
             modifier = Modifier.weight(1f),

@@ -1,14 +1,18 @@
 package com.elsfm.mobile.feature.library.composables
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DownloadDone
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -30,6 +34,7 @@ import com.elsfm.mobile.core.model.Track
 fun TrackListItem(
     track: Track,
     isPlaying: Boolean = false,
+    isDownloaded: Boolean = false,
     onClick: () -> Unit,
     onMoreClick: () -> Unit = {},
     modifier: Modifier = Modifier,
@@ -45,19 +50,37 @@ fun TrackListItem(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        // Album art thumbnail
-        Surface(
-            modifier = Modifier
-                .size(50.dp)
-                .clip(RoundedCornerShape(4.dp)),
-            color = MaterialTheme.colorScheme.surfaceVariant,
-        ) {
-            AsyncImage(
-                model = track.image,
-                contentDescription = track.name,
-                modifier = Modifier.size(50.dp),
-                contentScale = ContentScale.Crop,
-            )
+        // Album art thumbnail with optional downloaded badge
+        Box(modifier = Modifier.size(50.dp)) {
+            Surface(
+                modifier = Modifier
+                    .size(50.dp)
+                    .clip(RoundedCornerShape(4.dp)),
+                color = MaterialTheme.colorScheme.surfaceVariant,
+            ) {
+                AsyncImage(
+                    model = track.image,
+                    contentDescription = track.name,
+                    modifier = Modifier.size(50.dp),
+                    contentScale = ContentScale.Crop,
+                )
+            }
+            if (isDownloaded) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .size(16.dp)
+                        .background(MaterialTheme.colorScheme.primary, CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.DownloadDone,
+                        contentDescription = "Downloaded",
+                        tint = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.size(10.dp),
+                    )
+                }
+            }
         }
 
         // Track info

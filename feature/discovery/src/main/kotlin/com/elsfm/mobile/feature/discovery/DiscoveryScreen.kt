@@ -25,6 +25,7 @@ import com.elsfm.mobile.core.model.Track
 import com.elsfm.mobile.core.designsystem.OfflineBanner
 import com.elsfm.mobile.feature.discovery.sections.FeaturedPlaylistsSection
 import com.elsfm.mobile.feature.discovery.sections.NewReleasesSection
+import com.elsfm.mobile.feature.discovery.sections.RecentlyPlayedSection
 import com.elsfm.mobile.feature.discovery.sections.TrackListSection
 import com.elsfm.mobile.feature.library.composables.SectionHeader
 
@@ -129,6 +130,15 @@ internal fun DiscoveryContent(
     ) {
         if (state.isOffline) {
             item { OfflineBanner() }
+        }
+        if (state.recentlyPlayed.isNotEmpty()) {
+            item {
+                SectionHeader(title = "Recently Played", onSeeAllClick = {})
+                RecentlyPlayedSection(
+                    tracks = state.recentlyPlayed,
+                    onTrackClick = { track -> onTrackClicked(track, state.recentlyPlayed) },
+                )
+            }
         }
         if (state.kidsZone.isNotEmpty()) {
             item {
