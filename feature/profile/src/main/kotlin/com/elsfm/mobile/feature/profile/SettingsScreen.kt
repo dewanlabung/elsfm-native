@@ -58,6 +58,7 @@ fun SettingsScreen(
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState()),
         ) {
+            // ── Playback ──────────────────────────────────────────────────
             SettingsSectionHeader("Playback")
 
             ListItem(
@@ -116,6 +117,42 @@ fun SettingsScreen(
                 },
             )
 
+            ListItem(
+                headlineContent = { Text("Skip silence") },
+                supportingContent = { Text("Automatically skip silent segments within tracks") },
+                trailingContent = {
+                    Switch(
+                        checked = state.isSkipSilenceEnabled,
+                        onCheckedChange = { viewModel.toggleSkipSilence() },
+                    )
+                },
+            )
+
+            ListItem(
+                headlineContent = { Text("Persistent queue") },
+                supportingContent = { Text("Save the playback queue and restore it when you reopen the app") },
+                trailingContent = {
+                    Switch(
+                        checked = state.isPersistentQueueEnabled,
+                        onCheckedChange = { viewModel.togglePersistentQueue() },
+                    )
+                },
+            )
+
+            if (state.isPersistentQueueEnabled) {
+                ListItem(
+                    headlineContent = { Text("Resume playback") },
+                    supportingContent = { Text("Resume playing automatically when you reopen the app") },
+                    trailingContent = {
+                        Switch(
+                            checked = state.isResumePlaybackEnabled,
+                            onCheckedChange = { viewModel.toggleResumePlayback() },
+                        )
+                    },
+                )
+            }
+
+            // ── Session ───────────────────────────────────────────────────
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             SettingsSectionHeader("Session")
 
@@ -140,6 +177,7 @@ fun SettingsScreen(
 
             StorageSection()
 
+            // ── Downloads ─────────────────────────────────────────────────
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             SettingsSectionHeader("Downloads")
 
@@ -180,6 +218,32 @@ fun SettingsScreen(
                             )
                         }
                     }
+                },
+            )
+
+            // ── Other ─────────────────────────────────────────────────────
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            SettingsSectionHeader("Other")
+
+            ListItem(
+                headlineContent = { Text("Keep screen on") },
+                supportingContent = { Text("Prevent the screen from turning off while a track is playing") },
+                trailingContent = {
+                    Switch(
+                        checked = state.isKeepScreenOnEnabled,
+                        onCheckedChange = { viewModel.toggleKeepScreenOn() },
+                    )
+                },
+            )
+
+            ListItem(
+                headlineContent = { Text("Pause search history") },
+                supportingContent = { Text("Stop saving search queries to your history") },
+                trailingContent = {
+                    Switch(
+                        checked = state.isSearchHistoryPaused,
+                        onCheckedChange = { viewModel.toggleSearchHistoryPaused() },
+                    )
                 },
             )
 

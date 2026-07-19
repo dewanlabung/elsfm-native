@@ -14,12 +14,17 @@ import javax.inject.Inject
 data class SettingsState(
     val shakeEnabled: Boolean = true,
     val shakeSensitivity: ShakeSensitivity = ShakeSensitivity.MEDIUM,
-    val isPrivateSession: Boolean = false,
     val isAutoplayEnabled: Boolean = true,
     val isVolumeNormalizationEnabled: Boolean = false,
+    val isSkipSilenceEnabled: Boolean = false,
+    val isPersistentQueueEnabled: Boolean = true,
+    val isResumePlaybackEnabled: Boolean = true,
+    val isPrivateSession: Boolean = false,
     val isOfflineModeEnabled: Boolean = false,
     val isWifiAutoCacheEnabled: Boolean = false,
     val downloadQuality: DownloadQuality = DownloadQuality.HIGH,
+    val isKeepScreenOnEnabled: Boolean = false,
+    val isSearchHistoryPaused: Boolean = false,
 )
 
 @HiltViewModel
@@ -32,12 +37,17 @@ class SettingsViewModel @Inject constructor(
         SettingsState(
             shakeEnabled = shakePreferences.isEnabled,
             shakeSensitivity = shakePreferences.sensitivity,
-            isPrivateSession = sessionPreferences.isPrivateSession,
             isAutoplayEnabled = sessionPreferences.isAutoplayEnabled,
             isVolumeNormalizationEnabled = sessionPreferences.isVolumeNormalizationEnabled,
+            isSkipSilenceEnabled = sessionPreferences.isSkipSilenceEnabled,
+            isPersistentQueueEnabled = sessionPreferences.isPersistentQueueEnabled,
+            isResumePlaybackEnabled = sessionPreferences.isResumePlaybackEnabled,
+            isPrivateSession = sessionPreferences.isPrivateSession,
             isOfflineModeEnabled = sessionPreferences.isOfflineModeEnabled,
             isWifiAutoCacheEnabled = sessionPreferences.isWifiAutoCacheEnabled,
             downloadQuality = sessionPreferences.downloadQuality,
+            isKeepScreenOnEnabled = sessionPreferences.isKeepScreenOnEnabled,
+            isSearchHistoryPaused = sessionPreferences.isSearchHistoryPaused,
         )
     )
     val state: StateFlow<SettingsState> = _state.asStateFlow()
@@ -69,6 +79,36 @@ class SettingsViewModel @Inject constructor(
         val newValue = !_state.value.isVolumeNormalizationEnabled
         sessionPreferences.isVolumeNormalizationEnabled = newValue
         _state.value = _state.value.copy(isVolumeNormalizationEnabled = newValue)
+    }
+
+    fun toggleSkipSilence() {
+        val newValue = !_state.value.isSkipSilenceEnabled
+        sessionPreferences.isSkipSilenceEnabled = newValue
+        _state.value = _state.value.copy(isSkipSilenceEnabled = newValue)
+    }
+
+    fun togglePersistentQueue() {
+        val newValue = !_state.value.isPersistentQueueEnabled
+        sessionPreferences.isPersistentQueueEnabled = newValue
+        _state.value = _state.value.copy(isPersistentQueueEnabled = newValue)
+    }
+
+    fun toggleResumePlayback() {
+        val newValue = !_state.value.isResumePlaybackEnabled
+        sessionPreferences.isResumePlaybackEnabled = newValue
+        _state.value = _state.value.copy(isResumePlaybackEnabled = newValue)
+    }
+
+    fun toggleKeepScreenOn() {
+        val newValue = !_state.value.isKeepScreenOnEnabled
+        sessionPreferences.isKeepScreenOnEnabled = newValue
+        _state.value = _state.value.copy(isKeepScreenOnEnabled = newValue)
+    }
+
+    fun toggleSearchHistoryPaused() {
+        val newValue = !_state.value.isSearchHistoryPaused
+        sessionPreferences.isSearchHistoryPaused = newValue
+        _state.value = _state.value.copy(isSearchHistoryPaused = newValue)
     }
 
     fun toggleOfflineMode() {

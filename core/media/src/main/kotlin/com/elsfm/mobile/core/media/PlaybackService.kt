@@ -116,6 +116,7 @@ class PlaybackService : MediaSessionService() {
             // side so the transition arrives at the DAC on time.
             .experimentalSetDynamicSchedulingEnabled(true)
             .build()
+        player.skipSilenceEnabled = sessionPreferences.isSkipSilenceEnabled
         attachEqualizer(player)
         attachLoudnessEnhancer(player)
         val sessionBuilder = MediaSession.Builder(this, player)
