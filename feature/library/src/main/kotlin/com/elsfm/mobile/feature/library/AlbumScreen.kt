@@ -3,6 +3,7 @@ package com.elsfm.mobile.feature.library
 import android.content.Intent
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -255,16 +256,16 @@ private fun AlbumHeader(
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalAlignment = Alignment.Top,
         ) {
-            Surface(
+            Box(
                 modifier = Modifier
                     .size(140.dp)
-                    .clip(RoundedCornerShape(12.dp)),
-                color = MaterialTheme.colorScheme.surfaceVariant,
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
             ) {
                 AsyncImage(
                     model = album.image,
                     contentDescription = album.name,
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier.size(140.dp),
                     contentScale = ContentScale.Crop,
                 )
             }

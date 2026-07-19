@@ -1,5 +1,6 @@
 package com.elsfm.mobile.feature.library
 
+import androidx.compose.foundation.background
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -412,16 +413,16 @@ private fun PlaylistHeader(
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalAlignment = Alignment.Top,
         ) {
-            Surface(
+            Box(
                 modifier = Modifier
                     .size(140.dp)
-                    .clip(RoundedCornerShape(12.dp)),
-                color = MaterialTheme.colorScheme.surfaceVariant,
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
             ) {
                 AsyncImage(
                     model = playlist.image,
                     contentDescription = playlist.name,
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier.size(140.dp),
                     contentScale = ContentScale.Crop,
                 )
             }
