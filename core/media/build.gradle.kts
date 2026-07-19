@@ -37,6 +37,9 @@ dependencies {
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.ktor.client.core)
 
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.work.runtime)
+
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
 

@@ -61,6 +61,7 @@ data class DownloadsState(
     val downloadedPlaylists: List<DownloadedPlaylistUI> = emptyList(),
     val downloadedFiles: List<DownloadedFileUI> = emptyList(),
     val downloadProgress: Map<Int, Float> = emptyMap(),
+    val downloadTrackNames: Map<Int, String> = emptyMap(),
     val isLoading: Boolean = false,
     val error: String? = null,
     val activeTab: DownloadTab = DownloadTab.SONGS,

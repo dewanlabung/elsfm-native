@@ -174,6 +174,7 @@ fun PlayerScreen(
                     val currentTrack = state.currentTrack
                     val isDownloading = currentTrack != null && menuState.downloadingTrackIds.contains(currentTrack.id)
                     val isDownloaded = currentTrack != null && menuState.downloadedTrackIds.contains(currentTrack.id)
+                    val downloadProgress = currentTrack?.let { menuState.downloadProgress[it.id] } ?: 0f
                     if (currentTrack != null) {
                         IconButton(
                             onClick = {
@@ -184,18 +185,33 @@ fun PlayerScreen(
                             enabled = !isDownloading && !isDownloaded,
                             modifier = Modifier.testTag("player_download"),
                         ) {
-                            when {
-                                isDownloading -> CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White)
-                                isDownloaded -> Icon(
-                                    imageVector = Icons.Filled.DownloadDone,
-                                    contentDescription = "Available offline",
-                                    tint = Color.White,
-                                )
-                                else -> Icon(
-                                    imageVector = Icons.Filled.Download,
-                                    contentDescription = "Make available offline",
-                                    tint = Color.White,
-                                )
+                            Box(contentAlignment = Alignment.Center) {
+                                when {
+                                    isDownloading -> {
+                                        CircularProgressIndicator(
+                                            progress = downloadProgress,
+                                            modifier = Modifier.size(24.dp),
+                                            color = Color.White,
+                                            trackColor = Color.White.copy(alpha = 0.3f),
+                                        )
+                                        Text(
+                                            text = "${(downloadProgress * 100).toInt()}%",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = Color.White,
+                                            modifier = Modifier.align(Alignment.Center),
+                                        )
+                                    }
+                                    isDownloaded -> Icon(
+                                        imageVector = Icons.Filled.DownloadDone,
+                                        contentDescription = "Available offline",
+                                        tint = Color.White,
+                                    )
+                                    else -> Icon(
+                                        imageVector = Icons.Filled.Download,
+                                        contentDescription = "Make available offline",
+                                        tint = Color.White,
+                                    )
+                                }
                             }
                         }
                     }

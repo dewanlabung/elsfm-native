@@ -37,8 +37,18 @@ dependencies {
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
 
+    implementation(libs.androidx.work.runtime)
+    implementation(libs.androidx.hilt.work)
+    ksp(libs.androidx.hilt.compiler)
+    // Guava's own metadata swaps `listenablefuture` for an empty stub unless a real "guava"
+    // artifact is also on this classpath - without this, CoroutineWorker's inherited
+    // ListenableFuture-returning API fails to resolve at compile time (see WorkManager +
+    // Guava dependency-substitution issue tracked upstream in AndroidX/Guava).
+    implementation(libs.guava)
+
     implementation(project(":core:model"))
     implementation(project(":core:network"))
+    implementation(project(":core:media"))
     implementation(project(":core:common"))
     implementation(libs.kotlinx.serialization.json)
 
