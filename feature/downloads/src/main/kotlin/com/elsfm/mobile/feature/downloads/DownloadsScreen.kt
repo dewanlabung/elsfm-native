@@ -26,8 +26,10 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -54,57 +56,85 @@ fun DownloadsScreen(
 ) {
     val state = viewModel.state.collectAsState().value
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(0.dp)
-    ) {
-        // Search bar
+    Column(modifier = Modifier.fillMaxSize()) {
         OutlinedTextField(
             value = state.searchQuery,
             onValueChange = { viewModel.onEvent(DownloadsEvent.SearchQueryChanged(it)) },
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(horizontal = 16.dp, vertical = 8.dp),
             placeholder = { Text("Search downloads") },
             leadingIcon = { Icon(Icons.Default.Search, "Search") },
-            singleLine = true
+            singleLine = true,
         )
 
-        // Tabs
         TabRow(
             selectedTabIndex = when (state.activeTab) {
                 DownloadTab.SONGS -> 0
                 DownloadTab.ALBUMS -> 1
                 DownloadTab.PLAYLISTS -> 2
-                DownloadTab.FOLDER -> 3
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         ) {
             Tab(
                 selected = state.activeTab == DownloadTab.SONGS,
                 onClick = { viewModel.onEvent(DownloadsEvent.TabChanged(DownloadTab.SONGS)) },
-                text = { Text("Songs") }
+                text = { Text("Songs") },
             )
             Tab(
                 selected = state.activeTab == DownloadTab.ALBUMS,
                 onClick = { viewModel.onEvent(DownloadsEvent.TabChanged(DownloadTab.ALBUMS)) },
-                text = { Text("Albums") }
+                text = { Text("Albums") },
             )
             Tab(
                 selected = state.activeTab == DownloadTab.PLAYLISTS,
                 onClick = { viewModel.onEvent(DownloadsEvent.TabChanged(DownloadTab.PLAYLISTS)) },
-                text = { Text("Playlists") }
-            )
-            Tab(
-                selected = state.activeTab == DownloadTab.FOLDER,
-                onClick = { viewModel.onEvent(DownloadsEvent.TabChanged(DownloadTab.FOLDER)) },
-                text = { Text("Folder") }
+                text = { Text("Playlists") },
             )
         }
 
-        // Tab content — Albums uses a 2-column grid; all other tabs use a list.
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            FilledTonalButton(
+                onClick = { viewModel.onEvent(DownloadsEvent.PlayAll) },
+                modifier = Modifier.weight(1f),
+            ) {
+                Icon(Icons.Default.PlayArrow, contentDescription = null)
+                Text("Play All", modifier = Modifier.padding(start = 4.dp))
+            }
+            FilledTonalButton(
+                onClick = { viewModel.onEvent(DownloadsEvent.ShuffleAll) },
+                modifier = Modifier.weight(1f),
+            ) {
+                Icon(Icons.Filled.Shuffle, contentDescription = null)
+                Text("Shuffle", modifier = Modifier.padding(start = 4.dp))
+            }
+        }
+
         when (state.activeTab) {
+            DownloadTab.SONGS -> {
+                if (state.downloadedTracks.isEmpty()) {
+                    EmptyDownloads()
+                } else {
+                    LazyColumn(
+                        contentPadding = PaddingValues(bottom = 16.dp),
+                        modifier = Modifier.fillMaxSize(),
+                    ) {
+                        items(state.downloadedTracks) { track ->
+                            TrackDownloadItem(
+                                track = track,
+                                onPlay = { viewModel.onEvent(DownloadsEvent.PlayTrack(it)) },
+                                onDelete = { viewModel.onEvent(DownloadsEvent.DeleteDownload(it)) },
+                                onShare = { viewModel.onEvent(DownloadsEvent.ShareDownload(it)) },
+                            )
+                        }
+                    }
+                }
+            }
             DownloadTab.ALBUMS -> {
                 if (state.downloadedAlbums.isEmpty()) {
                     EmptyDownloads()
@@ -127,44 +157,24 @@ fun DownloadsScreen(
                     }
                 }
             }
-            else -> {
-                val isEmpty = when (state.activeTab) {
-                    DownloadTab.SONGS -> state.downloadedTracks.isEmpty()
-                    DownloadTab.PLAYLISTS -> state.downloadedPlaylists.isEmpty()
-                    DownloadTab.FOLDER -> state.downloadedFiles.isEmpty()
-                    else -> false
-                }
-                if (isEmpty) {
+            DownloadTab.PLAYLISTS -> {
+                if (state.downloadedPlaylists.isEmpty()) {
                     EmptyDownloads()
                 } else {
-                    LazyColumn(
-                        contentPadding = PaddingValues(0.dp),
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
+                        contentPadding = PaddingValues(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier.fillMaxSize(),
                     ) {
-                        when (state.activeTab) {
-                            DownloadTab.SONGS -> items(state.downloadedTracks) { track ->
-                                TrackDownloadItem(
-                                    track = track,
-                                    onPlay = { viewModel.onEvent(DownloadsEvent.PlayTrack(it)) },
-                                    onDelete = { viewModel.onEvent(DownloadsEvent.DeleteDownload(it)) },
-                                    onShare = { viewModel.onEvent(DownloadsEvent.ShareDownload(it)) },
-                                )
-                            }
-                            DownloadTab.PLAYLISTS -> items(state.downloadedPlaylists) { playlist ->
-                                DownloadedGroupCard(
-                                    name = playlist.name,
-                                    artworkUrl = playlist.artworkUrl,
-                                    subtitle = "${playlist.trackCount} tracks downloaded",
-                                    onPlay = { viewModel.onEvent(DownloadsEvent.PlayPlaylist(playlist.playlistId)) },
-                                )
-                            }
-                            DownloadTab.FOLDER -> items(state.downloadedFiles) { file ->
-                                DownloadedFileRow(
-                                    file = file,
-                                    onPlay = { viewModel.onEvent(DownloadsEvent.PlayTrack(it)) },
-                                )
-                            }
-                            else -> {}
+                        items(state.downloadedPlaylists) { playlist ->
+                            DownloadedGroupCard(
+                                name = playlist.name,
+                                artworkUrl = playlist.artworkUrl,
+                                subtitle = "${playlist.trackCount} tracks downloaded",
+                                onPlay = { viewModel.onEvent(DownloadsEvent.PlayPlaylist(playlist.playlistId)) },
+                            )
                         }
                     }
                 }
@@ -186,7 +196,6 @@ private fun EmptyDownloads() {
     }
 }
 
-/** A single downloaded album/playlist, shown as one clickable, playable card (not a scattered song list). */
 @Composable
 fun DownloadedGroupCard(
     name: String,
@@ -197,14 +206,15 @@ fun DownloadedGroupCard(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp)
+            .padding(4.dp)
             .clickable(onClick = onPlay),
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(1f)
-                .clip(RoundedCornerShape(12.dp)),
+                .clip(RoundedCornerShape(12.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant),
         ) {
             AsyncImage(
                 model = artworkUrl,
@@ -216,33 +226,35 @@ fun DownloadedGroupCard(
                 onClick = onPlay,
                 modifier = Modifier
                     .align(Alignment.BottomStart)
-                    .padding(12.dp)
-                    .size(48.dp)
-                    .background(Color.White, CircleShape),
+                    .padding(8.dp)
+                    .size(40.dp)
+                    .background(Color.White.copy(alpha = 0.9f), CircleShape),
             ) {
                 Icon(Icons.Filled.PlayArrow, contentDescription = "Play", tint = Color.Black)
             }
         }
         Text(
             text = name,
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(top = 12.dp),
+            style = MaterialTheme.typography.titleSmall,
+            modifier = Modifier.padding(top = 8.dp, start = 4.dp, end = 4.dp),
+            maxLines = 1,
         )
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            modifier = Modifier.padding(top = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            modifier = Modifier.padding(top = 2.dp, start = 4.dp, bottom = 4.dp),
         ) {
             Icon(
                 Icons.Filled.CheckCircle,
                 contentDescription = null,
-                modifier = Modifier.size(16.dp),
+                modifier = Modifier.size(14.dp),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
                 text = subtitle,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
             )
         }
     }
@@ -261,118 +273,71 @@ fun TrackDownloadItem(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onPlay(track.trackId) }
-            .padding(12.dp)
-            .background(MaterialTheme.colorScheme.surface),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        // Artwork placeholder
-        Box(
-            modifier = Modifier
-                .size(56.dp)
-                .background(
-                    MaterialTheme.colorScheme.surfaceVariant,
-                    shape = RoundedCornerShape(4.dp)
-                )
-        )
-
-        // Track info
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .padding(8.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            Text(
-                text = track.title,
-                style = MaterialTheme.typography.bodyMedium,
-                maxLines = 1
-            )
-            Text(
-                text = track.artist,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(top = 4.dp)
-            ) {
-                Text(
-                    text = track.fileSize,
-                    style = MaterialTheme.typography.labelSmall
-                )
-                if (track.isOffline) {
-                    Text(
-                        text = "Offline",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier
-                            .background(
-                                MaterialTheme.colorScheme.primaryContainer,
-                                shape = MaterialTheme.shapes.small
-                            )
-                            .padding(4.dp)
-                    )
-                }
-            }
-        }
-
-        // Menu
-        IconButton(onClick = { showMenu.value = !showMenu.value }) {
-            Icon(Icons.Default.MoreVert, "Options")
-        }
-
-        DropdownMenu(
-            expanded = showMenu.value,
-            onDismissRequest = { showMenu.value = false }
-        ) {
-            DropdownMenuItem(
-                text = { Text("Share") },
-                onClick = {
-                    onShare(track.trackId)
-                    showMenu.value = false
-                },
-                leadingIcon = { Icon(Icons.Default.Share, "Share") }
-            )
-            DropdownMenuItem(
-                text = { Text("Delete") },
-                onClick = {
-                    onDelete(track.trackId)
-                    showMenu.value = false
-                },
-                leadingIcon = { Icon(Icons.Default.Delete, "Delete") }
-            )
-        }
-    }
-}
-
-/** A raw file on disk in the app's downloads folder - the Folder tab's file-browser view. */
-@Composable
-fun DownloadedFileRow(
-    file: DownloadedFileUI,
-    onPlay: (Int) -> Unit = {},
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onPlay(file.trackId) }
-            .padding(16.dp),
+            .padding(horizontal = 12.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(Icons.Filled.PlayArrow, contentDescription = "Play")
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = file.fileName,
-                style = MaterialTheme.typography.bodyMedium,
-                maxLines = 1,
+        Box(
+            modifier = Modifier
+                .size(56.dp)
+                .clip(RoundedCornerShape(4.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant),
+        ) {
+            AsyncImage(
+                model = track.artworkUrl,
+                contentDescription = track.title,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop,
             )
+        }
+
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            Text(text = track.title, style = MaterialTheme.typography.bodyMedium, maxLines = 1)
             Text(
-                text = file.fileSize,
+                text = track.artist,
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
             )
+            Text(text = track.fileSize, style = MaterialTheme.typography.labelSmall)
+        }
+
+        Box {
+            IconButton(onClick = { showMenu.value = true }) {
+                Icon(Icons.Default.MoreVert, "Options")
+            }
+            DropdownMenu(
+                expanded = showMenu.value,
+                onDismissRequest = { showMenu.value = false },
+            ) {
+                DropdownMenuItem(
+                    text = { Text("Play") },
+                    onClick = {
+                        onPlay(track.trackId)
+                        showMenu.value = false
+                    },
+                    leadingIcon = { Icon(Icons.Default.PlayArrow, "Play") },
+                )
+                DropdownMenuItem(
+                    text = { Text("Share") },
+                    onClick = {
+                        onShare(track.trackId)
+                        showMenu.value = false
+                    },
+                    leadingIcon = { Icon(Icons.Default.Share, "Share") },
+                )
+                DropdownMenuItem(
+                    text = { Text("Delete") },
+                    onClick = {
+                        onDelete(track.trackId)
+                        showMenu.value = false
+                    },
+                    leadingIcon = { Icon(Icons.Default.Delete, "Delete") },
+                )
+            }
         }
     }
 }
