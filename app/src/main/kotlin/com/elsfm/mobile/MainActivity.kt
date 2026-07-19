@@ -24,16 +24,8 @@ class MainActivity : ComponentActivity() {
         setContent {
             val themeViewModel: ThemeViewModel = hiltViewModel()
             val isDarkMode by themeViewModel.isDarkMode.collectAsState()
-            val customPrimary by themeViewModel.customPrimaryColor.collectAsState()
-            val customAccent by themeViewModel.customAccentColor.collectAsState()
-            val customBackground by themeViewModel.customBackgroundColor.collectAsState()
 
-            ElsfmTheme(
-                useDarkTheme = isDarkMode,
-                customPrimaryColor = customPrimary,
-                customAccentColor = customAccent,
-                customBackgroundColor = customBackground,
-            ) {
+            ElsfmTheme(useDarkTheme = isDarkMode) {
                 ElsfmNavHost(
                     deepLinkTrackId = deepLinkTrackId,
                     onDeepLinkConsumed = { deepLinkTrackId = null },
