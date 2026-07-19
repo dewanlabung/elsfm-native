@@ -15,17 +15,12 @@ data class PlayerMenuState(
     val userPlaylists: List<PlaylistInfo> = emptyList(),
     val downloadingTrackIds: Set<Int> = emptySet(),
     val downloadedTrackIds: Set<Int> = emptySet(),
-    /** Live progress (0f-1f) for in-flight WorkManager downloads, keyed by track id. */
-    val downloadProgress: Map<Int, Float> = emptyMap(),
     val error: String? = null,
 )
 
 sealed class PlayerMenuEvent {
     data class ShowMenu(val trackId: Int) : PlayerMenuEvent()
     data object HideMenu : PlayerMenuEvent()
-
-    /** Purely local: inserts the track right after the currently playing item. No API call. */
-    data class PlayNext(val trackId: Int) : PlayerMenuEvent()
 
     /** Purely local: appends the track to the in-memory playback queue. No API call. */
     data class AddToQueue(val trackId: Int) : PlayerMenuEvent()

@@ -9,13 +9,11 @@ import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import com.elsfm.mobile.core.common.PersistedPlaybackState
 import com.elsfm.mobile.core.common.PlaybackStateStore
+import com.elsfm.mobile.core.media.LocalRecommendationEngine
 import com.elsfm.mobile.core.media.PlaybackService
 import com.elsfm.mobile.core.media.RecentTracksStore
-import com.elsfm.mobile.core.media.SessionPreferences
 import com.elsfm.mobile.core.media.toMediaItem
 import com.elsfm.mobile.core.model.Track
-import com.elsfm.mobile.core.network.ApiResult
-import com.elsfm.mobile.core.network.api.TrackApi
 import com.google.common.util.concurrent.MoreExecutors
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
@@ -37,8 +35,7 @@ class Media3PlayerController @Inject constructor(
     @ApplicationContext private val context: Context,
     private val playbackStateStore: PlaybackStateStore,
     private val recentTracksStore: RecentTracksStore,
-    private val trackApi: TrackApi,
-    private val sessionPreferences: SessionPreferences,
+    private val recommendationEngine: LocalRecommendationEngine,
 ) : PlayerController {
 
     private val _state = MutableStateFlow(PlayerState())
@@ -85,7 +82,7 @@ class Media3PlayerController @Inject constructor(
             }
 
             override fun onPlaybackStateChanged(playbackState: Int) {
-                if (playbackState == Player.STATE_ENDED && sessionPreferences.isAutoplayEnabled) {
+                if (playbackState == Player.STATE_ENDED) {
                     autoPlayRecommendations()
                 }
             }
@@ -97,29 +94,16 @@ class Media3PlayerController @Inject constructor(
     }
 
     private fun autoPlayRecommendations() {
-        val currentTrackId = _state.value.currentTrack?.id ?: return
-        scope.launch {
-            when (val result = trackApi.getRelatedTracks(currentTrackId)) {
-                is ApiResult.Success -> {
-                    val recommendations = result.data.filter { track ->
-                        !currentQueue.any { it.id == track.id }
-                    }
-                    if (recommendations.isEmpty()) return@launch
-                    recommendations.forEach { track ->
-                        currentQueue = currentQueue + track
-                        val mediaItem = track.toMediaItem(sessionPreferences = sessionPreferences)
-                        mediaItem?.let { mediaController?.addMediaItem(it) }
-                    }
-                    _state.value = _state.value.copy(queue = currentQueue)
-                    mediaController?.seekToNextMediaItem()
-                    mediaController?.play()
-                }
-                else -> {
-                    // Gracefully handle API errors (network error, validation error, unauthorized)
-                    // Just don't enqueue anything and let playback end
-                }
-            }
+        val excludeIds = currentQueue.map { it.id }.toSet()
+        val recommendations = recommendationEngine.getRecommendations(excludeIds)
+        if (recommendations.isEmpty()) return
+        recommendations.forEach { track ->
+            currentQueue = currentQueue + track
+            mediaController?.addMediaItem(track.toMediaItem())
         }
+        _state.value = _state.value.copy(queue = currentQueue)
+        mediaController?.seekToNextMediaItem()
+        mediaController?.play()
     }
 
     /**
@@ -146,8 +130,7 @@ class Media3PlayerController @Inject constructor(
         val persisted = playbackStateStore.restore() ?: return
         currentQueue = persisted.queue
         val startIndex = persisted.queue.indexOfFirst { it.id == persisted.currentTrack.id }.coerceAtLeast(0)
-        val mediaItems = persisted.queue.mapNotNull { it.toMediaItem(sessionPreferences = sessionPreferences) }
-        if (mediaItems.isEmpty()) return  // No playable items (offline mode or all unavailable)
+        val mediaItems = persisted.queue.map { it.toMediaItem() }
         _state.value = _state.value.copy(
             queue = persisted.queue,
             currentTrack = persisted.currentTrack,
@@ -157,7 +140,7 @@ class Media3PlayerController @Inject constructor(
             volume = persisted.volume,
         )
         mediaController?.apply {
-            setMediaItems(mediaItems, startIndex.coerceAtMost(mediaItems.size - 1), persisted.positionMs)
+            setMediaItems(mediaItems, startIndex, persisted.positionMs)
             prepare()
             playbackParameters = PlaybackParameters(persisted.speed)
             volume = persisted.volume
@@ -188,11 +171,10 @@ class Media3PlayerController @Inject constructor(
     override fun play(track: Track, queue: List<Track>) {
         currentQueue = queue
         val startIndex = queue.indexOfFirst { it.id == track.id }.coerceAtLeast(0)
-        val mediaItems = queue.mapNotNull { it.toMediaItem(sessionPreferences = sessionPreferences) }
-        if (mediaItems.isEmpty()) return  // No playable items (offline mode or all unavailable)
+        val mediaItems = queue.map { it.toMediaItem() }
         _state.value = _state.value.copy(queue = queue, currentTrack = track, durationMs = track.durationMs)
         mediaController?.apply {
-            setMediaItems(mediaItems, startIndex.coerceAtMost(mediaItems.size - 1), 0)
+            setMediaItems(mediaItems, startIndex, 0)
             prepare()
             play()
         }
@@ -228,17 +210,7 @@ class Media3PlayerController @Inject constructor(
         if (currentQueue.any { it.id == track.id }) return
         currentQueue = currentQueue + track
         _state.value = _state.value.copy(queue = currentQueue)
-        val mediaItem = track.toMediaItem(sessionPreferences = sessionPreferences)
-        mediaItem?.let { mediaController?.addMediaItem(it) }
-    }
-
-    override fun playNext(track: Track) {
-        val insertIndex = ((mediaController?.currentMediaItemIndex ?: -1) + 1)
-            .coerceIn(0, currentQueue.size)
-        currentQueue = currentQueue.toMutableList().apply { add(insertIndex, track) }
-        _state.value = _state.value.copy(queue = currentQueue)
-        val mediaItem = track.toMediaItem(sessionPreferences = sessionPreferences)
-        mediaItem?.let { mediaController?.addMediaItem(insertIndex, it) }
+        mediaController?.addMediaItem(track.toMediaItem())
     }
 
     override fun toggleShuffle() {

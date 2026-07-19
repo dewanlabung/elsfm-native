@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import com.elsfm.mobile.core.database.UserDao
 import com.elsfm.mobile.core.database.repository.DownloadRepository
 import com.elsfm.mobile.core.media.PlayHistoryApi
-import com.elsfm.mobile.core.media.SessionPreferences
 import com.elsfm.mobile.core.model.Track
 import com.elsfm.mobile.core.network.ApiResult
 import com.elsfm.mobile.core.network.api.UserApi
@@ -14,8 +13,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -27,21 +24,12 @@ class PlayerViewModel @Inject constructor(
     private val userApi: UserApi,
     private val userDao: UserDao,
     private val downloadRepository: DownloadRepository,
-    private val sessionPreferences: SessionPreferences,
 ) : ViewModel() {
 
     private val _menuState = MutableStateFlow(PlayerMenuState())
     val menuState: StateFlow<PlayerMenuState> = _menuState.asStateFlow()
 
     val state: StateFlow<PlayerState> = playerController.state
-
-    init {
-        downloadRepository.observeDownloadProgress()
-            .onEach { progress ->
-                _menuState.value = _menuState.value.copy(downloadProgress = progress)
-            }
-            .launchIn(viewModelScope)
-    }
 
     fun play(track: Track, queue: List<Track>) {
         // A new track starts unliked until the user toggles it this session -
@@ -50,9 +38,7 @@ class PlayerViewModel @Inject constructor(
         _menuState.value = _menuState.value.copy(isLiked = false, isLikeLoading = false)
         playerController.play(track, queue)
         playHistoryApi.startNewQueueSession()
-        if (!sessionPreferences.isPrivateSession) {
-            viewModelScope.launch { playHistoryApi.recordPlay(track.id) }
-        }
+        viewModelScope.launch { playHistoryApi.recordPlay(track.id) }
         viewModelScope.launch {
             if (downloadRepository.isDownloaded(track.id)) {
                 _menuState.value = _menuState.value.copy(
@@ -62,7 +48,6 @@ class PlayerViewModel @Inject constructor(
         }
     }
 
-    fun playNext(track: Track) = playerController.playNext(track)
     fun togglePlayPause() = playerController.togglePlayPause()
     fun seekTo(positionMs: Long) = playerController.seekTo(positionMs)
     fun skipNext() = playerController.skipNext()
@@ -114,12 +99,6 @@ class PlayerViewModel @Inject constructor(
                 )
             }
             PlayerMenuEvent.HideMenu -> {
-                _menuState.value = _menuState.value.copy(isMenuVisible = false)
-            }
-            is PlayerMenuEvent.PlayNext -> {
-                state.value.currentTrack?.takeIf { it.id == event.trackId }?.let { track ->
-                    playerController.playNext(track)
-                }
                 _menuState.value = _menuState.value.copy(isMenuVisible = false)
             }
             is PlayerMenuEvent.AddToQueue -> {
@@ -228,11 +207,27 @@ class PlayerViewModel @Inject constructor(
             is PlayerMenuEvent.MakeAvailableOffline -> {
                 val track = state.value.currentTrack?.takeIf { it.id == event.trackId }
                 if (track != null) {
-                    downloadRepository.enqueueDownload(
-                        track,
-                        albumId = track.album?.id,
-                        albumName = track.album?.name,
-                    )
+                    viewModelScope.launch {
+                        _menuState.value = _menuState.value.copy(
+                            downloadingTrackIds = _menuState.value.downloadingTrackIds + track.id,
+                        )
+                        val result = downloadRepository.downloadTrack(
+                            track,
+                            albumId = track.album?.id,
+                            albumName = track.album?.name,
+                        )
+                        result.onFailure {
+                            _menuState.value = _menuState.value.copy(error = "Failed to download track")
+                        }
+                        _menuState.value = _menuState.value.copy(
+                            downloadingTrackIds = _menuState.value.downloadingTrackIds - track.id,
+                            downloadedTrackIds = if (result.isSuccess) {
+                                _menuState.value.downloadedTrackIds + track.id
+                            } else {
+                                _menuState.value.downloadedTrackIds
+                            },
+                        )
+                    }
                 }
             }
         }

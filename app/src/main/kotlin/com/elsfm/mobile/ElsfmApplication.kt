@@ -1,14 +1,11 @@
 package com.elsfm.mobile
 
 import android.app.Application
-import androidx.hilt.work.HiltWorkerFactory
-import androidx.work.Configuration
 import coil.ImageLoader
 import coil.ImageLoaderFactory
 import coil.disk.DiskCache
 import coil.memory.MemoryCache
 import dagger.hilt.android.HiltAndroidApp
-import javax.inject.Inject
 
 private const val MEMORY_CACHE_PERCENT = 0.25
 private const val DISK_CACHE_BYTES = 512L * 1024 * 1024
@@ -20,16 +17,7 @@ private const val DISK_CACHE_BYTES = 512L * 1024 * 1024
  * back to Home after browsing an Artist/Album page feel slow.
  */
 @HiltAndroidApp
-class ElsfmApplication : Application(), ImageLoaderFactory, Configuration.Provider {
-
-    @Inject
-    lateinit var workerFactory: HiltWorkerFactory
-
-    override val workManagerConfiguration: Configuration
-        get() = Configuration.Builder()
-            .setWorkerFactory(workerFactory)
-            .build()
-
+class ElsfmApplication : Application(), ImageLoaderFactory {
     override fun newImageLoader(): ImageLoader {
         return ImageLoader.Builder(this)
             .memoryCache {

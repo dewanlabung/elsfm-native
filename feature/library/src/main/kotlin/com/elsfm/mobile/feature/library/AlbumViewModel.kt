@@ -22,8 +22,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -59,8 +57,6 @@ data class AlbumDetailState(
     val isPostingComment: Boolean = false,
     val downloadingTrackIds: Set<Int> = emptySet(),
     val downloadedTrackIds: Set<Int> = emptySet(),
-    /** Live progress (0f-1f) for in-flight WorkManager downloads, keyed by track id. */
-    val downloadProgress: Map<Int, Float> = emptyMap(),
     val isDownloadingAlbum: Boolean = false,
     val isPlaylistPickerVisible: Boolean = false,
     val isLoadingPlaylists: Boolean = false,
@@ -93,9 +89,6 @@ class AlbumViewModel @Inject constructor(
     init {
         loadAlbum()
         loadComments()
-        downloadRepository.observeDownloadProgress()
-            .onEach { progress -> _state.update { it.copy(downloadProgress = progress) } }
-            .launchIn(viewModelScope)
     }
 
     private fun loadAlbum() {
@@ -307,22 +300,53 @@ class AlbumViewModel @Inject constructor(
             .replace(Regex("\\s+"), "-")
     }
 
-    /** "Make available offline" for a single track. Enqueued as a WorkManager job so it
-     * survives the app being backgrounded or the process dying mid-download. */
+    /** "Make available offline" for a single track. */
     fun downloadTrack(track: Track) {
         val album = _state.value.album
-        downloadRepository.enqueueDownload(track, albumId = album?.id, albumName = album?.name)
+        viewModelScope.launch(dispatcherProvider.io) {
+            _state.value = _state.value.copy(
+                downloadingTrackIds = _state.value.downloadingTrackIds + track.id,
+            )
+            val result = downloadRepository.downloadTrack(track, albumId = album?.id, albumName = album?.name)
+            _state.value = _state.value.copy(
+                downloadingTrackIds = _state.value.downloadingTrackIds - track.id,
+                downloadedTrackIds = if (result.isSuccess) {
+                    _state.value.downloadedTrackIds + track.id
+                } else {
+                    _state.value.downloadedTrackIds
+                },
+                error = if (result.isFailure) "Failed to download track" else _state.value.error,
+            )
+        }
     }
 
     /**
      * "Make available offline" for the whole album - the real backend has no bulk
-     * download endpoint, so this enqueues the same per-track download job for every
-     * track, matching the real PWA's own "Downloading N tracks..." behavior.
+     * download endpoint, so this is the same per-track download looped client-side,
+     * matching the real PWA's own "Downloading N tracks..." behavior.
      */
     fun downloadAlbum() {
         val tracks = _state.value.tracks
         if (tracks.isEmpty()) return
-        val album = _state.value.album ?: return
-        downloadRepository.enqueueAlbumDownload(album.id, album.name, tracks)
+        val album = _state.value.album
+
+        viewModelScope.launch(dispatcherProvider.io) {
+            _state.value = _state.value.copy(isDownloadingAlbum = true)
+            for (track in tracks) {
+                _state.value = _state.value.copy(
+                    downloadingTrackIds = _state.value.downloadingTrackIds + track.id,
+                )
+                val result = downloadRepository.downloadTrack(track, albumId = album?.id, albumName = album?.name)
+                _state.value = _state.value.copy(
+                    downloadingTrackIds = _state.value.downloadingTrackIds - track.id,
+                    downloadedTrackIds = if (result.isSuccess) {
+                        _state.value.downloadedTrackIds + track.id
+                    } else {
+                        _state.value.downloadedTrackIds
+                    },
+                )
+            }
+            _state.value = _state.value.copy(isDownloadingAlbum = false)
+        }
     }
 }
