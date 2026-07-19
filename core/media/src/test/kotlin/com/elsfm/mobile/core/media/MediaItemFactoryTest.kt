@@ -26,16 +26,16 @@ class MediaItemFactoryTest {
 
         val mediaItem = track.toMediaItem()
 
-        assertEquals("1192", mediaItem.mediaId)
+        assertEquals("1192", mediaItem?.mediaId)
         assertEquals(
             "https://www.elsfm.com/storage/track_media/9cw1dTF9NOayHdT4HdyCydn1jgaVJh7Cm9xu4waT.mp3",
-            mediaItem.localConfiguration?.uri.toString(),
+            mediaItem?.localConfiguration?.uri.toString(),
         )
-        assertEquals("Phul Phulyo Bana Pakhama Ashu Jhajhalkyo", mediaItem.mediaMetadata.title.toString())
-        assertEquals("Sunday School Songs", mediaItem.mediaMetadata.artist.toString())
+        assertEquals("Phul Phulyo Bana Pakhama Ashu Jhajhalkyo", mediaItem?.mediaMetadata?.title.toString())
+        assertEquals("Sunday School Songs", mediaItem?.mediaMetadata?.artist.toString())
         assertEquals(
             "https://www.elsfm.com/storage/track_image_media/abc.jpeg",
-            mediaItem.mediaMetadata.artworkUri.toString(),
+            mediaItem?.mediaMetadata?.artworkUri.toString(),
         )
     }
 
@@ -57,7 +57,48 @@ class MediaItemFactoryTest {
 
         assertEquals(
             "https://www.elsfm.com/api/v1/tracks/1771/download",
-            mediaItem.localConfiguration?.uri.toString(),
+            mediaItem?.localConfiguration?.uri.toString(),
         )
+    }
+
+    @Test
+    fun `returns non-null when sessionPreferences is null`() {
+        // When no session preferences are provided, toMediaItem() should work normally
+        // (not in offline mode, can play remote tracks)
+        val track = Track(
+            id = 123,
+            name = "Remote Track",
+            image = null,
+            durationMs = 180000,
+            src = "storage/track_media/remote.mp3",
+            artists = listOf(Artist(id = 1, name = "Artist")),
+        )
+
+        val mediaItem = track.toMediaItem(sessionPreferences = null)
+
+        assertEquals("123", mediaItem?.mediaId)
+        // Should use the streaming URL, not return null
+        assertEquals(
+            "https://www.elsfm.com/storage/track_media/remote.mp3",
+            mediaItem?.localConfiguration?.uri.toString(),
+        )
+    }
+
+    @Test
+    fun `always allows local files even if offline mode check is added`() {
+        // Local files (file://) should always be playable, before offline mode check
+        val track = Track(
+            id = 456,
+            name = "Downloaded Track",
+            image = null,
+            durationMs = 200000,
+            src = "file:///data/data/com.example/cache/track.mp3",
+            artists = listOf(Artist(id = 2, name = "Artist")),
+        )
+
+        val mediaItem = track.toMediaItem()
+
+        assertEquals("456", mediaItem?.mediaId)
+        assertEquals("file:///data/data/com.example/cache/track.mp3", mediaItem?.localConfiguration?.uri.toString())
     }
 }

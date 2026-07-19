@@ -2,6 +2,7 @@ package com.elsfm.mobile.core.database.di
 
 import android.content.Context
 import androidx.room.Room
+import androidx.work.WorkManager
 import com.elsfm.mobile.core.common.PlaybackStateStore
 import com.elsfm.mobile.core.database.AppDatabase
 import com.elsfm.mobile.core.database.UserDao
@@ -55,4 +56,9 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun providePlaybackStateStore(dao: PlaybackStateDao): PlaybackStateStore = RoomPlaybackStateStore(dao)
+
+    @Provides
+    @Singleton
+    fun provideWorkManager(@ApplicationContext context: Context): WorkManager =
+        WorkManager.getInstance(context)
 }

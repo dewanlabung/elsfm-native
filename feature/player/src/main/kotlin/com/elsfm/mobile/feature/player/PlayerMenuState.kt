@@ -15,6 +15,8 @@ data class PlayerMenuState(
     val userPlaylists: List<PlaylistInfo> = emptyList(),
     val downloadingTrackIds: Set<Int> = emptySet(),
     val downloadedTrackIds: Set<Int> = emptySet(),
+    /** Live progress (0f-1f) for in-flight WorkManager downloads, keyed by track id. */
+    val downloadProgress: Map<Int, Float> = emptyMap(),
     val error: String? = null,
 )
 

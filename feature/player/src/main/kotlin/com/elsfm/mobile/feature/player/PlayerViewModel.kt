@@ -14,6 +14,8 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -32,6 +34,14 @@ class PlayerViewModel @Inject constructor(
     val menuState: StateFlow<PlayerMenuState> = _menuState.asStateFlow()
 
     val state: StateFlow<PlayerState> = playerController.state
+
+    init {
+        downloadRepository.observeDownloadProgress()
+            .onEach { progress ->
+                _menuState.value = _menuState.value.copy(downloadProgress = progress)
+            }
+            .launchIn(viewModelScope)
+    }
 
     fun play(track: Track, queue: List<Track>) {
         // A new track starts unliked until the user toggles it this session -
@@ -218,27 +228,11 @@ class PlayerViewModel @Inject constructor(
             is PlayerMenuEvent.MakeAvailableOffline -> {
                 val track = state.value.currentTrack?.takeIf { it.id == event.trackId }
                 if (track != null) {
-                    viewModelScope.launch {
-                        _menuState.value = _menuState.value.copy(
-                            downloadingTrackIds = _menuState.value.downloadingTrackIds + track.id,
-                        )
-                        val result = downloadRepository.downloadTrack(
-                            track,
-                            albumId = track.album?.id,
-                            albumName = track.album?.name,
-                        )
-                        result.onFailure {
-                            _menuState.value = _menuState.value.copy(error = "Failed to download track")
-                        }
-                        _menuState.value = _menuState.value.copy(
-                            downloadingTrackIds = _menuState.value.downloadingTrackIds - track.id,
-                            downloadedTrackIds = if (result.isSuccess) {
-                                _menuState.value.downloadedTrackIds + track.id
-                            } else {
-                                _menuState.value.downloadedTrackIds
-                            },
-                        )
-                    }
+                    downloadRepository.enqueueDownload(
+                        track,
+                        albumId = track.album?.id,
+                        albumName = track.album?.name,
+                    )
                 }
             }
         }
