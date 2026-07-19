@@ -53,10 +53,16 @@ fun AlbumCard(
             overflow = TextOverflow.Ellipsis,
         )
 
-        Text(
-            text = album.releaseDate.orEmpty(),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        val year = album.releaseDate?.let { raw ->
+            raw.substringAfterLast("/").trim().takeIf { it.length == 4 }
+                ?: raw.substringAfterLast("-").trim().take(4).takeIf { it.length == 4 }
+        }
+        if (!year.isNullOrBlank()) {
+            Text(
+                text = year,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }

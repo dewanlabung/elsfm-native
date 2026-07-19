@@ -9,6 +9,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.core.view.WindowCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.elsfm.mobile.core.designsystem.ElsfmTheme
 import com.elsfm.mobile.feature.profile.ThemeViewModel
@@ -20,6 +21,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Keep content below the status/navigation bars (don't go edge-to-edge).
+        WindowCompat.setDecorFitsSystemWindows(window, true)
         deepLinkTrackId = extractTrackId(intent?.data)
         setContent {
             val themeViewModel: ThemeViewModel = hiltViewModel()

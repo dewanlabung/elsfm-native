@@ -60,6 +60,8 @@ class PlayerViewModel @Inject constructor(
     fun setPlaybackSpeed(speed: Float) = playerController.setPlaybackSpeed(speed)
     fun setVolume(volume: Float) = playerController.setVolume(volume)
 
+    fun addToQueue(track: Track) = playerController.addToQueue(track)
+
     fun toggleLike() {
         val track = state.value.currentTrack ?: return
         val currentlyLiked = menuState.value.isLiked

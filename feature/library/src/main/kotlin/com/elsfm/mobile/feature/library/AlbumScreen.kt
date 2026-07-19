@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -245,67 +246,93 @@ private fun AlbumHeader(
     onDownloadAlbum: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier.fillMaxWidth().padding(16.dp)) {
-        Text(
-            text = album.name,
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-        )
+    Column(modifier = modifier.fillMaxWidth()) {
+        // Thumbnail + title/metadata side-by-side
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalAlignment = Alignment.Top,
+        ) {
+            Surface(
+                modifier = Modifier
+                    .size(140.dp)
+                    .clip(RoundedCornerShape(12.dp)),
+                color = MaterialTheme.colorScheme.surfaceVariant,
+            ) {
+                AsyncImage(
+                    model = album.image,
+                    contentDescription = album.name,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop,
+                )
+            }
 
-        Spacer(modifier = Modifier.height(4.dp))
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Text(
+                    text = album.name,
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                val releaseDate = album.releaseDate
+                if (!releaseDate.isNullOrBlank()) {
+                    Text(
+                        text = releaseDate,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Text(
+                    text = "$trackCount tracks",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                if (!album.plays.isNullOrBlank()) {
+                    Text(
+                        text = "${album.plays} plays",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
 
-        Text(
-            text = album.releaseDate.orEmpty(),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-
-        Text(
-            text = "$trackCount tracks",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-            StatCounter(icon = Icons.Filled.PlayArrow, count = album.plays)
+        // Action buttons row
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Button(onClick = onPlayAll) {
+                Icon(imageVector = Icons.Filled.PlayArrow, contentDescription = null)
+                Text(text = "Play All", modifier = Modifier.padding(start = 8.dp))
+            }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 LikeButton(isLiked = isLiked, isLoading = isLikeLoading, onClick = onToggleLike)
                 Text(
                     text = ((album.likesCount ?: 0) + if (isLiked) 1 else 0).toString(),
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(
-                    onClick = onToggleRepost,
-                    enabled = !isRepostLoading,
-                    modifier = Modifier.testTag("album_repost_button"),
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Refresh,
-                        contentDescription = if (isReposted) "Remove repost" else "Repost",
-                        tint = if (isReposted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                Text(
-                    text = ((album.repostsCount ?: 0) + if (isReposted) 1 else 0).toString(),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+            IconButton(
+                onClick = onToggleRepost,
+                enabled = !isRepostLoading,
+                modifier = Modifier.testTag("album_repost_button"),
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Refresh,
+                    contentDescription = if (isReposted) "Remove repost" else "Repost",
+                    tint = if (isReposted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(onClick = onPlayAll) {
-                Icon(imageVector = Icons.Filled.PlayArrow, contentDescription = null)
-                Text(text = "Play All", modifier = Modifier.padding(start = 8.dp))
             }
             IconButton(onClick = onShare, modifier = Modifier.testTag("album_share_button")) {
                 Icon(imageVector = Icons.Filled.Share, contentDescription = "Share album")
@@ -324,17 +351,20 @@ private fun AlbumHeader(
         }
 
         album.description?.takeIf { it.isNotBlank() }?.let { description ->
-            Spacer(modifier = Modifier.height(16.dp))
             Text(
                 text = description,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.85f),
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             )
         }
 
         if (album.tags.isNotEmpty()) {
-            Spacer(modifier = Modifier.height(12.dp))
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(horizontal = 16.dp),
+                modifier = Modifier.padding(vertical = 8.dp),
+            ) {
                 items(album.tags, key = { it.id }) { tag ->
                     Surface(
                         shape = RoundedCornerShape(50),
@@ -350,23 +380,6 @@ private fun AlbumHeader(
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun StatCounter(icon: androidx.compose.ui.graphics.vector.ImageVector, count: String?) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(18.dp),
-        )
-        Text(
-            text = count ?: "0",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
     }
 }
 

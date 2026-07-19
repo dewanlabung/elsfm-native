@@ -1,5 +1,6 @@
 package com.elsfm.mobile
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -17,15 +18,20 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -39,6 +45,8 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.elsfm.mobile.core.designsystem.ConnectivityBanner
+import com.elsfm.mobile.core.designsystem.TrackContextMenu
+import com.elsfm.mobile.core.model.Track
 import com.elsfm.mobile.core.network.auth.SessionEvent
 import com.elsfm.mobile.feature.artist.ArtistDetailScreen
 import com.elsfm.mobile.feature.auth.EmailVerificationScreen
@@ -443,12 +451,33 @@ fun ElsfmNavHost(
                             arguments = listOf(navArgument(CHANNEL_ID_ARG) { type = NavType.IntType }),
                         ) {
                             val playerViewModel: PlayerViewModel = hiltViewModel()
-                            ChannelDetailScreen(
-                                onTrackClicked = { track, queue -> playerViewModel.play(track, queue) },
-                                onPlaylistClicked = { playlist -> navController.navigateToPlaylist(playlist) },
-                                onAlbumClicked = { album -> navController.navigateToAlbum(album.id) },
-                                onChannelClicked = { channelId -> navController.navigate("channel/$channelId") },
-                            )
+                            var channelMoreTrack by remember { mutableStateOf<Track?>(null) }
+                            Box(modifier = androidx.compose.ui.Modifier.fillMaxSize()) {
+                                ChannelDetailScreen(
+                                    onTrackClicked = { track, queue -> playerViewModel.play(track, queue) },
+                                    onPlaylistClicked = { playlist -> navController.navigateToPlaylist(playlist) },
+                                    onAlbumClicked = { album -> navController.navigateToAlbum(album.id) },
+                                    onChannelClicked = { channelId -> navController.navigate("channel/$channelId") },
+                                    onTrackMoreClicked = { track -> channelMoreTrack = track },
+                                )
+                                channelMoreTrack?.let { track ->
+                                    TrackContextMenu(
+                                        trackId = track.id,
+                                        artistId = track.artists.firstOrNull()?.id,
+                                        albumId = track.album?.id,
+                                        isVisible = true,
+                                        onDismiss = { channelMoreTrack = null },
+                                        onAddToQueue = { playerViewModel.addToQueue(track) },
+                                        onAddToLibrary = {},
+                                        onAddToPlaylist = {},
+                                        onShare = {},
+                                        onRepost = {},
+                                        onGoToArtist = { artistId -> navController.navigate("artist/$artistId") },
+                                        onGoToAlbum = { albumId -> navController.navigateToAlbum(albumId) },
+                                        onViewComments = { trackId -> navController.navigateToTrackComments(trackId) },
+                                    )
+                                }
+                            }
                         }
                         composable(ROUTE_SEARCH) {
                             val playerViewModel: PlayerViewModel = hiltViewModel()
@@ -506,14 +535,35 @@ fun ElsfmNavHost(
                         }
                         composable(ROUTE_DISCOVERY) {
                             val playerViewModel: PlayerViewModel = hiltViewModel()
-                            DiscoveryScreen(
-                                onTrackClicked = { track, queue ->
-                                    playerViewModel.play(track, queue)
-                                },
-                                onPlaylistClicked = { playlist -> navController.navigateToPlaylist(playlist) },
-                                onAlbumClicked = { album -> navController.navigateToAlbum(album.id) },
-                                onChannelClicked = { channelId -> navController.navigate("channel/$channelId") },
-                            )
+                            var discoveryMoreTrack by remember { mutableStateOf<Track?>(null) }
+                            Box(modifier = androidx.compose.ui.Modifier.fillMaxSize()) {
+                                DiscoveryScreen(
+                                    onTrackClicked = { track, queue ->
+                                        playerViewModel.play(track, queue)
+                                    },
+                                    onPlaylistClicked = { playlist -> navController.navigateToPlaylist(playlist) },
+                                    onAlbumClicked = { album -> navController.navigateToAlbum(album.id) },
+                                    onChannelClicked = { channelId -> navController.navigate("channel/$channelId") },
+                                    onTrackMoreClicked = { track -> discoveryMoreTrack = track },
+                                )
+                                discoveryMoreTrack?.let { track ->
+                                    TrackContextMenu(
+                                        trackId = track.id,
+                                        artistId = track.artists.firstOrNull()?.id,
+                                        albumId = track.album?.id,
+                                        isVisible = true,
+                                        onDismiss = { discoveryMoreTrack = null },
+                                        onAddToQueue = { playerViewModel.addToQueue(track) },
+                                        onAddToLibrary = {},
+                                        onAddToPlaylist = {},
+                                        onShare = {},
+                                        onRepost = {},
+                                        onGoToArtist = { artistId -> navController.navigate("artist/$artistId") },
+                                        onGoToAlbum = { albumId -> navController.navigateToAlbum(albumId) },
+                                        onViewComments = { trackId -> navController.navigateToTrackComments(trackId) },
+                                    )
+                                }
+                            }
                         }
                         composable(ROUTE_PROFILE) {
                             ProfileScreen(

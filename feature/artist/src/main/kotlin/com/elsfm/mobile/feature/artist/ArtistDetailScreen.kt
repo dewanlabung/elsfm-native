@@ -63,6 +63,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import com.elsfm.mobile.core.designsystem.TrackContextMenu
 import com.elsfm.mobile.core.model.Artist
 import com.elsfm.mobile.core.model.ArtistFollower
 import com.elsfm.mobile.core.model.ArtistLink
@@ -661,6 +662,7 @@ private fun AboutTab(artist: Artist) {
 private fun TracksTab(
     tracks: List<Track>,
     onTrackClicked: (Track) -> Unit,
+    onTrackMoreClicked: (Track) -> Unit = {},
 ) {
     if (tracks.isEmpty()) {
         EmptyTabMessage("No tracks available")
@@ -671,12 +673,27 @@ private fun TracksTab(
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
     ) {
         items(tracks, key = { it.id }) { track ->
-            TrackListItem(
-                track = track,
-                isPlaying = false,
-                onClick = { onTrackClicked(track) },
-                onMoreClick = {},
-            )
+            var menuExpanded by remember { mutableStateOf(false) }
+            Box {
+                TrackListItem(
+                    track = track,
+                    isPlaying = false,
+                    onClick = { onTrackClicked(track) },
+                    onMoreClick = { menuExpanded = true },
+                )
+                TrackContextMenu(
+                    trackId = track.id,
+                    artistId = track.artists.firstOrNull()?.id,
+                    albumId = track.album?.id,
+                    isVisible = menuExpanded,
+                    onDismiss = { menuExpanded = false },
+                    onAddToQueue = { onTrackMoreClicked(track) },
+                    onAddToLibrary = {},
+                    onAddToPlaylist = {},
+                    onShare = {},
+                    onRepost = {},
+                )
+            }
         }
     }
 }

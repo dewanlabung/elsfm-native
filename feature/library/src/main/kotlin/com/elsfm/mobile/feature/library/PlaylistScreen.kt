@@ -1,5 +1,8 @@
 package com.elsfm.mobile.feature.library
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.content.Intent
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -17,11 +20,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.QueueMusic
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
@@ -190,6 +196,7 @@ internal fun PlaylistDetailContent(
                     modifier = Modifier.fillMaxSize().testTag(PLAYLIST_LAZY_COLUMN_TEST_TAG),
                 ) {
                     item {
+                        val playlistUrl = "https://www.elsfm.com/playlist/${playlist.id}"
                         PlaylistHeader(
                             playlist = playlist,
                             trackCount = state.tracks.size,
@@ -203,6 +210,18 @@ internal fun PlaylistDetailContent(
                             isDeletingPlaylist = state.isDeletingPlaylist,
                             onRenamePlaylist = onRenamePlaylist,
                             onDeletePlaylist = onDeletePlaylist,
+                            onShare = {
+                                val intent = Intent(Intent.ACTION_SEND).apply {
+                                    type = "text/plain"
+                                    putExtra(Intent.EXTRA_TEXT, playlistUrl)
+                                    putExtra(Intent.EXTRA_SUBJECT, playlist.name)
+                                }
+                                context.startActivity(Intent.createChooser(intent, "Share playlist"))
+                            },
+                            onCopyLink = {
+                                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                clipboard.setPrimaryClip(ClipData.newPlainText("Playlist link", playlistUrl))
+                            },
                         )
                     }
                     items(state.tracks, key = { it.id }) { track ->
@@ -376,68 +395,64 @@ private fun PlaylistHeader(
     isDeletingPlaylist: Boolean = false,
     onRenamePlaylist: (String) -> Unit = {},
     onDeletePlaylist: () -> Unit = {},
+    onShare: () -> Unit = {},
+    onCopyLink: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
     var showRenameDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
 
-    Column(modifier = modifier.fillMaxWidth().padding(16.dp)) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        // Thumbnail + title/metadata side-by-side
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalAlignment = Alignment.Top,
         ) {
-            Text(
-                text = playlist.name,
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f),
-            )
+            Surface(
+                modifier = Modifier
+                    .size(140.dp)
+                    .clip(RoundedCornerShape(12.dp)),
+                color = MaterialTheme.colorScheme.surfaceVariant,
+            ) {
+                AsyncImage(
+                    model = playlist.image,
+                    contentDescription = playlist.name,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop,
+                )
+            }
 
-            if (isOwnedByUser) {
-                Box {
-                    IconButton(
-                        onClick = { menuExpanded = true },
-                        modifier = Modifier.testTag("playlist_menu_button"),
-                    ) {
-                        Icon(imageVector = Icons.Filled.MoreVert, contentDescription = "Playlist options")
-                    }
-                    DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
-                        DropdownMenuItem(
-                            text = { Text("Rename playlist") },
-                            leadingIcon = { Icon(Icons.Filled.Edit, contentDescription = null) },
-                            onClick = {
-                                menuExpanded = false
-                                showRenameDialog = true
-                            },
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Delete playlist") },
-                            leadingIcon = { Icon(Icons.Filled.Delete, contentDescription = null) },
-                            onClick = {
-                                menuExpanded = false
-                                showDeleteDialog = true
-                            },
-                        )
-                    }
-                }
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Text(
+                    text = playlist.name,
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = "$trackCount tracks",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
 
-        Spacer(modifier = Modifier.height(4.dp))
-
-        Text(
-            text = "$trackCount tracks",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        // Action buttons row
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Button(onClick = onPlayAll) {
                 Icon(imageVector = Icons.Filled.PlayArrow, contentDescription = null)
                 Text(text = "Play All", modifier = Modifier.padding(start = 8.dp))
@@ -453,7 +468,51 @@ private fun PlaylistHeader(
                     Icon(imageVector = Icons.Filled.Download, contentDescription = "Make playlist available offline")
                 }
             }
+            Box {
+                IconButton(
+                    onClick = { menuExpanded = true },
+                    modifier = Modifier.testTag("playlist_menu_button"),
+                ) {
+                    Icon(imageVector = Icons.Filled.MoreVert, contentDescription = "Playlist options")
+                }
+                DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
+                    DropdownMenuItem(
+                        text = { Text("Add to queue") },
+                        leadingIcon = { Icon(Icons.Filled.QueueMusic, contentDescription = null) },
+                        onClick = { menuExpanded = false; onPlayAll() },
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Share") },
+                        leadingIcon = { Icon(Icons.Filled.Share, contentDescription = null) },
+                        onClick = { menuExpanded = false; onShare() },
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Copy playlist link") },
+                        leadingIcon = { Icon(Icons.Filled.ContentCopy, contentDescription = null) },
+                        onClick = { menuExpanded = false; onCopyLink() },
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Make available offline") },
+                        leadingIcon = { Icon(Icons.Filled.Download, contentDescription = null) },
+                        onClick = { menuExpanded = false; onDownloadPlaylist() },
+                    )
+                    if (isOwnedByUser) {
+                        DropdownMenuItem(
+                            text = { Text("Rename playlist") },
+                            leadingIcon = { Icon(Icons.Filled.Edit, contentDescription = null) },
+                            onClick = { menuExpanded = false; showRenameDialog = true },
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Delete playlist", color = MaterialTheme.colorScheme.error) },
+                            leadingIcon = { Icon(Icons.Filled.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+                            onClick = { menuExpanded = false; showDeleteDialog = true },
+                        )
+                    }
+                }
+            }
         }
+
+        Spacer(modifier = Modifier.height(8.dp))
     }
 
     if (showRenameDialog) {
