@@ -31,12 +31,14 @@ import androidx.compose.material.icons.filled.QueueMusic
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Divider
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
@@ -56,9 +58,12 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -68,7 +73,6 @@ import com.elsfm.mobile.core.designsystem.TrackContextMenu
 import com.elsfm.mobile.core.model.Playlist
 import com.elsfm.mobile.core.model.Track
 import com.elsfm.mobile.core.network.api.PlaylistInfo
-import com.elsfm.mobile.feature.library.composables.BlurredBackground
 import com.elsfm.mobile.feature.library.composables.TrackListItem
 
 internal const val PLAYLIST_TRACK_LIST_TEST_TAG = "playlistTrackList"
@@ -153,7 +157,10 @@ internal fun PlaylistDetailContent(
     val playlist = state.playlist
     val context = LocalContext.current
 
-    BlurredBackground(imageUrl = playlist?.image, modifier = modifier) {
+    Surface(
+        modifier = modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background,
+    ) {
         when {
             state.isLoading -> {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -225,6 +232,12 @@ internal fun PlaylistDetailContent(
                             },
                         )
                     }
+                    item {
+                        Divider(
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant,
+                        )
+                    }
                     items(state.tracks, key = { it.id }) { track ->
                         PlaylistTrackRow(
                             track = track,
@@ -278,6 +291,7 @@ internal fun PlaylistDetailContent(
                             )
                         }
                     }
+                    item { Spacer(modifier = Modifier.height(80.dp)) }
                 }
             }
         }
@@ -404,98 +418,105 @@ private fun PlaylistHeader(
     var showRenameDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
 
-    Column(modifier = modifier.fillMaxWidth()) {
-        // Thumbnail + title/metadata side-by-side
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalAlignment = Alignment.Top,
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(140.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant),
-            ) {
-                AsyncImage(
-                    model = playlist.image,
-                    contentDescription = playlist.name,
-                    modifier = Modifier.size(140.dp),
-                    contentScale = ContentScale.Crop,
-                )
-            }
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Spacer(modifier = Modifier.height(32.dp))
 
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                Text(
-                    text = playlist.name,
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 3,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Text(
-                    text = "$trackCount tracks",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+        // Centered playlist art with shadow
+        Box(
+            modifier = Modifier
+                .size(220.dp)
+                .shadow(elevation = 16.dp, shape = RoundedCornerShape(16.dp))
+                .clip(RoundedCornerShape(16.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant),
+        ) {
+            AsyncImage(
+                model = playlist.image,
+                contentDescription = playlist.name,
+                modifier = Modifier.size(220.dp),
+                contentScale = ContentScale.Crop,
+            )
         }
 
-        // Action buttons row
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Playlist name
+        Text(
+            text = playlist.name,
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground,
+            textAlign = TextAlign.Center,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(horizontal = 24.dp),
+        )
+
+        Spacer(modifier = Modifier.height(6.dp))
+
+        Text(
+            text = "$trackCount tracks",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        // Primary action: Play All
+        Button(
+            onClick = onPlayAll,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp)
+                .height(48.dp),
+            shape = RoundedCornerShape(12.dp),
+        ) {
+            Icon(imageVector = Icons.Filled.PlayArrow, contentDescription = null, modifier = Modifier.size(20.dp))
+            Spacer(modifier = Modifier.size(8.dp))
+            Text(text = "Play All", style = MaterialTheme.typography.labelLarge)
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Secondary actions row
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Button(onClick = onPlayAll) {
-                Icon(imageVector = Icons.Filled.PlayArrow, contentDescription = null)
-                Text(text = "Play All", modifier = Modifier.padding(start = 8.dp))
-            }
-            IconButton(
+            FilledTonalIconButton(
                 onClick = onDownloadPlaylist,
                 enabled = !isDownloading,
                 modifier = Modifier.testTag("playlist_download_button"),
             ) {
                 if (isDownloading) {
-                    CircularProgressIndicator(modifier = Modifier.size(20.dp))
+                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
                 } else {
                     Icon(imageVector = Icons.Filled.Download, contentDescription = "Make playlist available offline")
                 }
             }
+            FilledTonalIconButton(onClick = onShare) {
+                Icon(imageVector = Icons.Filled.Share, contentDescription = "Share")
+            }
+            FilledTonalIconButton(onClick = onCopyLink) {
+                Icon(imageVector = Icons.Filled.ContentCopy, contentDescription = "Copy link")
+            }
             Box {
-                IconButton(
+                FilledTonalIconButton(
                     onClick = { menuExpanded = true },
                     modifier = Modifier.testTag("playlist_menu_button"),
                 ) {
-                    Icon(imageVector = Icons.Filled.MoreVert, contentDescription = "Playlist options")
+                    Icon(imageVector = Icons.Filled.MoreVert, contentDescription = "More options")
                 }
                 DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
                     DropdownMenuItem(
                         text = { Text("Add to queue") },
                         leadingIcon = { Icon(Icons.Filled.QueueMusic, contentDescription = null) },
                         onClick = { menuExpanded = false; onPlayAll() },
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Share") },
-                        leadingIcon = { Icon(Icons.Filled.Share, contentDescription = null) },
-                        onClick = { menuExpanded = false; onShare() },
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Copy playlist link") },
-                        leadingIcon = { Icon(Icons.Filled.ContentCopy, contentDescription = null) },
-                        onClick = { menuExpanded = false; onCopyLink() },
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Make available offline") },
-                        leadingIcon = { Icon(Icons.Filled.Download, contentDescription = null) },
-                        onClick = { menuExpanded = false; onDownloadPlaylist() },
                     )
                     if (isOwnedByUser) {
                         DropdownMenuItem(
@@ -513,7 +534,7 @@ private fun PlaylistHeader(
             }
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(16.dp))
     }
 
     if (showRenameDialog) {

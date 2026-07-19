@@ -1,9 +1,9 @@
 package com.elsfm.mobile.feature.library
 
 import android.content.Intent
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -19,15 +19,17 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -45,9 +47,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -57,7 +62,6 @@ import com.elsfm.mobile.core.designsystem.TrackContextMenu
 import com.elsfm.mobile.core.model.Album
 import com.elsfm.mobile.core.model.Comment
 import com.elsfm.mobile.core.model.Track
-import com.elsfm.mobile.feature.library.composables.BlurredBackground
 import com.elsfm.mobile.feature.library.composables.TrackListItem
 
 internal const val ALBUM_TRACK_LIST_TEST_TAG = "albumTrackList"
@@ -151,7 +155,10 @@ internal fun AlbumDetailContent(
         )
     }
 
-    BlurredBackground(imageUrl = album?.image, modifier = modifier) {
+    Surface(
+        modifier = modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background,
+    ) {
         when {
             state.isLoading -> {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -182,6 +189,12 @@ internal fun AlbumDetailContent(
                             onShare = onShare,
                             isDownloading = state.isDownloadingAlbum,
                             onDownloadAlbum = onDownloadAlbum,
+                        )
+                    }
+                    item {
+                        Divider(
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant,
                         )
                     }
                     items(state.tracks, key = { it.id }) { track ->
@@ -225,6 +238,7 @@ internal fun AlbumDetailContent(
                             onPostComment = onPostComment,
                         )
                     }
+                    item { Spacer(modifier = Modifier.height(80.dp)) }
                 }
             }
         }
@@ -247,84 +261,101 @@ private fun AlbumHeader(
     onDownloadAlbum: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier.fillMaxWidth()) {
-        // Thumbnail + title/metadata side-by-side
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalAlignment = Alignment.Top,
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(140.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant),
-            ) {
-                AsyncImage(
-                    model = album.image,
-                    contentDescription = album.name,
-                    modifier = Modifier.size(140.dp),
-                    contentScale = ContentScale.Crop,
-                )
-            }
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Spacer(modifier = Modifier.height(32.dp))
 
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                Text(
-                    text = album.name,
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 3,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                val releaseDate = album.releaseDate
-                if (!releaseDate.isNullOrBlank()) {
-                    Text(
-                        text = releaseDate,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                Text(
-                    text = "$trackCount tracks",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                if (!album.plays.isNullOrBlank()) {
-                    Text(
-                        text = "${album.plays} plays",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
+        // Centered album art with shadow
+        Box(
+            modifier = Modifier
+                .size(220.dp)
+                .shadow(elevation = 16.dp, shape = RoundedCornerShape(16.dp))
+                .clip(RoundedCornerShape(16.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant),
+        ) {
+            AsyncImage(
+                model = album.image,
+                contentDescription = album.name,
+                modifier = Modifier.size(220.dp),
+                contentScale = ContentScale.Crop,
+            )
         }
 
-        // Action buttons row
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Album name
+        Text(
+            text = album.name,
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground,
+            textAlign = TextAlign.Center,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(horizontal = 24.dp),
+        )
+
+        Spacer(modifier = Modifier.height(6.dp))
+
+        // Year · tracks · plays
+        val meta = buildList {
+            val releaseDate = album.releaseDate
+            if (!releaseDate.isNullOrBlank()) {
+                val year = releaseDate.substringAfterLast("/").trim().takeIf { it.length == 4 }
+                    ?: releaseDate.substringAfterLast("-").trim().take(4).takeIf { it.length == 4 }
+                    ?: releaseDate
+                add(year)
+            }
+            add("$trackCount tracks")
+            if (!album.plays.isNullOrBlank()) add("${album.plays} plays")
+        }
+        Text(
+            text = meta.joinToString(" · "),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = 24.dp),
+        )
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        // Primary action: Play All
+        Button(
+            onClick = onPlayAll,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp)
+                .height(48.dp),
+            shape = RoundedCornerShape(12.dp),
+        ) {
+            Icon(imageVector = Icons.Filled.PlayArrow, contentDescription = null, modifier = Modifier.size(20.dp))
+            Spacer(modifier = Modifier.size(8.dp))
+            Text(text = "Play All", style = MaterialTheme.typography.labelLarge)
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Secondary actions row
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Button(onClick = onPlayAll) {
-                Icon(imageVector = Icons.Filled.PlayArrow, contentDescription = null)
-                Text(text = "Play All", modifier = Modifier.padding(start = 8.dp))
-            }
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            // Like
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 LikeButton(isLiked = isLiked, isLoading = isLikeLoading, onClick = onToggleLike)
                 Text(
                     text = ((album.likesCount ?: 0) + if (isLiked) 1 else 0).toString(),
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            IconButton(
+            // Repost
+            FilledTonalIconButton(
                 onClick = onToggleRepost,
                 enabled = !isRepostLoading,
                 modifier = Modifier.testTag("album_repost_button"),
@@ -335,52 +366,62 @@ private fun AlbumHeader(
                     tint = if (isReposted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            IconButton(onClick = onShare, modifier = Modifier.testTag("album_share_button")) {
+            // Share
+            FilledTonalIconButton(
+                onClick = onShare,
+                modifier = Modifier.testTag("album_share_button"),
+            ) {
                 Icon(imageVector = Icons.Filled.Share, contentDescription = "Share album")
             }
-            IconButton(
+            // Download
+            FilledTonalIconButton(
                 onClick = onDownloadAlbum,
                 enabled = !isDownloading,
                 modifier = Modifier.testTag("album_download_button"),
             ) {
                 if (isDownloading) {
-                    CircularProgressIndicator(modifier = Modifier.size(20.dp))
+                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
                 } else {
-                    Icon(imageVector = Icons.Filled.Download, contentDescription = "Make album available offline")
+                    Icon(imageVector = Icons.Filled.Download, contentDescription = "Make available offline")
                 }
             }
         }
 
+        // Description
         album.description?.takeIf { it.isNotBlank() }?.let { description ->
+            Spacer(modifier = Modifier.height(12.dp))
             Text(
                 text = description,
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.85f),
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 24.dp),
             )
         }
 
+        // Tags
         if (album.tags.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(8.dp))
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(horizontal = 16.dp),
-                modifier = Modifier.padding(vertical = 8.dp),
+                contentPadding = PaddingValues(horizontal = 24.dp),
             ) {
                 items(album.tags, key = { it.id }) { tag ->
                     Surface(
                         shape = RoundedCornerShape(50),
-                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        color = MaterialTheme.colorScheme.secondaryContainer,
                     ) {
                         Text(
                             text = "#${tag.displayName ?: tag.name}",
                             style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                         )
                     }
                 }
             }
         }
+
+        Spacer(modifier = Modifier.height(16.dp))
     }
 }
 
