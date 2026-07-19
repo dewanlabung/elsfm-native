@@ -107,8 +107,7 @@ class Media3PlayerController @Inject constructor(
                     if (recommendations.isEmpty()) return@launch
                     recommendations.forEach { track ->
                         currentQueue = currentQueue + track
-                        val mediaItem = track.toMediaItem(sessionPreferences = sessionPreferences)
-                        mediaItem?.let { mediaController?.addMediaItem(it) }
+                        mediaController?.addMediaItem(track.toMediaItem())
                     }
                     _state.value = _state.value.copy(queue = currentQueue)
                     mediaController?.seekToNextMediaItem()
@@ -146,8 +145,7 @@ class Media3PlayerController @Inject constructor(
         val persisted = playbackStateStore.restore() ?: return
         currentQueue = persisted.queue
         val startIndex = persisted.queue.indexOfFirst { it.id == persisted.currentTrack.id }.coerceAtLeast(0)
-        val mediaItems = persisted.queue.mapNotNull { it.toMediaItem(sessionPreferences = sessionPreferences) }
-        if (mediaItems.isEmpty()) return  // No playable items (offline mode or all unavailable)
+        val mediaItems = persisted.queue.map { it.toMediaItem() }
         _state.value = _state.value.copy(
             queue = persisted.queue,
             currentTrack = persisted.currentTrack,
@@ -157,7 +155,7 @@ class Media3PlayerController @Inject constructor(
             volume = persisted.volume,
         )
         mediaController?.apply {
-            setMediaItems(mediaItems, startIndex.coerceAtMost(mediaItems.size - 1), persisted.positionMs)
+            setMediaItems(mediaItems, startIndex, persisted.positionMs)
             prepare()
             playbackParameters = PlaybackParameters(persisted.speed)
             volume = persisted.volume
@@ -188,11 +186,10 @@ class Media3PlayerController @Inject constructor(
     override fun play(track: Track, queue: List<Track>) {
         currentQueue = queue
         val startIndex = queue.indexOfFirst { it.id == track.id }.coerceAtLeast(0)
-        val mediaItems = queue.mapNotNull { it.toMediaItem(sessionPreferences = sessionPreferences) }
-        if (mediaItems.isEmpty()) return  // No playable items (offline mode or all unavailable)
+        val mediaItems = queue.map { it.toMediaItem() }
         _state.value = _state.value.copy(queue = queue, currentTrack = track, durationMs = track.durationMs)
         mediaController?.apply {
-            setMediaItems(mediaItems, startIndex.coerceAtMost(mediaItems.size - 1), 0)
+            setMediaItems(mediaItems, startIndex, 0)
             prepare()
             play()
         }
@@ -228,8 +225,7 @@ class Media3PlayerController @Inject constructor(
         if (currentQueue.any { it.id == track.id }) return
         currentQueue = currentQueue + track
         _state.value = _state.value.copy(queue = currentQueue)
-        val mediaItem = track.toMediaItem(sessionPreferences = sessionPreferences)
-        mediaItem?.let { mediaController?.addMediaItem(it) }
+        mediaController?.addMediaItem(track.toMediaItem())
     }
 
     override fun playNext(track: Track) {
@@ -237,8 +233,7 @@ class Media3PlayerController @Inject constructor(
             .coerceIn(0, currentQueue.size)
         currentQueue = currentQueue.toMutableList().apply { add(insertIndex, track) }
         _state.value = _state.value.copy(queue = currentQueue)
-        val mediaItem = track.toMediaItem(sessionPreferences = sessionPreferences)
-        mediaItem?.let { mediaController?.addMediaItem(insertIndex, it) }
+        mediaController?.addMediaItem(insertIndex, track.toMediaItem())
     }
 
     override fun toggleShuffle() {

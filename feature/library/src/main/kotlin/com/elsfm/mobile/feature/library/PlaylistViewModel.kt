@@ -17,8 +17,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -41,8 +39,6 @@ data class PlaylistDetailState(
     val likeLoadingTrackIds: Set<Int> = emptySet(),
     val downloadingTrackIds: Set<Int> = emptySet(),
     val downloadedTrackIds: Set<Int> = emptySet(),
-    /** Live progress (0f-1f) for in-flight WorkManager downloads, keyed by track id. */
-    val downloadProgress: Map<Int, Float> = emptyMap(),
     val isDownloadingPlaylist: Boolean = false,
     val hasMoreTracks: Boolean = false,
     val isLoadingMore: Boolean = false,
@@ -71,12 +67,6 @@ class PlaylistViewModel @Inject constructor(
     val state: StateFlow<PlaylistDetailState> = _state.asStateFlow()
 
     private var currentPage = 1
-
-    init {
-        downloadRepository.observeDownloadProgress()
-            .onEach { progress -> _state.update { it.copy(downloadProgress = progress) } }
-            .launchIn(viewModelScope)
-    }
 
     fun loadPlaylist(playlist: Playlist) {
         currentPage = 1
@@ -263,24 +253,53 @@ class PlaylistViewModel @Inject constructor(
         }
     }
 
-    /** "Make available offline" for a single track. Enqueued as a WorkManager job so it
-     * survives the app being backgrounded or the process dying mid-download. */
+    /** "Make available offline" for a single track. */
     fun downloadTrack(track: Track) {
         val playlist = _state.value.playlist
-        downloadRepository.enqueueDownload(track, playlistId = playlist?.id, playlistName = playlist?.name)
+        viewModelScope.launch(dispatcherProvider.io) {
+            _state.update { it.copy(downloadingTrackIds = it.downloadingTrackIds + track.id) }
+            val result = downloadRepository.downloadTrack(
+                track,
+                playlistId = playlist?.id,
+                playlistName = playlist?.name,
+            )
+            _state.update {
+                it.copy(
+                    downloadingTrackIds = it.downloadingTrackIds - track.id,
+                    downloadedTrackIds = if (result.isSuccess) it.downloadedTrackIds + track.id else it.downloadedTrackIds,
+                    error = if (result.isFailure) "Failed to download track" else it.error,
+                )
+            }
+        }
     }
 
     /**
-     * "Make available offline" for the whole playlist - there is no bulk backend
-     * endpoint, so this enqueues the same per-track download job for every track,
-     * matching the real PWA's own "Downloading N tracks..." behavior.
+     * "Make available offline" for the whole playlist - same per-track download
+     * looped client-side as [downloadTrack], matching the real PWA's own
+     * "Downloading N tracks..." behavior (there is no bulk backend endpoint).
      */
     fun downloadPlaylist() {
         val tracks = _state.value.tracks
         if (tracks.isEmpty()) return
-        val playlist = _state.value.playlist ?: return
-        tracks.forEach { track ->
-            downloadRepository.enqueueDownload(track, playlistId = playlist.id, playlistName = playlist.name)
+        val playlist = _state.value.playlist
+
+        viewModelScope.launch(dispatcherProvider.io) {
+            _state.update { it.copy(isDownloadingPlaylist = true) }
+            for (track in tracks) {
+                _state.update { it.copy(downloadingTrackIds = it.downloadingTrackIds + track.id) }
+                val result = downloadRepository.downloadTrack(
+                    track,
+                    playlistId = playlist?.id,
+                    playlistName = playlist?.name,
+                )
+                _state.update {
+                    it.copy(
+                        downloadingTrackIds = it.downloadingTrackIds - track.id,
+                        downloadedTrackIds = if (result.isSuccess) it.downloadedTrackIds + track.id else it.downloadedTrackIds,
+                    )
+                }
+            }
+            _state.update { it.copy(isDownloadingPlaylist = false) }
         }
     }
 

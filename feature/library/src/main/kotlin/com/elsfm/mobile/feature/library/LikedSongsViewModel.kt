@@ -17,8 +17,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -31,8 +29,6 @@ data class LikedSongsState(
     val likeLoadingTrackIds: Set<Int> = emptySet(),
     val downloadingTrackIds: Set<Int> = emptySet(),
     val downloadedTrackIds: Set<Int> = emptySet(),
-    /** Live progress (0f-1f) for in-flight WorkManager downloads, keyed by track id. */
-    val downloadProgress: Map<Int, Float> = emptyMap(),
     val isPlaylistPickerVisible: Boolean = false,
     val isLoadingPlaylists: Boolean = false,
     val userPlaylists: List<PlaylistInfo> = emptyList(),
@@ -66,9 +62,6 @@ class LikedSongsViewModel @Inject constructor(
 
     init {
         loadLikedSongs()
-        downloadRepository.observeDownloadProgress()
-            .onEach { progress -> _state.update { it.copy(downloadProgress = progress) } }
-            .launchIn(viewModelScope)
     }
 
     fun loadLikedSongs() {
@@ -130,10 +123,18 @@ class LikedSongsViewModel @Inject constructor(
         }
     }
 
-    /** Enqueued as a WorkManager job so it survives the app being backgrounded or the
-     * process dying mid-download. */
     fun downloadTrack(track: Track) {
-        downloadRepository.enqueueDownload(track)
+        viewModelScope.launch(dispatcherProvider.io) {
+            _state.update { it.copy(downloadingTrackIds = it.downloadingTrackIds + track.id) }
+            val result = downloadRepository.downloadTrack(track)
+            _state.update {
+                it.copy(
+                    downloadingTrackIds = it.downloadingTrackIds - track.id,
+                    downloadedTrackIds = if (result.isSuccess) it.downloadedTrackIds + track.id else it.downloadedTrackIds,
+                    error = if (result.isFailure) "Failed to download track" else it.error,
+                )
+            }
+        }
     }
 
     fun repostTrack(trackId: Int) {

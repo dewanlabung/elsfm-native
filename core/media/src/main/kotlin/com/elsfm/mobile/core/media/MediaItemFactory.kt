@@ -5,10 +5,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import com.elsfm.mobile.core.model.Track
 
-fun Track.toMediaItem(
-    baseUrl: String = "https://www.elsfm.com/",
-    sessionPreferences: SessionPreferences? = null,
-): MediaItem? {
+fun Track.toMediaItem(baseUrl: String = "https://www.elsfm.com/"): MediaItem {
     // image is already a fully-qualified URL by the time it reaches here - Track.image is
     // decoded via ImageUrlSerializer, which normalizes the backend's relative paths to full
     // URLs at deserialize time. Prefixing baseUrl again here produced a broken URL like
@@ -30,15 +27,8 @@ fun Track.toMediaItem(
     // failed with UnrecognizedInputFormatException. The authenticated download endpoint
     // (already used successfully by DownloadManager) reliably serves the real audio file by
     // track id alone, so it's used whenever `src` isn't available.
-    //
-    // When offline mode is enabled, only local files (file://) can be played. Streaming
-    // tracks or remote endpoints return null to signal unavailability in offline mode.
     val uri = when {
         src?.startsWith("file://") == true -> src
-        sessionPreferences?.isOfflineModeEnabled == true -> {
-            // Offline mode: only allow local files
-            return null
-        }
         !src.isNullOrBlank() -> baseUrl + src
         else -> "${baseUrl}api/v1/tracks/$id/download"
     }
