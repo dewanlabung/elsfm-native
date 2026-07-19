@@ -99,7 +99,7 @@ class Media3PlayerController @Inject constructor(
         if (recommendations.isEmpty()) return
         recommendations.forEach { track ->
             currentQueue = currentQueue + track
-            mediaController?.addMediaItem(track.toMediaItem())
+            track.toMediaItem()?.let { mediaController?.addMediaItem(it) }
         }
         _state.value = _state.value.copy(queue = currentQueue)
         mediaController?.seekToNextMediaItem()
@@ -130,7 +130,7 @@ class Media3PlayerController @Inject constructor(
         val persisted = playbackStateStore.restore() ?: return
         currentQueue = persisted.queue
         val startIndex = persisted.queue.indexOfFirst { it.id == persisted.currentTrack.id }.coerceAtLeast(0)
-        val mediaItems = persisted.queue.map { it.toMediaItem() }
+        val mediaItems = persisted.queue.mapNotNull { it.toMediaItem() }
         _state.value = _state.value.copy(
             queue = persisted.queue,
             currentTrack = persisted.currentTrack,
@@ -171,7 +171,7 @@ class Media3PlayerController @Inject constructor(
     override fun play(track: Track, queue: List<Track>) {
         currentQueue = queue
         val startIndex = queue.indexOfFirst { it.id == track.id }.coerceAtLeast(0)
-        val mediaItems = queue.map { it.toMediaItem() }
+        val mediaItems = queue.mapNotNull { it.toMediaItem() }
         _state.value = _state.value.copy(queue = queue, currentTrack = track, durationMs = track.durationMs)
         mediaController?.apply {
             setMediaItems(mediaItems, startIndex, 0)
@@ -210,7 +210,17 @@ class Media3PlayerController @Inject constructor(
         if (currentQueue.any { it.id == track.id }) return
         currentQueue = currentQueue + track
         _state.value = _state.value.copy(queue = currentQueue)
-        mediaController?.addMediaItem(track.toMediaItem())
+        track.toMediaItem()?.let { mediaController?.addMediaItem(it) }
+    }
+
+    override fun playNext(track: Track) {
+        if (currentQueue.any { it.id == track.id }) return
+        val insertIndex = (mediaController?.currentMediaItemIndex ?: 0) + 1
+        val mutableQueue = currentQueue.toMutableList()
+        mutableQueue.add(insertIndex.coerceAtMost(mutableQueue.size), track)
+        currentQueue = mutableQueue
+        _state.value = _state.value.copy(queue = currentQueue)
+        track.toMediaItem()?.let { mediaController?.addMediaItem(insertIndex, it) }
     }
 
     override fun toggleShuffle() {

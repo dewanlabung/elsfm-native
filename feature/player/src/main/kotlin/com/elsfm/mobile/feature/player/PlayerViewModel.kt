@@ -101,6 +101,12 @@ class PlayerViewModel @Inject constructor(
             PlayerMenuEvent.HideMenu -> {
                 _menuState.value = _menuState.value.copy(isMenuVisible = false)
             }
+            is PlayerMenuEvent.PlayNext -> {
+                state.value.currentTrack?.takeIf { it.id == event.trackId }?.let { track ->
+                    playerController.playNext(track)
+                }
+                _menuState.value = _menuState.value.copy(isMenuVisible = false)
+            }
             is PlayerMenuEvent.AddToQueue -> {
                 // Purely local: no backend call, just appends to the in-memory queue.
                 state.value.currentTrack?.takeIf { it.id == event.trackId }?.let { track ->

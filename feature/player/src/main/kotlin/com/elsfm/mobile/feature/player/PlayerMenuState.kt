@@ -30,4 +30,5 @@ sealed class PlayerMenuEvent {
     data class AddToPlaylist(val trackId: Int, val playlistId: Int) : PlayerMenuEvent()
     data class Repost(val trackId: Int) : PlayerMenuEvent()
     data class MakeAvailableOffline(val trackId: Int) : PlayerMenuEvent()
+    data class PlayNext(val trackId: Int) : PlayerMenuEvent()
 }
