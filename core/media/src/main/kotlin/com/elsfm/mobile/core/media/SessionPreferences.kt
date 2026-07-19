@@ -18,6 +18,7 @@ private const val KEY_AUTOPLAY = "autoplay_enabled"
 private const val KEY_VOLUME_NORMALIZATION = "volume_normalization_enabled"
 private const val KEY_OFFLINE_MODE = "offline_mode_enabled"
 private const val KEY_DOWNLOAD_QUALITY = "download_quality"
+private const val KEY_WIFI_AUTO_CACHE = "wifi_auto_cache_enabled"
 
 /**
  * Persists session-level behavior flags across app restarts.
@@ -49,6 +50,11 @@ class SessionPreferences @Inject constructor(
     var isOfflineModeEnabled: Boolean
         get() = prefs.getBoolean(KEY_OFFLINE_MODE, false)
         set(value) = prefs.edit().putBoolean(KEY_OFFLINE_MODE, value).apply()
+
+    /** When true, recently played and liked tracks are downloaded automatically on WiFi. */
+    var isWifiAutoCacheEnabled: Boolean
+        get() = prefs.getBoolean(KEY_WIFI_AUTO_CACHE, false)
+        set(value) = prefs.edit().putBoolean(KEY_WIFI_AUTO_CACHE, value).apply()
 
     /** Default quality for new downloads. */
     var downloadQuality: DownloadQuality

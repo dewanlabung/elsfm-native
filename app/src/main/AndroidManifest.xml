@@ -46,6 +46,23 @@
             </intent-filter>
         </activity>
 
+        <!--
+            Disable WorkManager's default auto-initializer so we can supply our own
+            Configuration (with HiltWorkerFactory) via Configuration.Provider in
+            ElsfmApplication. Without this removal WorkManager initializes itself before
+            Hilt is ready and the worker factory is never wired.
+        -->
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false"
+            tools:node="merge">
+            <meta-data
+                android:name="androidx.work.WorkManagerInitializer"
+                android:value="androidx.startup.InitializationProvider"
+                tools:node="remove" />
+        </provider>
+
         <service
             android:name="com.elsfm.mobile.core.media.PlaybackService"
             android:foregroundServiceType="mediaPlayback"

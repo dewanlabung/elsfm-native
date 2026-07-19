@@ -18,6 +18,7 @@ data class SettingsState(
     val isAutoplayEnabled: Boolean = true,
     val isVolumeNormalizationEnabled: Boolean = false,
     val isOfflineModeEnabled: Boolean = false,
+    val isWifiAutoCacheEnabled: Boolean = false,
     val downloadQuality: DownloadQuality = DownloadQuality.HIGH,
 )
 
@@ -35,6 +36,7 @@ class SettingsViewModel @Inject constructor(
             isAutoplayEnabled = sessionPreferences.isAutoplayEnabled,
             isVolumeNormalizationEnabled = sessionPreferences.isVolumeNormalizationEnabled,
             isOfflineModeEnabled = sessionPreferences.isOfflineModeEnabled,
+            isWifiAutoCacheEnabled = sessionPreferences.isWifiAutoCacheEnabled,
             downloadQuality = sessionPreferences.downloadQuality,
         )
     )
@@ -73,6 +75,12 @@ class SettingsViewModel @Inject constructor(
         val newValue = !_state.value.isOfflineModeEnabled
         sessionPreferences.isOfflineModeEnabled = newValue
         _state.value = _state.value.copy(isOfflineModeEnabled = newValue)
+    }
+
+    fun toggleWifiAutoCache() {
+        val newValue = !_state.value.isWifiAutoCacheEnabled
+        sessionPreferences.isWifiAutoCacheEnabled = newValue
+        _state.value = _state.value.copy(isWifiAutoCacheEnabled = newValue)
     }
 
     fun setDownloadQuality(quality: DownloadQuality) {

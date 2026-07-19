@@ -155,6 +155,17 @@ fun SettingsScreen(
             )
 
             ListItem(
+                headlineContent = { Text("Auto-cache on WiFi") },
+                supportingContent = { Text("Download recent and liked tracks automatically when on WiFi") },
+                trailingContent = {
+                    Switch(
+                        checked = state.isWifiAutoCacheEnabled,
+                        onCheckedChange = { viewModel.toggleWifiAutoCache() },
+                    )
+                },
+            )
+
+            ListItem(
                 headlineContent = { Text("Download quality") },
                 supportingContent = {
                     Row(modifier = Modifier.padding(top = 4.dp)) {
