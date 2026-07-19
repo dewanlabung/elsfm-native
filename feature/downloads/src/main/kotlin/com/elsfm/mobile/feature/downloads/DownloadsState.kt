@@ -46,6 +46,7 @@ sealed interface DownloadsEvent {
     data class PlayPlaylist(val playlistId: Int) : DownloadsEvent
     data object PlayAll : DownloadsEvent
     data object ShuffleAll : DownloadsEvent
+    data object DownloadLibrary : DownloadsEvent
 }
 
 data class DownloadsState(
@@ -57,4 +58,6 @@ data class DownloadsState(
     val activeTab: DownloadTab = DownloadTab.SONGS,
     val searchQuery: String = "",
     val sortBy: SortBy = SortBy.RECENTLY_ADDED,
+    val isDownloadingLibrary: Boolean = false,
+    val libraryDownloadStatus: String? = null,
 )
