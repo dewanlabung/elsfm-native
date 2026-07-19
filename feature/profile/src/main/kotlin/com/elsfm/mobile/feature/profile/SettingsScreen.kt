@@ -1,5 +1,10 @@
 package com.elsfm.mobile.feature.profile
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -7,7 +12,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -25,9 +32,18 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.elsfm.mobile.core.designsystem.ElsfmPrimary
+import com.elsfm.mobile.core.designsystem.ElsfmBackgroundDark
+import com.elsfm.mobile.core.designsystem.ElsfmBackgroundLight
 import com.elsfm.mobile.core.media.DownloadQuality
 import com.elsfm.mobile.core.media.ShakeSensitivity
 import com.elsfm.mobile.feature.profile.storage.StorageSection
@@ -37,8 +53,15 @@ import com.elsfm.mobile.feature.profile.storage.StorageSection
 fun SettingsScreen(
     onBack: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel(),
+    themeViewModel: ThemeViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
+    val isDarkMode by themeViewModel.isDarkMode.collectAsState()
+    val customPrimary by themeViewModel.customPrimaryColor.collectAsState()
+    val customAccent by themeViewModel.customAccentColor.collectAsState()
+    val customBackground by themeViewModel.customBackgroundColor.collectAsState()
+
+    var colorPickerTarget by remember { mutableStateOf<ColorPickerTarget?>(null) }
 
     Scaffold(
         topBar = {
@@ -52,13 +75,72 @@ fun SettingsScreen(
             )
         },
     ) { innerPadding ->
+
+        // Color picker dialog — shown over the settings list
+        colorPickerTarget?.let { target ->
+            val defaultBg = if (isDarkMode) ElsfmBackgroundDark else ElsfmBackgroundLight
+            ColorPickerDialog(
+                title = when (target) {
+                    ColorPickerTarget.PRIMARY -> "Primary color"
+                    ColorPickerTarget.ACCENT -> "Accent color"
+                    ColorPickerTarget.BACKGROUND -> "Background color"
+                },
+                initialColor = when (target) {
+                    ColorPickerTarget.PRIMARY -> customPrimary ?: ElsfmPrimary
+                    ColorPickerTarget.ACCENT -> customAccent ?: ElsfmPrimary
+                    ColorPickerTarget.BACKGROUND -> customBackground ?: defaultBg
+                },
+                onDismiss = { colorPickerTarget = null },
+                onColorSelected = { color ->
+                    when (target) {
+                        ColorPickerTarget.PRIMARY -> themeViewModel.setCustomPrimaryColor(color)
+                        ColorPickerTarget.ACCENT -> themeViewModel.setCustomAccentColor(color)
+                        ColorPickerTarget.BACKGROUND -> themeViewModel.setCustomBackgroundColor(color)
+                    }
+                },
+            )
+        }
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState()),
         ) {
+            // ── Appearance ────────────────────────────────────────────────
+            SettingsSectionHeader("Appearance")
+
+            val defaultBg = if (isDarkMode) ElsfmBackgroundDark else ElsfmBackgroundLight
+
+            ColorPickerListItem(
+                label = "Primary color",
+                description = "Used for buttons, sliders, and active indicators",
+                color = customPrimary ?: ElsfmPrimary,
+                isCustom = customPrimary != null,
+                onPickColor = { colorPickerTarget = ColorPickerTarget.PRIMARY },
+                onReset = { themeViewModel.setCustomPrimaryColor(null) },
+            )
+
+            ColorPickerListItem(
+                label = "Accent color",
+                description = "Used for secondary highlights and selections",
+                color = customAccent ?: ElsfmPrimary,
+                isCustom = customAccent != null,
+                onPickColor = { colorPickerTarget = ColorPickerTarget.ACCENT },
+                onReset = { themeViewModel.setCustomAccentColor(null) },
+            )
+
+            ColorPickerListItem(
+                label = "Background color",
+                description = "Main background of all screens",
+                color = customBackground ?: defaultBg,
+                isCustom = customBackground != null,
+                onPickColor = { colorPickerTarget = ColorPickerTarget.BACKGROUND },
+                onReset = { themeViewModel.setCustomBackgroundColor(null) },
+            )
+
             // ── Playback ──────────────────────────────────────────────────
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             SettingsSectionHeader("Playback")
 
             ListItem(
@@ -250,6 +332,47 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.height(24.dp))
         }
     }
+}
+
+enum class ColorPickerTarget { PRIMARY, ACCENT, BACKGROUND }
+
+@Composable
+private fun ColorPickerListItem(
+    label: String,
+    description: String,
+    color: Color,
+    isCustom: Boolean,
+    onPickColor: () -> Unit,
+    onReset: () -> Unit,
+) {
+    ListItem(
+        headlineContent = { Text(label) },
+        supportingContent = { Text(description) },
+        trailingContent = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                if (isCustom) {
+                    Text(
+                        text = "Reset",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.clickable(onClick = onReset),
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(color)
+                        .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
+                        .clickable(onClick = onPickColor),
+                )
+            }
+        },
+        modifier = Modifier.clickable(onClick = onPickColor),
+    )
 }
 
 @Composable
