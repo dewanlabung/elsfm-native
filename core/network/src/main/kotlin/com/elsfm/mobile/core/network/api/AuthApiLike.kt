@@ -24,16 +24,15 @@ interface AuthApiLike {
     suspend fun register(email: String, password: String, tokenName: String): ApiResult<User>
 
     /**
-     * Backed by the real `POST auth/password/email` route (Fortify's
-     * `PasswordResetLinkController::store`), which emails the user a reset link. This route
-     * is `guest`-only on the backend (rejects requests carrying a valid session/token).
+     * Backed by the real `POST auth/forgot-password` route on the backend, which emails
+     * the user a reset link. This route is guest-only.
      */
     suspend fun requestPasswordReset(email: String): ApiResult<Unit>
 
     /**
      * Verifies the user's email address using the 6-digit code sent by the server after
      * registration. Backed by `POST api/v1/auth/email/verify` on the BeMusic backend.
-     * This route is `guest`-only (the account has no verified session yet at this point).
+     * Requires the email address that received the code alongside the code itself.
      */
-    suspend fun verifyEmail(code: String): ApiResult<Unit>
+    suspend fun verifyEmail(code: String, email: String): ApiResult<Unit>
 }

@@ -37,6 +37,10 @@ fun EmailVerificationScreen(
 ) {
     val state = viewModel.state.collectAsState().value
 
+    LaunchedEffect(email) {
+        viewModel.onEvent(EmailVerificationEvent.EmailSet(email))
+    }
+
     LaunchedEffect(state.isVerified) {
         if (state.isVerified) onVerified()
     }

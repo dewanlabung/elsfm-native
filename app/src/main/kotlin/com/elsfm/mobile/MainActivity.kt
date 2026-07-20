@@ -15,39 +15,49 @@ import com.elsfm.mobile.core.designsystem.ElsfmTheme
 import com.elsfm.mobile.feature.profile.ThemeViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
+sealed class DeepLink {
+    data class Track(val trackId: Int) : DeepLink()
+    data class Album(val albumId: Int) : DeepLink()
+    data class Artist(val artistId: Int) : DeepLink()
+    data class Playlist(val playlistId: Int) : DeepLink()
+}
+
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-    private var deepLinkTrackId by mutableStateOf<Int?>(null)
+    private var deepLink by mutableStateOf<DeepLink?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Keep content below the status/navigation bars (don't go edge-to-edge).
         WindowCompat.setDecorFitsSystemWindows(window, true)
-        deepLinkTrackId = extractTrackId(intent?.data)
+        deepLink = parseDeepLink(intent?.data)
         setContent {
             val themeViewModel: ThemeViewModel = hiltViewModel()
             val isDarkMode by themeViewModel.isDarkMode.collectAsState()
 
             ElsfmTheme(useDarkTheme = isDarkMode) {
                 ElsfmNavHost(
-                    deepLinkTrackId = deepLinkTrackId,
-                    onDeepLinkConsumed = { deepLinkTrackId = null },
+                    deepLink = deepLink,
+                    onDeepLinkConsumed = { deepLink = null },
                 )
             }
         }
     }
 
-    // launchMode="singleTask" routes a second deep-link tap here instead of a new onCreate.
+    // launchMode="singleTask" routes subsequent deep links here instead of a new onCreate.
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        deepLinkTrackId = extractTrackId(intent.data)
+        deepLink = parseDeepLink(intent.data)
     }
 
-    /** Matches the real web track URL `/track/{id}/{slug}` (see AndroidManifest's intent filter). */
-    private fun extractTrackId(data: Uri?): Int? {
+    private fun parseDeepLink(data: Uri?): DeepLink? {
         val segments = data?.pathSegments ?: return null
-        if (segments.getOrNull(0) != "track") return null
-        return segments.getOrNull(1)?.toIntOrNull()
+        return when (segments.getOrNull(0)) {
+            "track" -> segments.getOrNull(1)?.toIntOrNull()?.let { DeepLink.Track(it) }
+            "album" -> segments.getOrNull(1)?.toIntOrNull()?.let { DeepLink.Album(it) }
+            "artist" -> segments.getOrNull(1)?.toIntOrNull()?.let { DeepLink.Artist(it) }
+            "playlist" -> segments.getOrNull(1)?.toIntOrNull()?.let { DeepLink.Playlist(it) }
+            else -> null
+        }
     }
 }

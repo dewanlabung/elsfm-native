@@ -24,7 +24,7 @@ import java.io.IOException
 import javax.inject.Inject
 
 @Serializable
-private data class EmailVerifyRequest(val code: String)
+private data class EmailVerifyRequest(val code: String, val email: String)
 
 class AuthApi @Inject constructor(
     private val httpClient: HttpClient,
@@ -132,18 +132,19 @@ class AuthApi @Inject constructor(
 
     override suspend fun requestPasswordReset(email: String): ApiResult<Unit> {
         return try {
-            val response = httpClient.post("api/v1/auth/password/email") {
+            val response = httpClient.post("api/v1/auth/forgot-password") {
                 contentType(ContentType.Application.Json)
-                // Accept: application/json tells Laravel Fortify to return JSON errors
-                // instead of HTML redirect responses, which can appear as 401/403.
                 headers.append(HttpHeaders.Accept, "application/json")
                 setBody(PasswordResetRequest(email = email))
             }
             when (response.status) {
-                HttpStatusCode.OK -> ApiResult.Success(Unit)
+                HttpStatusCode.OK, HttpStatusCode.Accepted -> ApiResult.Success(Unit)
                 HttpStatusCode.UnprocessableEntity -> {
-                    val error = response.body<LaravelValidationError>()
-                    ApiResult.ValidationError(error.errors)
+                    val error = runCatching { response.body<LaravelValidationError>() }.getOrNull()
+                    ApiResult.ValidationError(
+                        error?.errors?.ifEmpty { mapOf("email" to listOf(error.message)) }
+                            ?: mapOf("email" to listOf("Validation error"))
+                    )
                 }
                 HttpStatusCode.Unauthorized, HttpStatusCode.Forbidden -> ApiResult.Unauthorized
                 else -> ApiResult.NetworkError(IllegalStateException("Unexpected status ${response.status}"))
@@ -155,18 +156,21 @@ class AuthApi @Inject constructor(
         }
     }
 
-    override suspend fun verifyEmail(code: String): ApiResult<Unit> {
+    override suspend fun verifyEmail(code: String, email: String): ApiResult<Unit> {
         return try {
             val response = httpClient.post("api/v1/auth/email/verify") {
                 contentType(ContentType.Application.Json)
                 headers.append(HttpHeaders.Accept, "application/json")
-                setBody(EmailVerifyRequest(code = code))
+                setBody(EmailVerifyRequest(code = code, email = email))
             }
             when (response.status) {
-                HttpStatusCode.OK, HttpStatusCode.Created -> ApiResult.Success(Unit)
+                HttpStatusCode.OK, HttpStatusCode.Created, HttpStatusCode.NoContent -> ApiResult.Success(Unit)
                 HttpStatusCode.UnprocessableEntity -> {
-                    val error = response.body<LaravelValidationError>()
-                    ApiResult.ValidationError(error.errors)
+                    val error = runCatching { response.body<LaravelValidationError>() }.getOrNull()
+                    ApiResult.ValidationError(
+                        error?.errors?.ifEmpty { mapOf("code" to listOf(error.message)) }
+                            ?: mapOf("code" to listOf("Invalid or expired code"))
+                    )
                 }
                 HttpStatusCode.Unauthorized, HttpStatusCode.Forbidden -> ApiResult.Unauthorized
                 else -> ApiResult.NetworkError(IllegalStateException("Unexpected status ${response.status}"))

@@ -11,6 +11,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 data class EmailVerificationState(
+    val email: String = "",
     val code: String = "",
     val isLoading: Boolean = false,
     val error: String? = null,
@@ -18,6 +19,7 @@ data class EmailVerificationState(
 )
 
 sealed class EmailVerificationEvent {
+    data class EmailSet(val email: String) : EmailVerificationEvent()
     data class CodeChanged(val code: String) : EmailVerificationEvent()
     object VerifyClicked : EmailVerificationEvent()
 }
@@ -31,8 +33,10 @@ class EmailVerificationViewModel @Inject constructor(
 
     fun onEvent(event: EmailVerificationEvent) {
         when (event) {
+            is EmailVerificationEvent.EmailSet -> {
+                _state.value = _state.value.copy(email = event.email)
+            }
             is EmailVerificationEvent.CodeChanged -> {
-                // Accept only digits, max 6 characters
                 val digits = event.code.filter { it.isDigit() }.take(6)
                 _state.value = _state.value.copy(code = digits, error = null)
             }
@@ -42,6 +46,7 @@ class EmailVerificationViewModel @Inject constructor(
 
     private fun verify() {
         val currentCode = _state.value.code
+        val currentEmail = _state.value.email
         if (currentCode.length != 6) {
             _state.value = _state.value.copy(error = "Please enter the 6-digit code from your email")
             return
@@ -50,7 +55,7 @@ class EmailVerificationViewModel @Inject constructor(
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true, error = null)
 
-            when (val result = authRepository.verifyEmail(currentCode)) {
+            when (val result = authRepository.verifyEmail(code = currentCode, email = currentEmail)) {
                 is ApiResult.Success -> {
                     _state.value = _state.value.copy(isLoading = false, isVerified = true)
                 }

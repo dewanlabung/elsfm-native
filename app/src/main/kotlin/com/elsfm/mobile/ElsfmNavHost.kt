@@ -177,7 +177,7 @@ fun ElsfmNavHost(
     startDestinationViewModel: StartDestinationViewModel = hiltViewModel(),
     themeViewModel: ThemeViewModel = hiltViewModel(),
     connectivityViewModel: ConnectivityViewModel = hiltViewModel(),
-    deepLinkTrackId: Int? = null,
+    deepLink: DeepLink? = null,
     onDeepLinkConsumed: () -> Unit = {},
 ) {
     val startState by startDestinationViewModel.state.collectAsState()
@@ -197,19 +197,25 @@ fun ElsfmNavHost(
     when (val current = startState) {
         StartDestinationState.Loading -> Unit
         is StartDestinationState.Resolved -> {
-            // No track-detail screen exists yet, so a track deep link starts playback and
-            // opens the full-screen player instead of navigating to a dedicated page. Only
-            // acts once the user is signed in - a deep link tapped from the login screen is
-            // silently dropped rather than queued.
+            // Deep link handling: only acts once the user is signed in — links tapped from
+            // the login screen are silently dropped rather than queued. Track links start
+            // playback and open the full-screen player. Album/artist/playlist links navigate.
             val deepLinkPlayerViewModel: PlayerViewModel = hiltViewModel()
             val deepLinkTrackViewModel: DeepLinkTrackViewModel = hiltViewModel()
-            LaunchedEffect(deepLinkTrackId, current.restoredUser) {
-                val trackId = deepLinkTrackId ?: return@LaunchedEffect
+            LaunchedEffect(deepLink, current.restoredUser) {
+                val link = deepLink ?: return@LaunchedEffect
                 if (current.restoredUser == null) return@LaunchedEffect
-                val track = deepLinkTrackViewModel.getTrack(trackId)
-                if (track != null) {
-                    deepLinkPlayerViewModel.play(track, listOf(track))
-                    navController.navigate(ROUTE_PLAYER)
+                when (link) {
+                    is DeepLink.Track -> {
+                        val track = deepLinkTrackViewModel.getTrack(link.trackId)
+                        if (track != null) {
+                            deepLinkPlayerViewModel.play(track, listOf(track))
+                            navController.navigate(ROUTE_PLAYER)
+                        }
+                    }
+                    is DeepLink.Album -> navController.navigateToAlbum(link.albumId)
+                    is DeepLink.Artist -> navController.navigate("artist/${link.artistId}")
+                    is DeepLink.Playlist -> navController.navigate("playlist/${link.playlistId}/Playlist?channelId=$NO_CHANNEL_ID")
                 }
                 onDeepLinkConsumed()
             }
@@ -299,11 +305,14 @@ fun ElsfmNavHost(
                                 onSignupSuccess = { navController.navigate(ROUTE_DISCOVERY) { popUpTo(0) } },
                                 onNeedsEmailVerification = { email ->
                                     val encoded = URLEncoder.encode(email, "UTF-8")
-                                    navController.navigate("email_verify/$encoded") {
-                                        // Keep signup in back stack so user can go back
-                                    }
+                                    navController.navigate("email_verify/$encoded")
                                 },
-                                onSigninClick = { navController.popBackStack() },
+                                onSigninClick = {
+                                    // Registration may have saved a token; clear it so the
+                                    // login screen doesn't see a stale session and bypass auth.
+                                    startDestinationViewModel.logout()
+                                    navController.popBackStack()
+                                },
                             )
                         }
                         composable(
@@ -317,7 +326,12 @@ fun ElsfmNavHost(
                                 onVerified = {
                                     navController.navigate(ROUTE_DISCOVERY) { popUpTo(0) }
                                 },
-                                onBackClick = { navController.popBackStack() },
+                                onBackClick = {
+                                    // Clear the registration token so going back starts clean
+                                    // and the user can log in with a different account.
+                                    startDestinationViewModel.logout()
+                                    navController.popBackStack()
+                                },
                             )
                         }
                         composable(ROUTE_PASSWORD_RESET) {

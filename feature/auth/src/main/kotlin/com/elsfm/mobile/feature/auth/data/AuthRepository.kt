@@ -59,8 +59,8 @@ class AuthRepository @Inject constructor(
      * Backed by `POST api/v1/auth/email/verify`. On success the account is considered verified
      * and the user can proceed into the app.
      */
-    suspend fun verifyEmail(code: String): ApiResult<Unit> =
-        authApi.verifyEmail(code)
+    suspend fun verifyEmail(code: String, email: String): ApiResult<Unit> =
+        authApi.verifyEmail(code = code, email = email)
 
     /** Same session-storage flow as [login], just backed by a Google OAuth access token. */
     suspend fun loginWithGoogle(googleAccessToken: String): ApiResult<User> {
