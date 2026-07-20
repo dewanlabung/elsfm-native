@@ -26,6 +26,18 @@ import javax.inject.Inject
 @Serializable
 private data class EmailVerifyRequest(val code: String, val email: String)
 
+// Extracts field-level errors from a parsed LaravelValidationError, falling back to
+// the top-level message (used by Password::sendResetLink responses which return only
+// {"message": "..."} with no errors map), then to a static fallback string.
+private fun errorsFrom(
+    error: LaravelValidationError?,
+    field: String,
+    fallback: String,
+): Map<String, List<String>> =
+    error?.errors?.takeIf { it.isNotEmpty() }
+        ?: error?.message?.let { mapOf(field to listOf(it)) }
+        ?: mapOf(field to listOf(fallback))
+
 class AuthApi @Inject constructor(
     private val httpClient: HttpClient,
 ) : AuthApiLike {
@@ -141,10 +153,7 @@ class AuthApi @Inject constructor(
                 HttpStatusCode.OK, HttpStatusCode.Accepted -> ApiResult.Success(Unit)
                 HttpStatusCode.UnprocessableEntity -> {
                     val error = runCatching { response.body<LaravelValidationError>() }.getOrNull()
-                    ApiResult.ValidationError(
-                        error?.errors?.ifEmpty { mapOf("email" to listOf(error.message)) }
-                            ?: mapOf("email" to listOf("Validation error"))
-                    )
+                    ApiResult.ValidationError(errorsFrom(error, field = "email", fallback = "Validation error"))
                 }
                 HttpStatusCode.Unauthorized, HttpStatusCode.Forbidden -> ApiResult.Unauthorized
                 else -> ApiResult.NetworkError(IllegalStateException("Unexpected status ${response.status}"))
@@ -167,10 +176,7 @@ class AuthApi @Inject constructor(
                 HttpStatusCode.OK, HttpStatusCode.Created, HttpStatusCode.NoContent -> ApiResult.Success(Unit)
                 HttpStatusCode.UnprocessableEntity -> {
                     val error = runCatching { response.body<LaravelValidationError>() }.getOrNull()
-                    ApiResult.ValidationError(
-                        error?.errors?.ifEmpty { mapOf("code" to listOf(error.message)) }
-                            ?: mapOf("code" to listOf("Invalid or expired code"))
-                    )
+                    ApiResult.ValidationError(errorsFrom(error, field = "code", fallback = "Invalid or expired code"))
                 }
                 HttpStatusCode.Unauthorized, HttpStatusCode.Forbidden -> ApiResult.Unauthorized
                 else -> ApiResult.NetworkError(IllegalStateException("Unexpected status ${response.status}"))
