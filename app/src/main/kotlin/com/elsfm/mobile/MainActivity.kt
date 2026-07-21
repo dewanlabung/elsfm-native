@@ -20,6 +20,7 @@ sealed class DeepLink {
     data class Album(val albumId: Int) : DeepLink()
     data class Artist(val artistId: Int) : DeepLink()
     data class Playlist(val playlistId: Int) : DeepLink()
+    data class PasswordReset(val token: String, val email: String) : DeepLink()
 }
 
 @AndroidEntryPoint
@@ -57,6 +58,15 @@ class MainActivity : ComponentActivity() {
             "album" -> segments.getOrNull(1)?.toIntOrNull()?.let { DeepLink.Album(it) }
             "artist" -> segments.getOrNull(1)?.toIntOrNull()?.let { DeepLink.Artist(it) }
             "playlist" -> segments.getOrNull(1)?.toIntOrNull()?.let { DeepLink.Playlist(it) }
+            "password" -> {
+                if (segments.getOrNull(1) == "reset") {
+                    val token = segments.getOrNull(2) ?: return null
+                    val email = data.getQueryParameter("email") ?: return null
+                    DeepLink.PasswordReset(token, email)
+                } else {
+                    null
+                }
+            }
             else -> null
         }
     }

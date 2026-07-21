@@ -1,5 +1,6 @@
 package com.elsfm.mobile.core.network.api
 
+import com.elsfm.mobile.core.model.CompletePasswordResetRequest
 import com.elsfm.mobile.core.model.LaravelValidationError
 import com.elsfm.mobile.core.model.LoginRequest
 import com.elsfm.mobile.core.model.LoginResponse
@@ -177,6 +178,41 @@ class AuthApi @Inject constructor(
                 HttpStatusCode.UnprocessableEntity -> {
                     val error = runCatching { response.body<LaravelValidationError>() }.getOrNull()
                     ApiResult.ValidationError(errorsFrom(error, field = "code", fallback = "Invalid or expired code"))
+                }
+                HttpStatusCode.Unauthorized, HttpStatusCode.Forbidden -> ApiResult.Unauthorized
+                else -> ApiResult.NetworkError(IllegalStateException("Unexpected status ${response.status}"))
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            ApiResult.NetworkError(e)
+        }
+    }
+
+    override suspend fun resetPassword(
+        email: String,
+        token: String,
+        password: String,
+        passwordConfirm: String
+    ): ApiResult<Unit> {
+        return try {
+            val response = httpClient.post("api/v1/auth/password/reset") {
+                contentType(ContentType.Application.Json)
+                headers.append(HttpHeaders.Accept, "application/json")
+                setBody(
+                    CompletePasswordResetRequest(
+                        email = email,
+                        token = token,
+                        password = password,
+                        passwordConfirmation = passwordConfirm
+                    )
+                )
+            }
+            when (response.status) {
+                HttpStatusCode.OK, HttpStatusCode.Created, HttpStatusCode.NoContent -> ApiResult.Success(Unit)
+                HttpStatusCode.UnprocessableEntity -> {
+                    val error = runCatching { response.body<LaravelValidationError>() }.getOrNull()
+                    ApiResult.ValidationError(errorsFrom(error, field = "password", fallback = "Validation error"))
                 }
                 HttpStatusCode.Unauthorized, HttpStatusCode.Forbidden -> ApiResult.Unauthorized
                 else -> ApiResult.NetworkError(IllegalStateException("Unexpected status ${response.status}"))

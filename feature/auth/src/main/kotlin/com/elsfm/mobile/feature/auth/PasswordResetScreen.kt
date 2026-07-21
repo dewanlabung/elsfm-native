@@ -30,7 +30,12 @@ import androidx.compose.foundation.Image
 fun PasswordResetScreen(
     viewModel: PasswordResetViewModel = hiltViewModel(),
     onBackClick: () -> Unit = {},
+    token: String? = null,
+    email: String? = null,
 ) {
+    if (token != null && email != null) {
+        viewModel.initializeWithDeepLink(token, email)
+    }
     val state = viewModel.state.collectAsState().value
 
     if (state.isSubmitted) {
@@ -66,7 +71,91 @@ fun PasswordResetScreen(
                 Text("Back to sign in")
             }
         }
+    } else if (state.token != null) {
+        // Password reset from deep link
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(24.dp)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.Top,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Image(
+                painter = painterResource(R.drawable.auth_hero),
+                contentDescription = "Siyonka Geetars",
+                modifier = Modifier
+                    .size(80.dp)
+                    .padding(bottom = 16.dp),
+                contentScale = ContentScale.Fit
+            )
+
+            Text(
+                text = "Set new password",
+                style = MaterialTheme.typography.headlineMedium,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
+            Text(
+                text = state.email,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(bottom = 32.dp),
+                textAlign = TextAlign.Center
+            )
+
+            OutlinedTextField(
+                value = state.password,
+                onValueChange = { viewModel.onEvent(PasswordResetEvent.PasswordChanged(it)) },
+                label = { Text("Password") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                visualTransformation = androidx.compose.material.PasswordVisualTransformation()
+            )
+
+            OutlinedTextField(
+                value = state.passwordConfirm,
+                onValueChange = { viewModel.onEvent(PasswordResetEvent.PasswordConfirmChanged(it)) },
+                label = { Text("Confirm Password") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp),
+                singleLine = true,
+                visualTransformation = androidx.compose.material.PasswordVisualTransformation()
+            )
+
+            if (state.error != null) {
+                Text(
+                    text = state.error,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(top = 16.dp),
+                    textAlign = TextAlign.Center
+                )
+            }
+
+            Button(
+                onClick = { viewModel.onEvent(PasswordResetEvent.ResetClicked) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 24.dp),
+                enabled = !state.isLoading && state.password.isNotBlank() && state.passwordConfirm.isNotBlank()
+            ) {
+                if (state.isLoading) {
+                    CircularProgressIndicator(modifier = Modifier.size(20.dp).padding(8.dp))
+                } else {
+                    Text("Reset Password")
+                }
+            }
+
+            TextButton(
+                onClick = onBackClick,
+                modifier = Modifier.padding(top = 16.dp)
+            ) {
+                Text("Back")
+            }
+        }
     } else {
+        // Forgot password flow
         Column(
             modifier = Modifier
                 .fillMaxSize()

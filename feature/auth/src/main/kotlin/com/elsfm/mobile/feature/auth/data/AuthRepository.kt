@@ -54,6 +54,15 @@ class AuthRepository @Inject constructor(
     suspend fun requestPasswordReset(email: String): ApiResult<Unit> =
         authApi.requestPasswordReset(email)
 
+    /** Completes a password reset using the token from the reset email. */
+    suspend fun resetPassword(
+        email: String,
+        token: String,
+        password: String,
+        passwordConfirm: String
+    ): ApiResult<Unit> =
+        authApi.resetPassword(email, token, password, passwordConfirm)
+
     /**
      * Verifies the email address using the 6-digit code the server emailed after registration.
      * Backed by `POST api/v1/auth/email/verify`. On success the account is considered verified

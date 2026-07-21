@@ -35,4 +35,16 @@ interface AuthApiLike {
      * Requires the email address that received the code alongside the code itself.
      */
     suspend fun verifyEmail(code: String, email: String): ApiResult<Unit>
+
+    /**
+     * Completes a password reset using the token from the reset email.
+     * Backed by `POST api/v1/auth/password/reset` on the backend.
+     * Requires email, token, and new password (confirmed).
+     */
+    suspend fun resetPassword(
+        email: String,
+        token: String,
+        password: String,
+        passwordConfirm: String
+    ): ApiResult<Unit>
 }

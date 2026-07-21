@@ -28,3 +28,11 @@ data class RegisterResponse(
 
 @Serializable
 data class PasswordResetRequest(val email: String)
+
+@Serializable
+data class CompletePasswordResetRequest(
+    val email: String,
+    val token: String,
+    val password: String,
+    @SerialName("password_confirmation") val passwordConfirmation: String,
+)

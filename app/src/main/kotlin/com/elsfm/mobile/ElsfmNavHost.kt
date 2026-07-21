@@ -88,6 +88,8 @@ private const val ROUTE_PROFILE = "profile"
 private const val ROUTE_DOWNLOADS = "downloads"
 private const val ROUTE_SIGNUP = "signup"
 private const val ROUTE_PASSWORD_RESET = "password_reset"
+private const val ROUTE_PASSWORD_RESET_WITH_TOKEN = "password_reset/{token}"
+private const val ROUTE_PASSWORD_RESET_TOKEN_ARG = "token"
 private const val ROUTE_EMAIL_VERIFY = "email_verify/{email}"
 private const val EMAIL_VERIFY_ARG = "email"
 private const val ROUTE_CHANNEL = "channel/{channelId}"
@@ -216,6 +218,7 @@ fun ElsfmNavHost(
                     is DeepLink.Album -> navController.navigateToAlbum(link.albumId)
                     is DeepLink.Artist -> navController.navigate("artist/${link.artistId}")
                     is DeepLink.Playlist -> navController.navigate("playlist/${link.playlistId}/Playlist?channelId=$NO_CHANNEL_ID")
+                    is DeepLink.PasswordReset -> navController.navigate("password_reset/${link.token}?email=${Uri.encode(link.email)}")
                 }
                 onDeepLinkConsumed()
             }
@@ -337,6 +340,22 @@ fun ElsfmNavHost(
                         composable(ROUTE_PASSWORD_RESET) {
                             PasswordResetScreen(
                                 onBackClick = { navController.popBackStack() },
+                            )
+                        }
+                        composable(
+                            route = ROUTE_PASSWORD_RESET_WITH_TOKEN,
+                            arguments = listOf(
+                                navArgument(ROUTE_PASSWORD_RESET_TOKEN_ARG) { type = NavType.StringType },
+                                navArgument("email") { type = NavType.StringType; defaultValue = "" }
+                            )
+                        ) { backStackEntry ->
+                            val token = backStackEntry.arguments?.getString(ROUTE_PASSWORD_RESET_TOKEN_ARG) ?: ""
+                            val encodedEmail = backStackEntry.arguments?.getString("email") ?: ""
+                            val email = URLDecoder.decode(encodedEmail, "UTF-8")
+                            PasswordResetScreen(
+                                onBackClick = { navController.popBackStack() },
+                                token = token,
+                                email = email
                             )
                         }
                         composable(ROUTE_HOME) {
