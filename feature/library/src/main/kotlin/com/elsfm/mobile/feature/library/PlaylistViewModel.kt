@@ -35,6 +35,7 @@ data class PlaylistDetailState(
     val tracks: List<Track> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null,
+    val isOwnedByCurrentUser: Boolean = false,
     val likedTrackIds: Set<Int> = emptySet(),
     val likeLoadingTrackIds: Set<Int> = emptySet(),
     val downloadingTrackIds: Set<Int> = emptySet(),
@@ -73,6 +74,10 @@ class PlaylistViewModel @Inject constructor(
         _state.update { it.copy(playlist = playlist, isLoading = true, error = null) }
 
         viewModelScope.launch(dispatcherProvider.io) {
+            val currentUserId = userDao.get()?.id
+            val isOwned = playlist.userId != null && playlist.userId == currentUserId
+            _state.update { it.copy(isOwnedByCurrentUser = isOwned) }
+
             when (val result = trackListApi.getPlaylistTracks(playlist.id, currentPage)) {
                 is ApiResult.Success -> {
                     _state.update {

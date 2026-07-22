@@ -13,7 +13,6 @@ import com.elsfm.mobile.core.model.Track
 import com.elsfm.mobile.core.network.ApiResult
 import com.elsfm.mobile.core.network.api.ChannelApi
 import com.elsfm.mobile.core.network.api.ChannelContentResult
-import com.elsfm.mobile.core.network.api.ProfileApi
 import com.elsfm.mobile.core.network.connectivity.NetworkMonitor
 import com.elsfm.mobile.core.network.elsfmJson
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -72,7 +71,6 @@ data class DiscoveryUiState(
     val newReleasesTitle: String = DEFAULT_NEW_RELEASES_TITLE,
     val mostlyPlayedSongs: List<Track> = emptyList(),
     val mostlyPlayedSongsTitle: String = DEFAULT_MOSTLY_PLAYED_TITLE,
-    val recentlyPlayed: List<Track> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null,
     val isOffline: Boolean = false,
@@ -80,7 +78,6 @@ data class DiscoveryUiState(
 
 @HiltViewModel
 class DiscoveryViewModel @Inject constructor(
-    private val profileApi: ProfileApi,
     private val channelApi: ChannelApi,
     private val dispatcherProvider: DispatcherProvider,
     private val discoveryCacheDao: DiscoveryCacheDao,
@@ -135,11 +132,8 @@ class DiscoveryViewModel @Inject constructor(
     }
 
     /**
-     * Loads recently-played + home sections and merges them into state. Only
-     * shows the full-screen spinner ([DiscoveryUiState.isLoading]) when there
-     * is no content on screen yet - once cache-or-fresh content has painted,
-     * subsequent calls (background refresh, connectivity restore) update
-     * silently and simply leave stale content up if the refresh itself fails.
+     * Loads home sections and merges them into state. Only shows the full-screen spinner
+     * ([DiscoveryUiState.isLoading]) when there is no content on screen yet.
      */
     private suspend fun performLoad() {
         val hadContentAlready = _state.value.hasAnySection()
@@ -148,24 +142,14 @@ class DiscoveryViewModel @Inject constructor(
         var loadError: String? = null
 
         coroutineScope {
-            val recentlyPlayedDeferred = async { loadRecentlyPlayed() }
-            val homeSectionsDeferred = async { loadHomeSections() }
+            val homeSections = loadHomeSections()
 
-            val recentlyPlayed = recentlyPlayedDeferred.await()
-            val homeSections = homeSectionsDeferred.await()
-
-            if (recentlyPlayed == null) {
-                loadError = "Failed to load recently played"
-            }
             if (homeSections.isEmpty()) {
-                loadError = loadError ?: "Failed to load home sections"
+                loadError = "Failed to load home sections"
             }
 
             val previous = _state.value
             _state.value = previous.copy(
-                // Fall back to whatever is already on screen (cache or a prior
-                // successful load) rather than clearing sections a failed
-                // refresh didn't actually touch.
                 kidsZone = homeSections.kidsZone ?: previous.kidsZone,
                 kidsZoneTitle = homeSections.kidsZoneTitle ?: previous.kidsZoneTitle,
                 exploreMoreChannel = homeSections.exploreMoreChannel ?: previous.exploreMoreChannel,
@@ -175,7 +159,6 @@ class DiscoveryViewModel @Inject constructor(
                 newReleasesTitle = homeSections.newReleasesTitle ?: previous.newReleasesTitle,
                 mostlyPlayedSongs = homeSections.mostlyPlayedSongs ?: previous.mostlyPlayedSongs,
                 mostlyPlayedSongsTitle = homeSections.mostlyPlayedSongsTitle ?: previous.mostlyPlayedSongsTitle,
-                recentlyPlayed = recentlyPlayed.orEmpty(),
             )
 
             if (!homeSections.isEmpty()) {
@@ -212,15 +195,6 @@ class DiscoveryViewModel @Inject constructor(
         )
         val payloadJson = elsfmJson().encodeToString(DiscoverySections.serializer(), sections)
         discoveryCacheDao.save(DiscoveryCache(payloadJson = payloadJson))
-    }
-
-    private suspend fun loadRecentlyPlayed(): List<Track>? {
-        return when (val result = profileApi.getRecentlyPlayed()) {
-            is ApiResult.Success -> result.data
-            is ApiResult.NetworkError,
-            is ApiResult.ValidationError,
-            is ApiResult.Unauthorized -> null
-        }
     }
 
     /**

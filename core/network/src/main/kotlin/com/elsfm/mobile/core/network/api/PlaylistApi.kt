@@ -38,6 +38,8 @@ data class PlaylistInfo(
     val trackCount: Int? = null,
     @SerialName("updated_at")
     val updatedAt: String? = null,
+    @SerialName("user_id")
+    val userId: Int? = null,
 )
 
 @Serializable

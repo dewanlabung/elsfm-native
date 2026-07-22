@@ -74,10 +74,6 @@ fun TrackContextMenu(
             )
         }
         DropdownMenuItem(
-            text = { Text("Go to track") },
-            onClick = { onGoToTrack(trackId); onDismiss() },
-        )
-        DropdownMenuItem(
             text = { Text("View lyrics") },
             onClick = { onViewLyrics(trackId); onDismiss() },
         )

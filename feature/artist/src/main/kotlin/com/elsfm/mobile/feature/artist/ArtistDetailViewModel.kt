@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.elsfm.mobile.core.common.DispatcherProvider
 import com.elsfm.mobile.core.database.repository.FollowStateRepository
-import com.elsfm.mobile.core.model.Album
 import com.elsfm.mobile.core.network.ApiResult
 import com.elsfm.mobile.core.network.api.ArtistApi
 import com.elsfm.mobile.core.network.api.UserApi
@@ -48,14 +47,18 @@ class ArtistDetailViewModel @Inject constructor(
                 coroutineScope {
                     val artistResult = artistApi.getArtist(id)
                     val tracksResult = artistApi.getArtistTracks(id)
-                    val albumsResult = artistApi.getArtistAlbums(id)
+                    val albumsResult = artistApi.getArtistAlbums(id, page = 1)
 
                     when {
                         artistResult is ApiResult.Success && tracksResult is ApiResult.Success && albumsResult is ApiResult.Success -> {
+                            val page = albumsResult.data
                             _state.value = _state.value.copy(
                                 artist = artistResult.data,
                                 tracks = tracksResult.data,
-                                albums = albumsResult.data,
+                                albums = page.albums,
+                                albumsPage = page.currentPage,
+                                albumsLastPage = page.lastPage,
+                                hasMoreAlbums = page.currentPage < page.lastPage,
                                 isLoading = false
                             )
                         }
@@ -64,6 +67,7 @@ class ArtistDetailViewModel @Inject constructor(
                                 artist = artistResult.data,
                                 tracks = tracksResult.data,
                                 albums = emptyList(),
+                                hasMoreAlbums = false,
                                 isLoading = false
                             )
                         }
@@ -72,6 +76,7 @@ class ArtistDetailViewModel @Inject constructor(
                                 artist = artistResult.data,
                                 tracks = emptyList(),
                                 albums = emptyList(),
+                                hasMoreAlbums = false,
                                 isLoading = false
                             )
                         }
@@ -118,6 +123,28 @@ class ArtistDetailViewModel @Inject constructor(
         }
     }
 
+    fun loadNextAlbumsPage() {
+        val artistId = _state.value.artist?.id ?: return
+        if (_state.value.isLoadingMoreAlbums || !_state.value.hasMoreAlbums) return
+        viewModelScope.launch(dispatcher) {
+            _state.value = _state.value.copy(isLoadingMoreAlbums = true)
+            val nextPage = _state.value.albumsPage + 1
+            when (val result = artistApi.getArtistAlbums(artistId, page = nextPage)) {
+                is ApiResult.Success -> {
+                    val page = result.data
+                    _state.value = _state.value.copy(
+                        albums = _state.value.albums + page.albums,
+                        albumsPage = page.currentPage,
+                        albumsLastPage = page.lastPage,
+                        hasMoreAlbums = page.currentPage < page.lastPage,
+                        isLoadingMoreAlbums = false,
+                    )
+                }
+                else -> _state.value = _state.value.copy(isLoadingMoreAlbums = false)
+            }
+        }
+    }
+
     /**
      * Switches the active profile tab. Followers are fetched lazily the first time that tab
      * is selected (`GET artists/{id}/followers`), matching the web client's per-tab data
@@ -128,7 +155,6 @@ class ArtistDetailViewModel @Inject constructor(
         if (tab == ArtistTab.FOLLOWERS && _state.value.followers.isEmpty() && !_state.value.isFollowersLoading) {
             loadFollowers()
         }
-        // ALBUMS tab uses albums already loaded in loadArtistDetails — no lazy fetch needed.
     }
 
     private fun loadFollowers() {

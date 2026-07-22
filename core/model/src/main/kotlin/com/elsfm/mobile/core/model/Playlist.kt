@@ -9,5 +9,7 @@ data class Playlist(
     val name: String,
     @Serializable(with = ImageUrlSerializer::class) val image: String? = null,
     @SerialName("channel_id")
-    val channelId: Int? = null
+    val channelId: Int? = null,
+    @SerialName("user_id")
+    val userId: Int? = null,
 )

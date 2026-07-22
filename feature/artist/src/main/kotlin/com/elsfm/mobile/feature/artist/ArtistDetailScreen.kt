@@ -23,6 +23,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshotFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -72,6 +77,8 @@ import com.elsfm.mobile.feature.library.composables.AlbumCard
 import com.elsfm.mobile.feature.library.composables.SectionHeader
 import com.elsfm.mobile.feature.library.composables.TrackListItem
 
+private const val ALBUMS_LOAD_MORE_THRESHOLD = 4
+
 @Composable
 fun ArtistDetailScreen(
     artistId: Int,
@@ -79,6 +86,8 @@ fun ArtistDetailScreen(
     onAlbumClicked: (albumId: Int) -> Unit,
     onArtistClicked: (artistId: Int) -> Unit = {},
     onUserClicked: (userId: Int) -> Unit = {},
+    onPlayNext: (Track) -> Unit = {},
+    onMakeAvailableOffline: (Int) -> Unit = {},
     viewModel: ArtistDetailViewModel = hiltViewModel(key = artistId.toString()),
 ) {
     val state by viewModel.state.collectAsState()
@@ -138,10 +147,15 @@ fun ArtistDetailScreen(
                             ArtistTab.TRACKS -> TracksTab(
                                 tracks = state.tracks,
                                 onTrackClicked = { track -> onTrackClicked(track, state.tracks) },
+                                onPlayNext = onPlayNext,
+                                onMakeAvailableOffline = onMakeAvailableOffline,
                             )
                             ArtistTab.ALBUMS -> AlbumsTab(
                                 albums = state.albums,
                                 onAlbumClicked = onAlbumClicked,
+                                onLoadMoreAlbums = viewModel::loadNextAlbumsPage,
+                                isLoadingMoreAlbums = state.isLoadingMoreAlbums,
+                                hasMoreAlbums = state.hasMoreAlbums,
                             )
                             ArtistTab.FOLLOWERS -> FollowersTab(
                                 followers = state.followers,
@@ -581,17 +595,34 @@ private fun PopularTrackRow(index: Int, track: Track, onClick: () -> Unit) {
 private fun AlbumsTab(
     albums: List<com.elsfm.mobile.core.model.Album>,
     onAlbumClicked: (Int) -> Unit,
+    onLoadMoreAlbums: () -> Unit = {},
+    isLoadingMoreAlbums: Boolean = false,
+    hasMoreAlbums: Boolean = false,
 ) {
     if (albums.isEmpty()) {
         EmptyTabMessage("No albums available")
         return
     }
+    val listState = rememberLazyListState()
+    val currentLoadState by rememberUpdatedState(hasMoreAlbums to isLoadingMoreAlbums)
+    LaunchedEffect(listState) {
+        snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
+            .distinctUntilChanged()
+            .collect { lastIndex ->
+                val total = listState.layoutInfo.totalItemsCount
+                val (more, loading) = currentLoadState
+                if (lastIndex != null && lastIndex >= total - ALBUMS_LOAD_MORE_THRESHOLD && more && !loading) {
+                    onLoadMoreAlbums()
+                }
+            }
+    }
+    val chunked = albums.chunked(2)
     LazyColumn(
+        state = listState,
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        val chunked = albums.chunked(2)
         items(chunked) { row ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -605,6 +636,16 @@ private fun AlbumsTab(
                     )
                 }
                 if (row.size == 1) Spacer(modifier = Modifier.weight(1f))
+            }
+        }
+        if (isLoadingMoreAlbums) {
+            item {
+                Box(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    CircularProgressIndicator(modifier = Modifier.size(32.dp))
+                }
             }
         }
     }
@@ -662,7 +703,8 @@ private fun AboutTab(artist: Artist) {
 private fun TracksTab(
     tracks: List<Track>,
     onTrackClicked: (Track) -> Unit,
-    onTrackMoreClicked: (Track) -> Unit = {},
+    onPlayNext: (Track) -> Unit = {},
+    onMakeAvailableOffline: (Int) -> Unit = {},
 ) {
     if (tracks.isEmpty()) {
         EmptyTabMessage("No tracks available")
@@ -687,7 +729,9 @@ private fun TracksTab(
                     albumId = track.album?.id,
                     isVisible = menuExpanded,
                     onDismiss = { menuExpanded = false },
-                    onAddToQueue = { onTrackMoreClicked(track) },
+                    onPlayNext = { onPlayNext(track) },
+                    onAddToQueue = {},
+                    onMakeAvailableOffline = { onMakeAvailableOffline(track.id) },
                     onAddToLibrary = {},
                     onAddToPlaylist = {},
                     onShare = {},

@@ -8,7 +8,9 @@ import com.elsfm.mobile.core.network.ApiResult
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
+import io.ktor.client.request.parameter
 import io.ktor.http.isSuccess
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import javax.inject.Inject
 
@@ -19,10 +21,20 @@ private data class ArtistTracksPagination(val data: List<Track>)
 private data class ArtistTracksResponse(val pagination: ArtistTracksPagination)
 
 @Serializable
-private data class ArtistAlbumsPagination(val data: List<Album>)
+private data class ArtistAlbumsPagination(
+    val data: List<Album>,
+    @SerialName("last_page") val lastPage: Int = 1,
+    @SerialName("current_page") val currentPage: Int = 1,
+)
 
 @Serializable
 private data class ArtistAlbumsResponse(val pagination: ArtistAlbumsPagination)
+
+data class ArtistAlbumsPage(
+    val albums: List<Album>,
+    val currentPage: Int = 1,
+    val lastPage: Int = 1,
+)
 
 @Serializable
 private data class ArtistFollowersPagination(val data: List<ArtistFollower>)
@@ -62,11 +74,20 @@ open class ArtistApi @Inject constructor(
         }
     }
 
-    open suspend fun getArtistAlbums(id: Int): ApiResult<List<Album>> {
+    open suspend fun getArtistAlbums(id: Int, page: Int = 1): ApiResult<ArtistAlbumsPage> {
         return try {
-            val response = httpClient.get("api/v1/artists/$id/albums")
+            val response = httpClient.get("api/v1/artists/$id/albums") {
+                parameter("page", page)
+            }
             if (response.status.isSuccess()) {
-                ApiResult.Success(response.body<ArtistAlbumsResponse>().pagination.data)
+                val pagination = response.body<ArtistAlbumsResponse>().pagination
+                ApiResult.Success(
+                    ArtistAlbumsPage(
+                        albums = pagination.data,
+                        currentPage = pagination.currentPage,
+                        lastPage = pagination.lastPage,
+                    )
+                )
             } else {
                 ApiResult.NetworkError(RuntimeException("Unexpected status: ${response.status}"))
             }
