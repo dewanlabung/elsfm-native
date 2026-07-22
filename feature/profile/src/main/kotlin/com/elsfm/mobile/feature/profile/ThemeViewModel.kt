@@ -1,5 +1,6 @@
 package com.elsfm.mobile.feature.profile
 
+import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,6 +21,9 @@ class ThemeViewModel @Inject constructor(
     private val _isDarkMode = MutableStateFlow(themeStore.isDarkMode())
     val isDarkMode: StateFlow<Boolean> = _isDarkMode.asStateFlow()
 
+    private val _accentColorHex = MutableStateFlow(themeStore.accentColorHex())
+    val accentColorHex: StateFlow<String> = _accentColorHex.asStateFlow()
+
     fun toggleTheme() {
         setDarkMode(!_isDarkMode.value)
     }
@@ -28,4 +32,12 @@ class ThemeViewModel @Inject constructor(
         themeStore.setDarkMode(isDarkMode)
         _isDarkMode.update { isDarkMode }
     }
+
+    fun setAccentColor(hex: String) {
+        themeStore.setAccentColorHex(hex)
+        _accentColorHex.update { hex }
+    }
 }
+
+fun parseAccentColor(hex: String): Color =
+    try { Color(android.graphics.Color.parseColor(hex)) } catch (_: Exception) { Color(0xFF1B5E20.toInt()) }

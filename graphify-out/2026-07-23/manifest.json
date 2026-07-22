@@ -1,0 +1,1787 @@
+{
+  ".claude/settings.local.json": {
+    "mtime": 1782557916.6340833,
+    "ast_hash": "0a3c3cd064e74e8944b2fbe36af7607b",
+    "semantic_hash": "0a3c3cd064e74e8944b2fbe36af7607b"
+  },
+  "app/build.gradle.kts": {
+    "mtime": 1784448896.333539,
+    "ast_hash": "564b4bd1c9f7b93ad8f0baccadc59ca2",
+    "semantic_hash": "564b4bd1c9f7b93ad8f0baccadc59ca2"
+  },
+  "app/google-services.json": {
+    "mtime": 1783778554.7368822,
+    "ast_hash": "25d648560e4412cdcce273434880431b",
+    "semantic_hash": "25d648560e4412cdcce273434880431b"
+  },
+  "app/src/androidTest/kotlin/com/elsfm/mobile/HiltTestRunner.kt": {
+    "mtime": 1783205035.0117896,
+    "ast_hash": "0a16e76d848a9b288c820c54cbd3addc",
+    "semantic_hash": "0a16e76d848a9b288c820c54cbd3addc"
+  },
+  "app/src/androidTest/kotlin/com/elsfm/mobile/LoginFlowInstrumentedTest.kt": {
+    "mtime": 1783205035.0123584,
+    "ast_hash": "c0964f2f81ea395351bea0e723e07c7d",
+    "semantic_hash": "c0964f2f81ea395351bea0e723e07c7d"
+  },
+  "app/src/main/kotlin/com/elsfm/mobile/ConnectivityViewModel.kt": {
+    "mtime": 1784375187.7025948,
+    "ast_hash": "ee0a37a599001e731d1b9df7c9a1b203",
+    "semantic_hash": "ee0a37a599001e731d1b9df7c9a1b203"
+  },
+  "app/src/main/kotlin/com/elsfm/mobile/DeepLinkTrackViewModel.kt": {
+    "mtime": 1783956437.0066776,
+    "ast_hash": "b7039e0a330c75ff990e526899b07b05",
+    "semantic_hash": "b7039e0a330c75ff990e526899b07b05"
+  },
+  "app/src/main/kotlin/com/elsfm/mobile/ElsfmApplication.kt": {
+    "mtime": 1784449391.0387847,
+    "ast_hash": "2ff748fc2dce86f941db66eef577e59e",
+    "semantic_hash": "2ff748fc2dce86f941db66eef577e59e"
+  },
+  "app/src/main/kotlin/com/elsfm/mobile/ElsfmNavHost.kt": {
+    "mtime": 1784661669.049148,
+    "ast_hash": "8fc352466c432e7ad4b76e267f4fbf69",
+    "semantic_hash": ""
+  },
+  "app/src/main/kotlin/com/elsfm/mobile/HomePlaceholderScreen.kt": {
+    "mtime": 1783249282.6346946,
+    "ast_hash": "573c7afed00bb6f9cff4e4a8a9f3a3a0",
+    "semantic_hash": "573c7afed00bb6f9cff4e4a8a9f3a3a0"
+  },
+  "app/src/main/kotlin/com/elsfm/mobile/HomeViewModel.kt": {
+    "mtime": 1783849907.298848,
+    "ast_hash": "0c9dfb82f32df18fabe8b15b97514ec4",
+    "semantic_hash": "0c9dfb82f32df18fabe8b15b97514ec4"
+  },
+  "app/src/main/kotlin/com/elsfm/mobile/MainActivity.kt": {
+    "mtime": 1784581794.8786707,
+    "ast_hash": "1ec2ad0cd743d752798e98de9ff0c0c1",
+    "semantic_hash": ""
+  },
+  "app/src/main/kotlin/com/elsfm/mobile/StartDestinationViewModel.kt": {
+    "mtime": 1783954480.962425,
+    "ast_hash": "ea9c9b878fd638e75c9c6cea97d532ac",
+    "semantic_hash": "ea9c9b878fd638e75c9c6cea97d532ac"
+  },
+  "app/src/main/kotlin/com/elsfm/mobile/work/AutoCacheWorker.kt": {
+    "mtime": 1784449368.073805,
+    "ast_hash": "226f29d21da7d210328f7c7d38e9aa56",
+    "semantic_hash": "226f29d21da7d210328f7c7d38e9aa56"
+  },
+  "build.gradle.kts": {
+    "mtime": 1783784211.6547832,
+    "ast_hash": "927096e0960671d9c90761586b862703",
+    "semantic_hash": "927096e0960671d9c90761586b862703"
+  },
+  "core/common/build.gradle.kts": {
+    "mtime": 1784280914.5867295,
+    "ast_hash": "f61686f6ff9114a066f9184f03395e1c",
+    "semantic_hash": "f61686f6ff9114a066f9184f03395e1c"
+  },
+  "core/common/src/main/kotlin/com/elsfm/mobile/core/common/DispatcherProvider.kt": {
+    "mtime": 1783174211.044879,
+    "ast_hash": "a426c62050437a7aca4130cdcea88c17",
+    "semantic_hash": "a426c62050437a7aca4130cdcea88c17"
+  },
+  "core/common/src/main/kotlin/com/elsfm/mobile/core/common/PlaybackStateStore.kt": {
+    "mtime": 1784280909.749903,
+    "ast_hash": "d291164473efb9139d9644515341967d",
+    "semantic_hash": "d291164473efb9139d9644515341967d"
+  },
+  "core/common/src/test/kotlin/com/elsfm/mobile/core/common/DispatcherProviderTest.kt": {
+    "mtime": 1783174211.0455449,
+    "ast_hash": "689e97a00da69ecae79d3af9df14a983",
+    "semantic_hash": "689e97a00da69ecae79d3af9df14a983"
+  },
+  "core/database/build.gradle.kts": {
+    "mtime": 1784432120.3150868,
+    "ast_hash": "b6982d90ce52d54601b485c7c19995ce",
+    "semantic_hash": "b6982d90ce52d54601b485c7c19995ce"
+  },
+  "core/database/schemas/com.elsfm.mobile.core.database.AppDatabase/1.json": {
+    "mtime": 1783176021.715029,
+    "ast_hash": "e398c571302c6b0622bba27d981ee857",
+    "semantic_hash": "e398c571302c6b0622bba27d981ee857"
+  },
+  "core/database/schemas/com.elsfm.mobile.core.database.AppDatabase/2.json": {
+    "mtime": 1783341616.1965458,
+    "ast_hash": "94496362eb19d8cd90f6384eba2721fc",
+    "semantic_hash": "94496362eb19d8cd90f6384eba2721fc"
+  },
+  "core/database/schemas/com.elsfm.mobile.core.database.AppDatabase/3.json": {
+    "mtime": 1783376647.783764,
+    "ast_hash": "74b5f48df912bc9a335195615f177449",
+    "semantic_hash": "74b5f48df912bc9a335195615f177449"
+  },
+  "core/database/schemas/com.elsfm.mobile.core.database.AppDatabase/4.json": {
+    "mtime": 1783805629.2615104,
+    "ast_hash": "ce89fa40ef7de95e7309eb0af77a13df",
+    "semantic_hash": "ce89fa40ef7de95e7309eb0af77a13df"
+  },
+  "core/database/schemas/com.elsfm.mobile.core.database.AppDatabase/5.json": {
+    "mtime": 1784281182.8513322,
+    "ast_hash": "7764f25902929a9b40f868e8c128ec67",
+    "semantic_hash": "7764f25902929a9b40f868e8c128ec67"
+  },
+  "core/database/schemas/com.elsfm.mobile.core.database.AppDatabase/6.json": {
+    "mtime": 1784281989.1257954,
+    "ast_hash": "2d8a9b9590b2b3d6ab9909c2eaf76033",
+    "semantic_hash": "2d8a9b9590b2b3d6ab9909c2eaf76033"
+  },
+  "core/database/schemas/com.elsfm.mobile.core.database.AppDatabase/7.json": {
+    "mtime": 1784368674.2175748,
+    "ast_hash": "c658f175d2a61fd28a893ad2dc03719d",
+    "semantic_hash": "c658f175d2a61fd28a893ad2dc03719d"
+  },
+  "core/database/src/androidTest/kotlin/com/elsfm/mobile/core/database/UserDaoTest.kt": {
+    "mtime": 1783176021.7158911,
+    "ast_hash": "334a25629072471353334766e4830dc6",
+    "semantic_hash": "334a25629072471353334766e4830dc6"
+  },
+  "core/database/src/main/kotlin/com/elsfm/mobile/core/database/AppDatabase.kt": {
+    "mtime": 1784368748.4259305,
+    "ast_hash": "f880fcc894490e2b4869144248d65f31",
+    "semantic_hash": "f880fcc894490e2b4869144248d65f31"
+  },
+  "core/database/src/main/kotlin/com/elsfm/mobile/core/database/UserDao.kt": {
+    "mtime": 1783176021.7167773,
+    "ast_hash": "a45d47b91da3bc813d4fa9e692a76096",
+    "semantic_hash": "a45d47b91da3bc813d4fa9e692a76096"
+  },
+  "core/database/src/main/kotlin/com/elsfm/mobile/core/database/UserEntity.kt": {
+    "mtime": 1783176021.7170057,
+    "ast_hash": "1b4637ee4ccf0a834c299c32b1c68185",
+    "semantic_hash": "1b4637ee4ccf0a834c299c32b1c68185"
+  },
+  "core/database/src/main/kotlin/com/elsfm/mobile/core/database/dao/DiscoveryCacheDao.kt": {
+    "mtime": 1784408642.798988,
+    "ast_hash": "8aa4661626ac35505aa7a9de2d16785a",
+    "semantic_hash": "8aa4661626ac35505aa7a9de2d16785a"
+  },
+  "core/database/src/main/kotlin/com/elsfm/mobile/core/database/dao/DownloadedTrackDao.kt": {
+    "mtime": 1783801023.1992428,
+    "ast_hash": "fbed6e992ab793dfa99bd4cf85c7e667",
+    "semantic_hash": "fbed6e992ab793dfa99bd4cf85c7e667"
+  },
+  "core/database/src/main/kotlin/com/elsfm/mobile/core/database/dao/FollowStateDao.kt": {
+    "mtime": 1783341541.1796515,
+    "ast_hash": "643f4c91393aa54e02e8e73f19e987f5",
+    "semantic_hash": "643f4c91393aa54e02e8e73f19e987f5"
+  },
+  "core/database/src/main/kotlin/com/elsfm/mobile/core/database/dao/LibraryCacheDao.kt": {
+    "mtime": 1784408651.006985,
+    "ast_hash": "9cf1883c14f3d568a78d06a985fd4f21",
+    "semantic_hash": "9cf1883c14f3d568a78d06a985fd4f21"
+  },
+  "core/database/src/main/kotlin/com/elsfm/mobile/core/database/dao/PlaybackStateDao.kt": {
+    "mtime": 1784280923.4729528,
+    "ast_hash": "968a4d39e8cbe4176e0846d210b6ab32",
+    "semantic_hash": "968a4d39e8cbe4176e0846d210b6ab32"
+  },
+  "core/database/src/main/kotlin/com/elsfm/mobile/core/database/dao/ProfileCacheDao.kt": {
+    "mtime": 1784408658.8597348,
+    "ast_hash": "10d71bdefa0475455e712de085f7595d",
+    "semantic_hash": "10d71bdefa0475455e712de085f7595d"
+  },
+  "core/database/src/main/kotlin/com/elsfm/mobile/core/database/dao/TokenDao.kt": {
+    "mtime": 1783350537.928623,
+    "ast_hash": "8802d47cb94ecff0f1675c4f07568661",
+    "semantic_hash": "8802d47cb94ecff0f1675c4f07568661"
+  },
+  "core/database/src/main/kotlin/com/elsfm/mobile/core/database/di/DatabaseModule.kt": {
+    "mtime": 1784432120.3159006,
+    "ast_hash": "dcfe86f5f1d4b1d2fc65538ce2d4ac7b",
+    "semantic_hash": "dcfe86f5f1d4b1d2fc65538ce2d4ac7b"
+  },
+  "core/database/src/main/kotlin/com/elsfm/mobile/core/database/entity/DiscoveryCache.kt": {
+    "mtime": 1784281450.39908,
+    "ast_hash": "51566f4b402fa0628867ec2f5007d5cf",
+    "semantic_hash": "51566f4b402fa0628867ec2f5007d5cf"
+  },
+  "core/database/src/main/kotlin/com/elsfm/mobile/core/database/entity/DownloadedTrack.kt": {
+    "mtime": 1783805274.003607,
+    "ast_hash": "c9daa1c73220ac0c9b59532cd919e3c2",
+    "semantic_hash": "c9daa1c73220ac0c9b59532cd919e3c2"
+  },
+  "core/database/src/main/kotlin/com/elsfm/mobile/core/database/entity/FollowedArtistEntity.kt": {
+    "mtime": 1783341536.499362,
+    "ast_hash": "907831616d6d5b91085db7ed22e381ac",
+    "semantic_hash": "907831616d6d5b91085db7ed22e381ac"
+  },
+  "core/database/src/main/kotlin/com/elsfm/mobile/core/database/entity/LibraryCache.kt": {
+    "mtime": 1784368767.1623976,
+    "ast_hash": "03cc54b47106dad8278559045cd5a2a9",
+    "semantic_hash": "03cc54b47106dad8278559045cd5a2a9"
+  },
+  "core/database/src/main/kotlin/com/elsfm/mobile/core/database/entity/PlaybackStateEntity.kt": {
+    "mtime": 1784280921.4592507,
+    "ast_hash": "b0395457b68d029185fce22d1b172bb4",
+    "semantic_hash": "b0395457b68d029185fce22d1b172bb4"
+  },
+  "core/database/src/main/kotlin/com/elsfm/mobile/core/database/entity/ProfileCache.kt": {
+    "mtime": 1784368674.21947,
+    "ast_hash": "e5944972a2414bbdab939518abbb07ea",
+    "semantic_hash": "e5944972a2414bbdab939518abbb07ea"
+  },
+  "core/database/src/main/kotlin/com/elsfm/mobile/core/database/entity/TokenEntity.kt": {
+    "mtime": 1783350533.70339,
+    "ast_hash": "efa6878ee35f15d45afe5844a3cb35b6",
+    "semantic_hash": "efa6878ee35f15d45afe5844a3cb35b6"
+  },
+  "core/database/src/main/kotlin/com/elsfm/mobile/core/database/repository/DownloadRepository.kt": {
+    "mtime": 1784432120.316594,
+    "ast_hash": "191af3aaf3bba261a3332daa6be43c8e",
+    "semantic_hash": "191af3aaf3bba261a3332daa6be43c8e"
+  },
+  "core/database/src/main/kotlin/com/elsfm/mobile/core/database/repository/FollowStateRepository.kt": {
+    "mtime": 1783785444.6150098,
+    "ast_hash": "5712048fd7d4be9ee9693fe0beb4ab38",
+    "semantic_hash": "5712048fd7d4be9ee9693fe0beb4ab38"
+  },
+  "core/database/src/main/kotlin/com/elsfm/mobile/core/database/repository/RoomPlaybackStateStore.kt": {
+    "mtime": 1784280936.4089131,
+    "ast_hash": "9a1a1c4c8c03bae590e35108d293235f",
+    "semantic_hash": "9a1a1c4c8c03bae590e35108d293235f"
+  },
+  "core/database/src/test/kotlin/com/elsfm/mobile/core/database/DiscoveryCacheDaoTest.kt": {
+    "mtime": 1784281810.3863132,
+    "ast_hash": "5ba9fbbe3c861f17cbe830ed32f5ebf8",
+    "semantic_hash": "5ba9fbbe3c861f17cbe830ed32f5ebf8"
+  },
+  "core/database/src/test/kotlin/com/elsfm/mobile/core/database/DownloadedTrackDaoTest.kt": {
+    "mtime": 1783378132.0181186,
+    "ast_hash": "44fca7e331745684dc87d1945d7edcdc",
+    "semantic_hash": "44fca7e331745684dc87d1945d7edcdc"
+  },
+  "core/database/src/test/kotlin/com/elsfm/mobile/core/database/repository/FollowStateRepositoryTest.kt": {
+    "mtime": 1783785550.3162556,
+    "ast_hash": "f10501a599aa588abdfaa93d90e371a5",
+    "semantic_hash": "f10501a599aa588abdfaa93d90e371a5"
+  },
+  "core/database/src/test/kotlin/com/elsfm/mobile/core/database/repository/RoomPlaybackStateStoreTest.kt": {
+    "mtime": 1784281149.9914274,
+    "ast_hash": "582453b1f3234123ed51e11801529198",
+    "semantic_hash": "582453b1f3234123ed51e11801529198"
+  },
+  "core/designsystem/build.gradle.kts": {
+    "mtime": 1784368900.5600307,
+    "ast_hash": "c00046c6fbd70a98451c755bb786b09b",
+    "semantic_hash": "c00046c6fbd70a98451c755bb786b09b"
+  },
+  "core/designsystem/src/androidTest/kotlin/com/elsfm/mobile/core/designsystem/ElsfmThemeTest.kt": {
+    "mtime": 1783176669.5846643,
+    "ast_hash": "98e76b85b62889f53c5269a41bec6ebd",
+    "semantic_hash": "98e76b85b62889f53c5269a41bec6ebd"
+  },
+  "core/designsystem/src/main/kotlin/com/elsfm/mobile/core/designsystem/Color.kt": {
+    "mtime": 1783777699.4500718,
+    "ast_hash": "f5b3c5cfeaf916cca7c328b8a0d660c4",
+    "semantic_hash": "f5b3c5cfeaf916cca7c328b8a0d660c4"
+  },
+  "core/designsystem/src/main/kotlin/com/elsfm/mobile/core/designsystem/ConnectivityBanner.kt": {
+    "mtime": 1784375181.7368653,
+    "ast_hash": "5df9b807b5991466ff0512c03cbb7bf3",
+    "semantic_hash": "5df9b807b5991466ff0512c03cbb7bf3"
+  },
+  "core/designsystem/src/main/kotlin/com/elsfm/mobile/core/designsystem/LikeButton.kt": {
+    "mtime": 1783377380.2638245,
+    "ast_hash": "6db5eef7911fdd04a3c416f15f77dde7",
+    "semantic_hash": "6db5eef7911fdd04a3c416f15f77dde7"
+  },
+  "core/designsystem/src/main/kotlin/com/elsfm/mobile/core/designsystem/OfflineBanner.kt": {
+    "mtime": 1784368674.1052854,
+    "ast_hash": "17ad74430b75f367dbfebda4c80e8736",
+    "semantic_hash": "17ad74430b75f367dbfebda4c80e8736"
+  },
+  "core/designsystem/src/main/kotlin/com/elsfm/mobile/core/designsystem/Theme.kt": {
+    "mtime": 1784451749.5946186,
+    "ast_hash": "2dc87a07702fce66c7a181d1696b9b37",
+    "semantic_hash": "2dc87a07702fce66c7a181d1696b9b37"
+  },
+  "core/designsystem/src/main/kotlin/com/elsfm/mobile/core/designsystem/TrackContextMenu.kt": {
+    "mtime": 1784406306.3748386,
+    "ast_hash": "0552208e64d54c71da6647c3fcbaed75",
+    "semantic_hash": "0552208e64d54c71da6647c3fcbaed75"
+  },
+  "core/designsystem/src/main/kotlin/com/elsfm/mobile/core/designsystem/Type.kt": {
+    "mtime": 1783176669.5859761,
+    "ast_hash": "7b9b4ef4db918512f5bcf11da1cb2080",
+    "semantic_hash": "7b9b4ef4db918512f5bcf11da1cb2080"
+  },
+  "core/media/build.gradle.kts": {
+    "mtime": 1784432120.3170319,
+    "ast_hash": "612f75cc8521320df39025d27b0ae1cc",
+    "semantic_hash": "612f75cc8521320df39025d27b0ae1cc"
+  },
+  "core/media/src/main/kotlin/com/elsfm/mobile/core/media/HeadsetEventMonitor.kt": {
+    "mtime": 1784326681.4774945,
+    "ast_hash": "c2012135f75ec6171b72918eb0bb25e4",
+    "semantic_hash": "c2012135f75ec6171b72918eb0bb25e4"
+  },
+  "core/media/src/main/kotlin/com/elsfm/mobile/core/media/LocalRecommendationEngine.kt": {
+    "mtime": 1784326695.0707161,
+    "ast_hash": "9f01e4f4177c193b91e47f8af2162464",
+    "semantic_hash": "9f01e4f4177c193b91e47f8af2162464"
+  },
+  "core/media/src/main/kotlin/com/elsfm/mobile/core/media/MediaItemFactory.kt": {
+    "mtime": 1784431663.4210918,
+    "ast_hash": "05011a6e5e93da7555607a8a8636fc14",
+    "semantic_hash": "05011a6e5e93da7555607a8a8636fc14"
+  },
+  "core/media/src/main/kotlin/com/elsfm/mobile/core/media/PlayHistoryApi.kt": {
+    "mtime": 1783948953.1537187,
+    "ast_hash": "6beba9988da9ead286fd637045c46280",
+    "semantic_hash": "6beba9988da9ead286fd637045c46280"
+  },
+  "core/media/src/main/kotlin/com/elsfm/mobile/core/media/PlaybackService.kt": {
+    "mtime": 1784450304.1216397,
+    "ast_hash": "30ae7894ba74b7b343c9932a9bca6fcd",
+    "semantic_hash": "30ae7894ba74b7b343c9932a9bca6fcd"
+  },
+  "core/media/src/main/kotlin/com/elsfm/mobile/core/media/RecentTracksStore.kt": {
+    "mtime": 1784326688.0155833,
+    "ast_hash": "07e59dc765c86d10509cf396e7f915a6",
+    "semantic_hash": "07e59dc765c86d10509cf396e7f915a6"
+  },
+  "core/media/src/main/kotlin/com/elsfm/mobile/core/media/SessionPreferences.kt": {
+    "mtime": 1784450222.637315,
+    "ast_hash": "b0a012e3511e6fd78ebae2acf037373c",
+    "semantic_hash": "b0a012e3511e6fd78ebae2acf037373c"
+  },
+  "core/media/src/main/kotlin/com/elsfm/mobile/core/media/ShakeDetector.kt": {
+    "mtime": 1784368674.1079302,
+    "ast_hash": "220ddc93734db396aa3b8ff9c0a5e6d7",
+    "semantic_hash": "220ddc93734db396aa3b8ff9c0a5e6d7"
+  },
+  "core/media/src/main/kotlin/com/elsfm/mobile/core/media/ShakePreferences.kt": {
+    "mtime": 1784368674.108131,
+    "ast_hash": "88f75c944ed437e40f97e3213e9ebe4a",
+    "semantic_hash": "88f75c944ed437e40f97e3213e9ebe4a"
+  },
+  "core/media/src/main/kotlin/com/elsfm/mobile/core/media/ShakeSensitivity.kt": {
+    "mtime": 1784368674.1083212,
+    "ast_hash": "2497b3239eb6ca5ce4dd80c6050c216f",
+    "semantic_hash": "2497b3239eb6ca5ce4dd80c6050c216f"
+  },
+  "core/media/src/test/kotlin/com/elsfm/mobile/core/media/MediaItemFactoryTest.kt": {
+    "mtime": 1784431663.4216485,
+    "ast_hash": "7276b6a48af81536438102aad0b9ecaf",
+    "semantic_hash": "7276b6a48af81536438102aad0b9ecaf"
+  },
+  "core/media/src/test/kotlin/com/elsfm/mobile/core/media/PlayHistoryApiTest.kt": {
+    "mtime": 1783207671.0491266,
+    "ast_hash": "6411de67ef33a6add566499703c74111",
+    "semantic_hash": "6411de67ef33a6add566499703c74111"
+  },
+  "core/model/build.gradle.kts": {
+    "mtime": 1783173902.9441516,
+    "ast_hash": "3e3207a1cab6ea20a657c448ec100d0e",
+    "semantic_hash": "3e3207a1cab6ea20a657c448ec100d0e"
+  },
+  "core/model/src/main/kotlin/com/elsfm/mobile/core/model/Album.kt": {
+    "mtime": 1783776355.6833735,
+    "ast_hash": "f6a5f702aecceb3d63fb51a1c923e709",
+    "semantic_hash": "f6a5f702aecceb3d63fb51a1c923e709"
+  },
+  "core/model/src/main/kotlin/com/elsfm/mobile/core/model/AppNotification.kt": {
+    "mtime": 1783760620.4830694,
+    "ast_hash": "25729d7ac08412444902cd6148095151",
+    "semantic_hash": "25729d7ac08412444902cd6148095151"
+  },
+  "core/model/src/main/kotlin/com/elsfm/mobile/core/model/Artist.kt": {
+    "mtime": 1783761272.9800284,
+    "ast_hash": "7dfe3ba4321703b9ccd24a9a5a03b780",
+    "semantic_hash": "7dfe3ba4321703b9ccd24a9a5a03b780"
+  },
+  "core/model/src/main/kotlin/com/elsfm/mobile/core/model/ArtistFollower.kt": {
+    "mtime": 1783760619.3230994,
+    "ast_hash": "05e29cbb2319263ae798c42e980c2492",
+    "semantic_hash": "05e29cbb2319263ae798c42e980c2492"
+  },
+  "core/model/src/main/kotlin/com/elsfm/mobile/core/model/Channel.kt": {
+    "mtime": 1783281756.9594524,
+    "ast_hash": "7012255a0cda57f3e5f5b96ef45e9606",
+    "semantic_hash": "7012255a0cda57f3e5f5b96ef45e9606"
+  },
+  "core/model/src/main/kotlin/com/elsfm/mobile/core/model/Comment.kt": {
+    "mtime": 1783776336.1319046,
+    "ast_hash": "57c1fe9d0ba275c2ab1568aed3288bab",
+    "semantic_hash": "57c1fe9d0ba275c2ab1568aed3288bab"
+  },
+  "core/model/src/main/kotlin/com/elsfm/mobile/core/model/DiscoverySections.kt": {
+    "mtime": 1784281443.0585828,
+    "ast_hash": "2218eeeb4589a3881068536d03232a09",
+    "semantic_hash": "2218eeeb4589a3881068536d03232a09"
+  },
+  "core/model/src/main/kotlin/com/elsfm/mobile/core/model/FileEntry.kt": {
+    "mtime": 1783724039.0453646,
+    "ast_hash": "ff30a9dc3e32825261500fe19a35d511",
+    "semantic_hash": "ff30a9dc3e32825261500fe19a35d511"
+  },
+  "core/model/src/main/kotlin/com/elsfm/mobile/core/model/FollowUser.kt": {
+    "mtime": 1784279257.6071172,
+    "ast_hash": "0f6ce598b4a44d26a55b3109b0cd8038",
+    "semantic_hash": "0f6ce598b4a44d26a55b3109b0cd8038"
+  },
+  "core/model/src/main/kotlin/com/elsfm/mobile/core/model/ImageUrlSerializer.kt": {
+    "mtime": 1783955868.605272,
+    "ast_hash": "77f461eb74fe06550d344b5f5d5b6cc4",
+    "semantic_hash": "77f461eb74fe06550d344b5f5d5b6cc4"
+  },
+  "core/model/src/main/kotlin/com/elsfm/mobile/core/model/LaravelValidationError.kt": {
+    "mtime": 1783173902.944912,
+    "ast_hash": "ff03ccf30d23e0b12f740f8d75d4f5a0",
+    "semantic_hash": "ff03ccf30d23e0b12f740f8d75d4f5a0"
+  },
+  "core/model/src/main/kotlin/com/elsfm/mobile/core/model/LibrarySections.kt": {
+    "mtime": 1784368773.0010993,
+    "ast_hash": "7716c5762179b852f06b9bd345b049be",
+    "semantic_hash": "7716c5762179b852f06b9bd345b049be"
+  },
+  "core/model/src/main/kotlin/com/elsfm/mobile/core/model/LoginRequest.kt": {
+    "mtime": 1783173902.9452386,
+    "ast_hash": "86fdf5334621d89357dbd8fb7e51554c",
+    "semantic_hash": "86fdf5334621d89357dbd8fb7e51554c"
+  },
+  "core/model/src/main/kotlin/com/elsfm/mobile/core/model/LoginResponse.kt": {
+    "mtime": 1783173902.9458463,
+    "ast_hash": "29b4da86d9b1d9fac6b32f9501905589",
+    "semantic_hash": "29b4da86d9b1d9fac6b32f9501905589"
+  },
+  "core/model/src/main/kotlin/com/elsfm/mobile/core/model/NullSafeLongSerializer.kt": {
+    "mtime": 1784212039.838342,
+    "ast_hash": "a6745544d04faf4dcb53688474b0c5eb",
+    "semantic_hash": "a6745544d04faf4dcb53688474b0c5eb"
+  },
+  "core/model/src/main/kotlin/com/elsfm/mobile/core/model/Permission.kt": {
+    "mtime": 1783173902.9464042,
+    "ast_hash": "cc7801da25215f0699ec2b477478e707",
+    "semantic_hash": "cc7801da25215f0699ec2b477478e707"
+  },
+  "core/model/src/main/kotlin/com/elsfm/mobile/core/model/Playlist.kt": {
+    "mtime": 1783760623.407226,
+    "ast_hash": "afdf9586d8b544195a56bf5b0c6cd926",
+    "semantic_hash": "afdf9586d8b544195a56bf5b0c6cd926"
+  },
+  "core/model/src/main/kotlin/com/elsfm/mobile/core/model/RegisterModels.kt": {
+    "mtime": 1784661703.6153746,
+    "ast_hash": "5a3ab9f51c7035b463dc53043b70896b",
+    "semantic_hash": ""
+  },
+  "core/model/src/main/kotlin/com/elsfm/mobile/core/model/SearchResult.kt": {
+    "mtime": 1783251680.9670305,
+    "ast_hash": "d803ff3b234ab376ae9dd726c158d9c9",
+    "semantic_hash": "d803ff3b234ab376ae9dd726c158d9c9"
+  },
+  "core/model/src/main/kotlin/com/elsfm/mobile/core/model/Tag.kt": {
+    "mtime": 1783776327.89619,
+    "ast_hash": "f566c6eb6716c88ce8321c1d7de344e3",
+    "semantic_hash": "f566c6eb6716c88ce8321c1d7de344e3"
+  },
+  "core/model/src/main/kotlin/com/elsfm/mobile/core/model/Track.kt": {
+    "mtime": 1784212047.4365997,
+    "ast_hash": "7f9f01badad87ba992e84abb281425f7",
+    "semantic_hash": "7f9f01badad87ba992e84abb281425f7"
+  },
+  "core/model/src/main/kotlin/com/elsfm/mobile/core/model/TrackLyrics.kt": {
+    "mtime": 1783723747.1954024,
+    "ast_hash": "01c573719837b8e6cdd342ed3e033b3b",
+    "semantic_hash": "01c573719837b8e6cdd342ed3e033b3b"
+  },
+  "core/model/src/main/kotlin/com/elsfm/mobile/core/model/User.kt": {
+    "mtime": 1783173902.9468906,
+    "ast_hash": "9576f06680eeb9dc27234292b2179f30",
+    "semantic_hash": "9576f06680eeb9dc27234292b2179f30"
+  },
+  "core/model/src/main/kotlin/com/elsfm/mobile/core/model/UserProfile.kt": {
+    "mtime": 1783785769.968511,
+    "ast_hash": "3d4bf9b9ca09e56673767ac10e568f21",
+    "semantic_hash": "3d4bf9b9ca09e56673767ac10e568f21"
+  },
+  "core/model/src/main/kotlin/com/elsfm/mobile/core/model/UserSessionInfo.kt": {
+    "mtime": 1783724045.6007578,
+    "ast_hash": "fed1b6748e949e3611865d77cde98379",
+    "semantic_hash": "fed1b6748e949e3611865d77cde98379"
+  },
+  "core/model/src/test/kotlin/com/elsfm/mobile/core/model/ChannelSerializationTest.kt": {
+    "mtime": 1783251457.7012537,
+    "ast_hash": "f04fec4c9558fc1dfda7744e39df9766",
+    "semantic_hash": "f04fec4c9558fc1dfda7744e39df9766"
+  },
+  "core/model/src/test/kotlin/com/elsfm/mobile/core/model/LoginResponseSerializationTest.kt": {
+    "mtime": 1783173902.9478683,
+    "ast_hash": "c5a92c7cf1bb8ac4f0683ade2be663af",
+    "semantic_hash": "c5a92c7cf1bb8ac4f0683ade2be663af"
+  },
+  "core/model/src/test/kotlin/com/elsfm/mobile/core/model/SearchResultSerializationTest.kt": {
+    "mtime": 1783251461.6903858,
+    "ast_hash": "3f6b42f021481782ac2a579123593095",
+    "semantic_hash": "3f6b42f021481782ac2a579123593095"
+  },
+  "core/model/src/test/kotlin/com/elsfm/mobile/core/model/TrackSerializationTest.kt": {
+    "mtime": 1784212089.6462631,
+    "ast_hash": "9992426eb82cc3747e85d2ccb493e902",
+    "semantic_hash": "9992426eb82cc3747e85d2ccb493e902"
+  },
+  "core/model/src/test/kotlin/com/elsfm/mobile/core/model/UserProfileSerializationTest.kt": {
+    "mtime": 1783258157.4294467,
+    "ast_hash": "49cbae56f61f422b0074d7b9b95295c1",
+    "semantic_hash": "49cbae56f61f422b0074d7b9b95295c1"
+  },
+  "core/network/build.gradle.kts": {
+    "mtime": 1784281495.8957703,
+    "ast_hash": "187dabcabadf85c5dacfaf0d2c93d56d",
+    "semantic_hash": "187dabcabadf85c5dacfaf0d2c93d56d"
+  },
+  "core/network/src/main/kotlin/com/elsfm/mobile/core/network/ApiResult.kt": {
+    "mtime": 1783179811.2667384,
+    "ast_hash": "c3492529490fb29eca9d8ffc5e28af9a",
+    "semantic_hash": "c3492529490fb29eca9d8ffc5e28af9a"
+  },
+  "core/network/src/main/kotlin/com/elsfm/mobile/core/network/ElsfmApiConfig.kt": {
+    "mtime": 1783185093.980336,
+    "ast_hash": "e9abcae0d58c2d20497d1c718300c2d1",
+    "semantic_hash": "e9abcae0d58c2d20497d1c718300c2d1"
+  },
+  "core/network/src/main/kotlin/com/elsfm/mobile/core/network/ElsfmJson.kt": {
+    "mtime": 1783179811.267165,
+    "ast_hash": "68df629c4c76ca8cbf1a2dd6ae51cccf",
+    "semantic_hash": "68df629c4c76ca8cbf1a2dd6ae51cccf"
+  },
+  "core/network/src/main/kotlin/com/elsfm/mobile/core/network/api/AccountApi.kt": {
+    "mtime": 1784368674.1111543,
+    "ast_hash": "b89794926edbbd99c330bec759d03d8c",
+    "semantic_hash": "b89794926edbbd99c330bec759d03d8c"
+  },
+  "core/network/src/main/kotlin/com/elsfm/mobile/core/network/api/AlbumApi.kt": {
+    "mtime": 1783772355.4532936,
+    "ast_hash": "8de0f3f6a741e3ff92b75ee605f64d10",
+    "semantic_hash": "8de0f3f6a741e3ff92b75ee605f64d10"
+  },
+  "core/network/src/main/kotlin/com/elsfm/mobile/core/network/api/ArtistApi.kt": {
+    "mtime": 1783723789.090095,
+    "ast_hash": "dcb33cfc2f7dabd0c7fff19e301401eb",
+    "semantic_hash": "dcb33cfc2f7dabd0c7fff19e301401eb"
+  },
+  "core/network/src/main/kotlin/com/elsfm/mobile/core/network/api/AuthApi.kt": {
+    "mtime": 1784661726.5947306,
+    "ast_hash": "68754b2c69a517c7e7fcf872e145a0a9",
+    "semantic_hash": ""
+  },
+  "core/network/src/main/kotlin/com/elsfm/mobile/core/network/api/AuthApiLike.kt": {
+    "mtime": 1784661709.7370446,
+    "ast_hash": "946968c43cdef79c98113bab8a07aff5",
+    "semantic_hash": ""
+  },
+  "core/network/src/main/kotlin/com/elsfm/mobile/core/network/api/BillingApi.kt": {
+    "mtime": 1784280275.3660297,
+    "ast_hash": "8053bf214608a87422b2efa691c9ffd3",
+    "semantic_hash": "8053bf214608a87422b2efa691c9ffd3"
+  },
+  "core/network/src/main/kotlin/com/elsfm/mobile/core/network/api/ChannelApi.kt": {
+    "mtime": 1783377386.0705,
+    "ast_hash": "0ab6f4c7dc68ba4ce2f2cab9b94d6bcc",
+    "semantic_hash": "0ab6f4c7dc68ba4ce2f2cab9b94d6bcc"
+  },
+  "core/network/src/main/kotlin/com/elsfm/mobile/core/network/api/CommentApi.kt": {
+    "mtime": 1784453322.647516,
+    "ast_hash": "746f4137d76db2706240361dca6ff30d",
+    "semantic_hash": "746f4137d76db2706240361dca6ff30d"
+  },
+  "core/network/src/main/kotlin/com/elsfm/mobile/core/network/api/LyricsApi.kt": {
+    "mtime": 1783723753.7388303,
+    "ast_hash": "5371bfb8f2d74b1522d774fdcb30ad7b",
+    "semantic_hash": "5371bfb8f2d74b1522d774fdcb30ad7b"
+  },
+  "core/network/src/main/kotlin/com/elsfm/mobile/core/network/api/NotificationsApi.kt": {
+    "mtime": 1783724800.1344497,
+    "ast_hash": "094570822b6c43264d080f736e56e503",
+    "semantic_hash": "094570822b6c43264d080f736e56e503"
+  },
+  "core/network/src/main/kotlin/com/elsfm/mobile/core/network/api/PlaylistApi.kt": {
+    "mtime": 1784215097.0506897,
+    "ast_hash": "d1ff6999d27d3a9f7eb40db8a4f709f7",
+    "semantic_hash": "d1ff6999d27d3a9f7eb40db8a4f709f7"
+  },
+  "core/network/src/main/kotlin/com/elsfm/mobile/core/network/api/ProfileApi.kt": {
+    "mtime": 1783785825.17002,
+    "ast_hash": "4c7764590d5c8eae0f32fd36e5be7424",
+    "semantic_hash": "4c7764590d5c8eae0f32fd36e5be7424"
+  },
+  "core/network/src/main/kotlin/com/elsfm/mobile/core/network/api/RepostApi.kt": {
+    "mtime": 1783776448.5689445,
+    "ast_hash": "be618e4f6b8fbcafc7044cd6f4d0df54",
+    "semantic_hash": "be618e4f6b8fbcafc7044cd6f4d0df54"
+  },
+  "core/network/src/main/kotlin/com/elsfm/mobile/core/network/api/SearchApi.kt": {
+    "mtime": 1783281181.5138063,
+    "ast_hash": "be2c0f6cd7b2ced22cc2a9b7ed5f35ba",
+    "semantic_hash": "be2c0f6cd7b2ced22cc2a9b7ed5f35ba"
+  },
+  "core/network/src/main/kotlin/com/elsfm/mobile/core/network/api/SessionsApi.kt": {
+    "mtime": 1783724616.1801233,
+    "ast_hash": "ec7a399b84a80875d181b9a9180f0976",
+    "semantic_hash": "ec7a399b84a80875d181b9a9180f0976"
+  },
+  "core/network/src/main/kotlin/com/elsfm/mobile/core/network/api/TrackApi.kt": {
+    "mtime": 1784408117.3592165,
+    "ast_hash": "741a707bbd3f0e43d145f09713db25bd",
+    "semantic_hash": "741a707bbd3f0e43d145f09713db25bd"
+  },
+  "core/network/src/main/kotlin/com/elsfm/mobile/core/network/api/TrackListApi.kt": {
+    "mtime": 1783849791.0717962,
+    "ast_hash": "4af5d8c36606a480ff7f97649f49ff73",
+    "semantic_hash": "4af5d8c36606a480ff7f97649f49ff73"
+  },
+  "core/network/src/main/kotlin/com/elsfm/mobile/core/network/api/UserApi.kt": {
+    "mtime": 1784279281.4606912,
+    "ast_hash": "588d78eb04bf654b0267d19398f18258",
+    "semantic_hash": "588d78eb04bf654b0267d19398f18258"
+  },
+  "core/network/src/main/kotlin/com/elsfm/mobile/core/network/api/UserApiLike.kt": {
+    "mtime": 1783785431.1376684,
+    "ast_hash": "6eefa9209095fb47a74c045a9a495a1f",
+    "semantic_hash": "6eefa9209095fb47a74c045a9a495a1f"
+  },
+  "core/network/src/main/kotlin/com/elsfm/mobile/core/network/auth/AuthPlugin.kt": {
+    "mtime": 1784368674.2207117,
+    "ast_hash": "1686e403d12a274a53ddf4cb1b5c2fb7",
+    "semantic_hash": "1686e403d12a274a53ddf4cb1b5c2fb7"
+  },
+  "core/network/src/main/kotlin/com/elsfm/mobile/core/network/auth/EncryptedTokenStore.kt": {
+    "mtime": 1783759579.185892,
+    "ast_hash": "ee986f67c1cf3b209501e4b86c6ed22e",
+    "semantic_hash": "ee986f67c1cf3b209501e4b86c6ed22e"
+  },
+  "core/network/src/main/kotlin/com/elsfm/mobile/core/network/auth/SessionEvent.kt": {
+    "mtime": 1783182110.0735466,
+    "ast_hash": "f98256b73c69ad0fb59a71f174e055a0",
+    "semantic_hash": "f98256b73c69ad0fb59a71f174e055a0"
+  },
+  "core/network/src/main/kotlin/com/elsfm/mobile/core/network/auth/SessionManager.kt": {
+    "mtime": 1783182110.0737946,
+    "ast_hash": "9c2223861b478190a6ff70c68b675d38",
+    "semantic_hash": "9c2223861b478190a6ff70c68b675d38"
+  },
+  "core/network/src/main/kotlin/com/elsfm/mobile/core/network/auth/TokenStore.kt": {
+    "mtime": 1783182110.0740013,
+    "ast_hash": "262338803e451ca1fa5fc2fa82303797",
+    "semantic_hash": "262338803e451ca1fa5fc2fa82303797"
+  },
+  "core/network/src/main/kotlin/com/elsfm/mobile/core/network/connectivity/NetworkMonitor.kt": {
+    "mtime": 1784281478.0219452,
+    "ast_hash": "945941eaca18d172a0a025a4c73ff3cb",
+    "semantic_hash": "945941eaca18d172a0a025a4c73ff3cb"
+  },
+  "core/network/src/main/kotlin/com/elsfm/mobile/core/network/di/NetworkModule.kt": {
+    "mtime": 1784368674.2210565,
+    "ast_hash": "8ce0a2f1d8ebc0c4dafd8addb7145d8e",
+    "semantic_hash": "8ce0a2f1d8ebc0c4dafd8addb7145d8e"
+  },
+  "core/network/src/main/kotlin/com/elsfm/mobile/core/network/download/DownloadManager.kt": {
+    "mtime": 1784494705.0632622,
+    "ast_hash": "f2c838725613f86988697eee79d1ae8d",
+    "semantic_hash": "f2c838725613f86988697eee79d1ae8d"
+  },
+  "core/network/src/main/kotlin/com/elsfm/mobile/core/network/util/ApiErrorHandler.kt": {
+    "mtime": 1783348745.8583043,
+    "ast_hash": "fd3f1d0f18d4e6258c3556d2d7f883ca",
+    "semantic_hash": "fd3f1d0f18d4e6258c3556d2d7f883ca"
+  },
+  "core/network/src/main/kotlin/com/elsfm/mobile/core/network/util/RetryPolicy.kt": {
+    "mtime": 1783348737.2821224,
+    "ast_hash": "4fbf6725e9f88da1d676c8477053c61b",
+    "semantic_hash": "4fbf6725e9f88da1d676c8477053c61b"
+  },
+  "core/network/src/test/kotlin/com/elsfm/mobile/core/network/ElsfmJsonTest.kt": {
+    "mtime": 1783179811.2680118,
+    "ast_hash": "da83dd902d840d83ac6ffaadb670b22b",
+    "semantic_hash": "da83dd902d840d83ac6ffaadb670b22b"
+  },
+  "core/network/src/test/kotlin/com/elsfm/mobile/core/network/LoggingBehaviorTest.kt": {
+    "mtime": 1783185093.980949,
+    "ast_hash": "0728a6389592826db55e216e60e741a4",
+    "semantic_hash": "0728a6389592826db55e216e60e741a4"
+  },
+  "core/network/src/test/kotlin/com/elsfm/mobile/core/network/api/AccountApiTest.kt": {
+    "mtime": 1783724127.0019078,
+    "ast_hash": "3cd94f13f74c560f5971d6bc3b5de08b",
+    "semantic_hash": "3cd94f13f74c560f5971d6bc3b5de08b"
+  },
+  "core/network/src/test/kotlin/com/elsfm/mobile/core/network/api/AlbumApiTest.kt": {
+    "mtime": 1783772377.5845478,
+    "ast_hash": "db55ce96a55583f07ffb1c9d5e217988",
+    "semantic_hash": "db55ce96a55583f07ffb1c9d5e217988"
+  },
+  "core/network/src/test/kotlin/com/elsfm/mobile/core/network/api/ArtistApiTest.kt": {
+    "mtime": 1783281305.5869524,
+    "ast_hash": "9d75a0c4fad22dd7feb98523ad138b64",
+    "semantic_hash": "9d75a0c4fad22dd7feb98523ad138b64"
+  },
+  "core/network/src/test/kotlin/com/elsfm/mobile/core/network/api/AuthApiTest.kt": {
+    "mtime": 1783955137.7663286,
+    "ast_hash": "09ddf75a54f2329ef6a89b0b8f17e7bd",
+    "semantic_hash": "09ddf75a54f2329ef6a89b0b8f17e7bd"
+  },
+  "core/network/src/test/kotlin/com/elsfm/mobile/core/network/api/BillingApiTest.kt": {
+    "mtime": 1784280294.7163572,
+    "ast_hash": "6ece15c36286b6a69f10ac871b2907f7",
+    "semantic_hash": "6ece15c36286b6a69f10ac871b2907f7"
+  },
+  "core/network/src/test/kotlin/com/elsfm/mobile/core/network/api/ChannelApiTest.kt": {
+    "mtime": 1783377416.1246147,
+    "ast_hash": "312389df1896edfd24668b2d947cc61f",
+    "semantic_hash": "312389df1896edfd24668b2d947cc61f"
+  },
+  "core/network/src/test/kotlin/com/elsfm/mobile/core/network/api/NotificationsApiTest.kt": {
+    "mtime": 1783724150.9069712,
+    "ast_hash": "ecacac38b8bd6930d979da356f09a01a",
+    "semantic_hash": "ecacac38b8bd6930d979da356f09a01a"
+  },
+  "core/network/src/test/kotlin/com/elsfm/mobile/core/network/api/PlaylistApiTest.kt": {
+    "mtime": 1783955935.9044867,
+    "ast_hash": "11b6fc83a002b45ae79c884eea9d2bb7",
+    "semantic_hash": "11b6fc83a002b45ae79c884eea9d2bb7"
+  },
+  "core/network/src/test/kotlin/com/elsfm/mobile/core/network/api/ProfileApiTest.kt": {
+    "mtime": 1783786233.6077096,
+    "ast_hash": "58cb02e676d469dd5b29d71b2c64ad4e",
+    "semantic_hash": "58cb02e676d469dd5b29d71b2c64ad4e"
+  },
+  "core/network/src/test/kotlin/com/elsfm/mobile/core/network/api/SearchApiTest.kt": {
+    "mtime": 1783281292.9367743,
+    "ast_hash": "4e5126306ab1255a3a3ae9c4f32315e9",
+    "semantic_hash": "4e5126306ab1255a3a3ae9c4f32315e9"
+  },
+  "core/network/src/test/kotlin/com/elsfm/mobile/core/network/api/SessionsApiTest.kt": {
+    "mtime": 1783724137.865561,
+    "ast_hash": "8ac6a6334114ad5a4f706e02f729c706",
+    "semantic_hash": "8ac6a6334114ad5a4f706e02f729c706"
+  },
+  "core/network/src/test/kotlin/com/elsfm/mobile/core/network/api/TrackApiTest.kt": {
+    "mtime": 1784408440.4872231,
+    "ast_hash": "50d547abb361b409973e80a1b92e1a3a",
+    "semantic_hash": "50d547abb361b409973e80a1b92e1a3a"
+  },
+  "core/network/src/test/kotlin/com/elsfm/mobile/core/network/api/TrackListApiTest.kt": {
+    "mtime": 1783849804.8969066,
+    "ast_hash": "6fd3f070432465e30d00809b5551040a",
+    "semantic_hash": "6fd3f070432465e30d00809b5551040a"
+  },
+  "core/network/src/test/kotlin/com/elsfm/mobile/core/network/api/UserApiTest.kt": {
+    "mtime": 1784279301.738471,
+    "ast_hash": "2f88fd799554805369b4eb2f73064b88",
+    "semantic_hash": "2f88fd799554805369b4eb2f73064b88"
+  },
+  "core/network/src/test/kotlin/com/elsfm/mobile/core/network/auth/AuthPluginTest.kt": {
+    "mtime": 1783183222.2726724,
+    "ast_hash": "1ed941a0e72e8d6fe7159c0e49acea4b",
+    "semantic_hash": "1ed941a0e72e8d6fe7159c0e49acea4b"
+  },
+  "core/network/src/test/kotlin/com/elsfm/mobile/core/network/auth/SessionManagerTest.kt": {
+    "mtime": 1783183222.2730248,
+    "ast_hash": "bbfb1a07d19e1e4e0936bb80681e2187",
+    "semantic_hash": "bbfb1a07d19e1e4e0936bb80681e2187"
+  },
+  "core/network/src/test/kotlin/com/elsfm/mobile/core/network/connectivity/NetworkMonitorTest.kt": {
+    "mtime": 1784282232.0853763,
+    "ast_hash": "9ff6c871c0a703795c0ee85b800d5009",
+    "semantic_hash": "9ff6c871c0a703795c0ee85b800d5009"
+  },
+  "core/network/src/test/kotlin/com/elsfm/mobile/core/network/util/ApiErrorHandlerTest.kt": {
+    "mtime": 1783348760.7995455,
+    "ast_hash": "4b21b12e46b6359f4509825cfe5262fb",
+    "semantic_hash": "4b21b12e46b6359f4509825cfe5262fb"
+  },
+  "core/network/src/test/kotlin/com/elsfm/mobile/core/network/util/RetryPolicyTest.kt": {
+    "mtime": 1783349115.5383136,
+    "ast_hash": "a2ece42c4512d486080686948b3f4bd9",
+    "semantic_hash": "a2ece42c4512d486080686948b3f4bd9"
+  },
+  "feature/artist/build.gradle.kts": {
+    "mtime": 1784326967.5465443,
+    "ast_hash": "1e203522d85ea69e66cb5e39d0840698",
+    "semantic_hash": "1e203522d85ea69e66cb5e39d0840698"
+  },
+  "feature/artist/src/main/kotlin/com/elsfm/mobile/feature/artist/ArtistDetailScreen.kt": {
+    "mtime": 1784457873.5862446,
+    "ast_hash": "43a732997ff40e8da48bcff5ab846170",
+    "semantic_hash": "43a732997ff40e8da48bcff5ab846170"
+  },
+  "feature/artist/src/main/kotlin/com/elsfm/mobile/feature/artist/ArtistDetailState.kt": {
+    "mtime": 1784326971.7058797,
+    "ast_hash": "b00f48af22da6b055ebfcb6f9b510ddc",
+    "semantic_hash": "b00f48af22da6b055ebfcb6f9b510ddc"
+  },
+  "feature/artist/src/main/kotlin/com/elsfm/mobile/feature/artist/ArtistDetailViewModel.kt": {
+    "mtime": 1784327050.2612133,
+    "ast_hash": "ad99128508584f3ad408304e1d726e26",
+    "semantic_hash": "ad99128508584f3ad408304e1d726e26"
+  },
+  "feature/artist/src/test/kotlin/com/elsfm/mobile/feature/artist/ArtistDetailViewModelTest.kt": {
+    "mtime": 1783785572.1062071,
+    "ast_hash": "7f8baabe4c8b4d736d6f0d28ee10c285",
+    "semantic_hash": "7f8baabe4c8b4d736d6f0d28ee10c285"
+  },
+  "feature/auth/build.gradle.kts": {
+    "mtime": 1784300264.9933078,
+    "ast_hash": "2ad13d15db081aef22d2db868c7c4a7e",
+    "semantic_hash": "2ad13d15db081aef22d2db868c7c4a7e"
+  },
+  "feature/auth/src/androidTest/kotlin/com/elsfm/mobile/feature/auth/LoginScreenTest.kt": {
+    "mtime": 1783187264.9789822,
+    "ast_hash": "b417e15fa8724eaf4d8eaa2f652f0baa",
+    "semantic_hash": "b417e15fa8724eaf4d8eaa2f652f0baa"
+  },
+  "feature/auth/src/main/kotlin/com/elsfm/mobile/feature/auth/EmailVerificationScreen.kt": {
+    "mtime": 1784577464.4896832,
+    "ast_hash": "76bf469a73c759f5123314b427ba8ecd",
+    "semantic_hash": "76bf469a73c759f5123314b427ba8ecd"
+  },
+  "feature/auth/src/main/kotlin/com/elsfm/mobile/feature/auth/EmailVerificationViewModel.kt": {
+    "mtime": 1784577458.9576454,
+    "ast_hash": "d0adf84d192b4f493cc807885039511a",
+    "semantic_hash": "d0adf84d192b4f493cc807885039511a"
+  },
+  "feature/auth/src/main/kotlin/com/elsfm/mobile/feature/auth/LoginScreen.kt": {
+    "mtime": 1784326290.514156,
+    "ast_hash": "e9a270d6523ccce85da73e2d594f568e",
+    "semantic_hash": "e9a270d6523ccce85da73e2d594f568e"
+  },
+  "feature/auth/src/main/kotlin/com/elsfm/mobile/feature/auth/LoginUiState.kt": {
+    "mtime": 1783186286.7846353,
+    "ast_hash": "60c6199505ae604d060de0957db8bfc7",
+    "semantic_hash": "60c6199505ae604d060de0957db8bfc7"
+  },
+  "feature/auth/src/main/kotlin/com/elsfm/mobile/feature/auth/LoginViewModel.kt": {
+    "mtime": 1783954595.336531,
+    "ast_hash": "ef7daa51584050d1697064b8f611705e",
+    "semantic_hash": "ef7daa51584050d1697064b8f611705e"
+  },
+  "feature/auth/src/main/kotlin/com/elsfm/mobile/feature/auth/PasswordResetScreen.kt": {
+    "mtime": 1784661649.0066533,
+    "ast_hash": "6d8e222a0c8513557bb9ebc5a428a72c",
+    "semantic_hash": ""
+  },
+  "feature/auth/src/main/kotlin/com/elsfm/mobile/feature/auth/PasswordResetViewModel.kt": {
+    "mtime": 1784661624.1540468,
+    "ast_hash": "0dd5f1f30d736badbb0a56d646d53d20",
+    "semantic_hash": ""
+  },
+  "feature/auth/src/main/kotlin/com/elsfm/mobile/feature/auth/PasswordSaver.kt": {
+    "mtime": 1783955376.8111823,
+    "ast_hash": "35195dc6af3ab7c3f2a391b92edbe388",
+    "semantic_hash": "35195dc6af3ab7c3f2a391b92edbe388"
+  },
+  "feature/auth/src/main/kotlin/com/elsfm/mobile/feature/auth/SignupScreen.kt": {
+    "mtime": 1784368674.2222738,
+    "ast_hash": "04ee08e10fa03bc364b8142f17ebead2",
+    "semantic_hash": "04ee08e10fa03bc364b8142f17ebead2"
+  },
+  "feature/auth/src/main/kotlin/com/elsfm/mobile/feature/auth/SignupViewModel.kt": {
+    "mtime": 1784337381.4285836,
+    "ast_hash": "bc9dd433e7533c8c29d90128b5c92ac2",
+    "semantic_hash": "bc9dd433e7533c8c29d90128b5c92ac2"
+  },
+  "feature/auth/src/main/kotlin/com/elsfm/mobile/feature/auth/data/AuthRepository.kt": {
+    "mtime": 1784661731.3226154,
+    "ast_hash": "18812d52a11a05c5f539fac9cdd9572a",
+    "semantic_hash": ""
+  },
+  "feature/auth/src/main/kotlin/com/elsfm/mobile/feature/auth/data/GoogleSignInService.kt": {
+    "mtime": 1783954305.037086,
+    "ast_hash": "d6c5aec505e8a464b5545d789ee06918",
+    "semantic_hash": "d6c5aec505e8a464b5545d789ee06918"
+  },
+  "feature/auth/src/main/kotlin/com/elsfm/mobile/feature/auth/data/GoogleSignInServiceLike.kt": {
+    "mtime": 1783954291.7575,
+    "ast_hash": "d615086812a0a4eb3693c46916e6bd7e",
+    "semantic_hash": "d615086812a0a4eb3693c46916e6bd7e"
+  },
+  "feature/auth/src/main/kotlin/com/elsfm/mobile/feature/auth/di/AuthModule.kt": {
+    "mtime": 1783954342.1091132,
+    "ast_hash": "1edbc0c8630cd30fe09b5a374dc5a9fa",
+    "semantic_hash": "1edbc0c8630cd30fe09b5a374dc5a9fa"
+  },
+  "feature/auth/src/test/kotlin/com/elsfm/mobile/feature/auth/AuthRepositoryTest.kt": {
+    "mtime": 1783955046.5286934,
+    "ast_hash": "5922c1e3265c85c3d6ee8375b75af51d",
+    "semantic_hash": "5922c1e3265c85c3d6ee8375b75af51d"
+  },
+  "feature/auth/src/test/kotlin/com/elsfm/mobile/feature/auth/LoginViewModelTest.kt": {
+    "mtime": 1783955056.9655387,
+    "ast_hash": "9a50c2224883f49605f6e99695b0f5b3",
+    "semantic_hash": "9a50c2224883f49605f6e99695b0f5b3"
+  },
+  "feature/auth/src/test/kotlin/com/elsfm/mobile/feature/auth/PasswordResetViewModelTest.kt": {
+    "mtime": 1783955300.903179,
+    "ast_hash": "1d8255b4b84845ae570e4efe49be9e3d",
+    "semantic_hash": "1d8255b4b84845ae570e4efe49be9e3d"
+  },
+  "feature/auth/src/test/kotlin/com/elsfm/mobile/feature/auth/SignupViewModelTest.kt": {
+    "mtime": 1783955276.0550222,
+    "ast_hash": "12923f206f52d0905a2c05712a4a4d9b",
+    "semantic_hash": "12923f206f52d0905a2c05712a4a4d9b"
+  },
+  "feature/comments/build.gradle.kts": {
+    "mtime": 1784453361.7221894,
+    "ast_hash": "2f0ca6dc99951ceecb6105cf2cbab0f3",
+    "semantic_hash": "2f0ca6dc99951ceecb6105cf2cbab0f3"
+  },
+  "feature/comments/src/main/kotlin/com/elsfm/mobile/feature/comments/CommentsScreen.kt": {
+    "mtime": 1784453650.040978,
+    "ast_hash": "3a9a2237ae664dd2ae74b2238591dc2f",
+    "semantic_hash": "3a9a2237ae664dd2ae74b2238591dc2f"
+  },
+  "feature/comments/src/main/kotlin/com/elsfm/mobile/feature/comments/CommentsState.kt": {
+    "mtime": 1784453328.8884299,
+    "ast_hash": "be2afd9f98c4f722e4ec44855650f3f5",
+    "semantic_hash": "be2afd9f98c4f722e4ec44855650f3f5"
+  },
+  "feature/comments/src/main/kotlin/com/elsfm/mobile/feature/comments/CommentsViewModel.kt": {
+    "mtime": 1784453347.4679906,
+    "ast_hash": "ea70d2aa88c287ebe75d933241c15cb8",
+    "semantic_hash": "ea70d2aa88c287ebe75d933241c15cb8"
+  },
+  "feature/comments/src/test/kotlin/com/elsfm/mobile/feature/comments/CommentsViewModelTest.kt": {
+    "mtime": 1784279787.2506518,
+    "ast_hash": "736cca9dc7fa4e6e4031b4f5d80dcb16",
+    "semantic_hash": "736cca9dc7fa4e6e4031b4f5d80dcb16"
+  },
+  "feature/discovery/build.gradle.kts": {
+    "mtime": 1784368674.1162393,
+    "ast_hash": "64b3bfb3c1623c3dddd8371af73db1f5",
+    "semantic_hash": "64b3bfb3c1623c3dddd8371af73db1f5"
+  },
+  "feature/discovery/src/androidTest/kotlin/com/elsfm/mobile/feature/discovery/DiscoveryScreenTest.kt": {
+    "mtime": 1783805975.9360662,
+    "ast_hash": "5a39b9e7d3ee6d1ee121850ac171717b",
+    "semantic_hash": "5a39b9e7d3ee6d1ee121850ac171717b"
+  },
+  "feature/discovery/src/main/kotlin/com/elsfm/mobile/feature/discovery/ChannelDetailScreen.kt": {
+    "mtime": 1783723995.6728983,
+    "ast_hash": "8d05fdaea633b4b6a48599b0a9acb0ae",
+    "semantic_hash": "8d05fdaea633b4b6a48599b0a9acb0ae"
+  },
+  "feature/discovery/src/main/kotlin/com/elsfm/mobile/feature/discovery/ChannelDetailViewModel.kt": {
+    "mtime": 1783723849.3178797,
+    "ast_hash": "3358d7ec881eaa46d194a2a0b7c6e15e",
+    "semantic_hash": "3358d7ec881eaa46d194a2a0b7c6e15e"
+  },
+  "feature/discovery/src/main/kotlin/com/elsfm/mobile/feature/discovery/DiscoveryScreen.kt": {
+    "mtime": 1784495976.5807292,
+    "ast_hash": "2154ec6bb7da52479105d8d79c6f7b6e",
+    "semantic_hash": "2154ec6bb7da52479105d8d79c6f7b6e"
+  },
+  "feature/discovery/src/main/kotlin/com/elsfm/mobile/feature/discovery/DiscoveryState.kt": {
+    "mtime": 1783350521.177676,
+    "ast_hash": "2861602d357f0cae8af4a84b51d02d72",
+    "semantic_hash": "2861602d357f0cae8af4a84b51d02d72"
+  },
+  "feature/discovery/src/main/kotlin/com/elsfm/mobile/feature/discovery/DiscoveryViewModel.kt": {
+    "mtime": 1784368674.1175516,
+    "ast_hash": "8ff4e732fc2f2f8f6112c48bb4cea6b5",
+    "semantic_hash": "8ff4e732fc2f2f8f6112c48bb4cea6b5"
+  },
+  "feature/discovery/src/main/kotlin/com/elsfm/mobile/feature/discovery/FeaturedPlaylistsSection.kt": {
+    "mtime": 1783331845.1668348,
+    "ast_hash": "2a55d3b6c0b3a7f56c8cb7a96f406565",
+    "semantic_hash": "2a55d3b6c0b3a7f56c8cb7a96f406565"
+  },
+  "feature/discovery/src/main/kotlin/com/elsfm/mobile/feature/discovery/PopularSongsSection.kt": {
+    "mtime": 1783331845.1670735,
+    "ast_hash": "8ca964828455d09740d71ce63291e742",
+    "semantic_hash": "8ca964828455d09740d71ce63291e742"
+  },
+  "feature/discovery/src/main/kotlin/com/elsfm/mobile/feature/discovery/sections/FeaturedPlaylistsSection.kt": {
+    "mtime": 1783331216.2765167,
+    "ast_hash": "2a8f90d0c88a7b17e9bef9b897326916",
+    "semantic_hash": "2a8f90d0c88a7b17e9bef9b897326916"
+  },
+  "feature/discovery/src/main/kotlin/com/elsfm/mobile/feature/discovery/sections/NewReleasesSection.kt": {
+    "mtime": 1783331223.7853239,
+    "ast_hash": "d93a19051bff582e645f40b47112f4d4",
+    "semantic_hash": "d93a19051bff582e645f40b47112f4d4"
+  },
+  "feature/discovery/src/main/kotlin/com/elsfm/mobile/feature/discovery/sections/RecentlyPlayedSection.kt": {
+    "mtime": 1784495966.0335224,
+    "ast_hash": "6c8d25f07c21185d24d72085cc938531",
+    "semantic_hash": "6c8d25f07c21185d24d72085cc938531"
+  },
+  "feature/discovery/src/main/kotlin/com/elsfm/mobile/feature/discovery/sections/TrackListSection.kt": {
+    "mtime": 1783331234.5464923,
+    "ast_hash": "20cc7e7f1cb3e88c4bb58920abfb9298",
+    "semantic_hash": "20cc7e7f1cb3e88c4bb58920abfb9298"
+  },
+  "feature/discovery/src/test/kotlin/com/elsfm/mobile/feature/discovery/ChannelDetailViewModelTest.kt": {
+    "mtime": 1783724036.6836004,
+    "ast_hash": "c81b4bddca6dcf490ea81bb1b9fe6e64",
+    "semantic_hash": "c81b4bddca6dcf490ea81bb1b9fe6e64"
+  },
+  "feature/discovery/src/test/kotlin/com/elsfm/mobile/feature/discovery/DiscoveryViewModelTest.kt": {
+    "mtime": 1784281776.1176362,
+    "ast_hash": "3ea496125f854716846e866bbbfdc0d8",
+    "semantic_hash": "3ea496125f854716846e866bbbfdc0d8"
+  },
+  "feature/downloads/build.gradle.kts": {
+    "mtime": 1784452566.362906,
+    "ast_hash": "ef7514b276c73accbddaba6c929c5de4",
+    "semantic_hash": "ef7514b276c73accbddaba6c929c5de4"
+  },
+  "feature/downloads/src/main/kotlin/com/elsfm/mobile/feature/downloads/DownloadItem.kt": {
+    "mtime": 1783261290.9576194,
+    "ast_hash": "962f87df255cf22ff4d104827fb6942f",
+    "semantic_hash": "962f87df255cf22ff4d104827fb6942f"
+  },
+  "feature/downloads/src/main/kotlin/com/elsfm/mobile/feature/downloads/DownloadsScreen.kt": {
+    "mtime": 1784453023.0532057,
+    "ast_hash": "9f46fade03cfc9bd9fceb4e892e107c3",
+    "semantic_hash": "9f46fade03cfc9bd9fceb4e892e107c3"
+  },
+  "feature/downloads/src/main/kotlin/com/elsfm/mobile/feature/downloads/DownloadsState.kt": {
+    "mtime": 1784452923.914883,
+    "ast_hash": "454138b14ab8258a2821fe31853c3b76",
+    "semantic_hash": "454138b14ab8258a2821fe31853c3b76"
+  },
+  "feature/downloads/src/main/kotlin/com/elsfm/mobile/feature/downloads/DownloadsViewModel.kt": {
+    "mtime": 1784453296.4034822,
+    "ast_hash": "99eaa925f605573ad68cf443f85f6346",
+    "semantic_hash": "99eaa925f605573ad68cf443f85f6346"
+  },
+  "feature/downloads/src/test/kotlin/com/elsfm/mobile/feature/downloads/DownloadsViewModelTest.kt": {
+    "mtime": 1784281276.9018593,
+    "ast_hash": "db23c2e8752b74083b4ed3865b3bc2dc",
+    "semantic_hash": "db23c2e8752b74083b4ed3865b3bc2dc"
+  },
+  "feature/library/build.gradle.kts": {
+    "mtime": 1784368674.222629,
+    "ast_hash": "3aab8fce1ebfedecfc81a6564e2b59f1",
+    "semantic_hash": "3aab8fce1ebfedecfc81a6564e2b59f1"
+  },
+  "feature/library/src/androidTest/kotlin/com/elsfm/mobile/feature/library/AlbumScreenTest.kt": {
+    "mtime": 1783332371.0413837,
+    "ast_hash": "67a7ac672aa67fdb038f17a5a1829286",
+    "semantic_hash": "67a7ac672aa67fdb038f17a5a1829286"
+  },
+  "feature/library/src/androidTest/kotlin/com/elsfm/mobile/feature/library/LibraryScreenTest.kt": {
+    "mtime": 1783956188.7029455,
+    "ast_hash": "9ef17ffd0e770c7f4c9d96c74996dafe",
+    "semantic_hash": "9ef17ffd0e770c7f4c9d96c74996dafe"
+  },
+  "feature/library/src/androidTest/kotlin/com/elsfm/mobile/feature/library/PlaylistScreenTest.kt": {
+    "mtime": 1783850112.307448,
+    "ast_hash": "6374a4c7f302bf041fb3524807dd6ce4",
+    "semantic_hash": "6374a4c7f302bf041fb3524807dd6ce4"
+  },
+  "feature/library/src/main/kotlin/com/elsfm/mobile/feature/library/AlbumScreen.kt": {
+    "mtime": 1784495924.4519196,
+    "ast_hash": "68aebdd7bfc4dbd58d9c2e6c91b72e03",
+    "semantic_hash": "68aebdd7bfc4dbd58d9c2e6c91b72e03"
+  },
+  "feature/library/src/main/kotlin/com/elsfm/mobile/feature/library/AlbumViewModel.kt": {
+    "mtime": 1784432125.3848426,
+    "ast_hash": "125c1c2055db2d7b089dda625d78a7fd",
+    "semantic_hash": "125c1c2055db2d7b089dda625d78a7fd"
+  },
+  "feature/library/src/main/kotlin/com/elsfm/mobile/feature/library/ChannelListComposable.kt": {
+    "mtime": 1783255666.1836386,
+    "ast_hash": "495888c09dcd8d224237243f50c9ad43",
+    "semantic_hash": "495888c09dcd8d224237243f50c9ad43"
+  },
+  "feature/library/src/main/kotlin/com/elsfm/mobile/feature/library/LibraryScreen.kt": {
+    "mtime": 1784368674.1195629,
+    "ast_hash": "5a34523ec8be3ca4bf2ff6651cff9380",
+    "semantic_hash": "5a34523ec8be3ca4bf2ff6651cff9380"
+  },
+  "feature/library/src/main/kotlin/com/elsfm/mobile/feature/library/LibraryViewModel.kt": {
+    "mtime": 1784368797.0633411,
+    "ast_hash": "abfe633b9daaeff8cc5f159ead3a57ef",
+    "semantic_hash": "abfe633b9daaeff8cc5f159ead3a57ef"
+  },
+  "feature/library/src/main/kotlin/com/elsfm/mobile/feature/library/LikedSongsScreen.kt": {
+    "mtime": 1784495928.0401483,
+    "ast_hash": "1ab42d7d363e80926f50b97ae0ace339",
+    "semantic_hash": "1ab42d7d363e80926f50b97ae0ace339"
+  },
+  "feature/library/src/main/kotlin/com/elsfm/mobile/feature/library/LikedSongsViewModel.kt": {
+    "mtime": 1784432125.3854373,
+    "ast_hash": "dd440ca208591de91143da9bb37c0515",
+    "semantic_hash": "dd440ca208591de91143da9bb37c0515"
+  },
+  "feature/library/src/main/kotlin/com/elsfm/mobile/feature/library/ListeningHistoryScreen.kt": {
+    "mtime": 1784495930.5749087,
+    "ast_hash": "4e8511873b43c3061046f13a183db39c",
+    "semantic_hash": "4e8511873b43c3061046f13a183db39c"
+  },
+  "feature/library/src/main/kotlin/com/elsfm/mobile/feature/library/ListeningHistoryViewModel.kt": {
+    "mtime": 1784298350.7150772,
+    "ast_hash": "6607b13b98454cb5dcfb7b2bc5d84210",
+    "semantic_hash": "6607b13b98454cb5dcfb7b2bc5d84210"
+  },
+  "feature/library/src/main/kotlin/com/elsfm/mobile/feature/library/PlaylistScreen.kt": {
+    "mtime": 1784495934.5133927,
+    "ast_hash": "518c87618a536c9847e01eaa20b98b2f",
+    "semantic_hash": "518c87618a536c9847e01eaa20b98b2f"
+  },
+  "feature/library/src/main/kotlin/com/elsfm/mobile/feature/library/PlaylistViewModel.kt": {
+    "mtime": 1784432125.3859308,
+    "ast_hash": "a47642225fdb7965bdb199a3709de28d",
+    "semantic_hash": "a47642225fdb7965bdb199a3709de28d"
+  },
+  "feature/library/src/main/kotlin/com/elsfm/mobile/feature/library/composables/AlbumCard.kt": {
+    "mtime": 1784457397.865656,
+    "ast_hash": "4854e42da8479989c7b9f2b8f5bd0ae0",
+    "semantic_hash": "4854e42da8479989c7b9f2b8f5bd0ae0"
+  },
+  "feature/library/src/main/kotlin/com/elsfm/mobile/feature/library/composables/ArtistCard.kt": {
+    "mtime": 1783330237.1573238,
+    "ast_hash": "87d9dc1b27bb891716e64ae01ad9a8a2",
+    "semantic_hash": "87d9dc1b27bb891716e64ae01ad9a8a2"
+  },
+  "feature/library/src/main/kotlin/com/elsfm/mobile/feature/library/composables/BlurredBackground.kt": {
+    "mtime": 1783329806.4041786,
+    "ast_hash": "8ac8a29593edb49919c1844427b667fc",
+    "semantic_hash": "8ac8a29593edb49919c1844427b667fc"
+  },
+  "feature/library/src/main/kotlin/com/elsfm/mobile/feature/library/composables/PlaylistCard.kt": {
+    "mtime": 1783330237.1606998,
+    "ast_hash": "625e6987fa96ba44791b7b868a815f56",
+    "semantic_hash": "625e6987fa96ba44791b7b868a815f56"
+  },
+  "feature/library/src/main/kotlin/com/elsfm/mobile/feature/library/composables/SectionHeader.kt": {
+    "mtime": 1783330302.6342473,
+    "ast_hash": "46c5e67bdb3159e43340e814351db861",
+    "semantic_hash": "46c5e67bdb3159e43340e814351db861"
+  },
+  "feature/library/src/main/kotlin/com/elsfm/mobile/feature/library/composables/TrackCard.kt": {
+    "mtime": 1784495960.8091564,
+    "ast_hash": "e4225262d92a96ac56005fa4d528f274",
+    "semantic_hash": "e4225262d92a96ac56005fa4d528f274"
+  },
+  "feature/library/src/main/kotlin/com/elsfm/mobile/feature/library/composables/TrackListItem.kt": {
+    "mtime": 1784495754.2538111,
+    "ast_hash": "c5718969c2843359c6a03ca6ebc8393c",
+    "semantic_hash": "c5718969c2843359c6a03ca6ebc8393c"
+  },
+  "feature/library/src/main/kotlin/com/elsfm/mobile/feature/library/data/LibraryApiRepository.kt": {
+    "mtime": 1783955975.2227705,
+    "ast_hash": "39fba2470964b2386d76de5dc670a3c0",
+    "semantic_hash": "39fba2470964b2386d76de5dc670a3c0"
+  },
+  "feature/library/src/main/kotlin/com/elsfm/mobile/feature/library/data/LibraryApiRepositoryImpl.kt": {
+    "mtime": 1783955990.568059,
+    "ast_hash": "4afc90461629daa1cdd7f9e33264350b",
+    "semantic_hash": "4afc90461629daa1cdd7f9e33264350b"
+  },
+  "feature/library/src/main/kotlin/com/elsfm/mobile/feature/library/data/LibraryData.kt": {
+    "mtime": 1783953843.1210628,
+    "ast_hash": "10973ec2fa90e7e656b713465275283d",
+    "semantic_hash": "10973ec2fa90e7e656b713465275283d"
+  },
+  "feature/library/src/main/kotlin/com/elsfm/mobile/feature/library/data/TrackLikeController.kt": {
+    "mtime": 1783377427.9647725,
+    "ast_hash": "d143d23899ba152e7ffdcdc7b5a9d15a",
+    "semantic_hash": "d143d23899ba152e7ffdcdc7b5a9d15a"
+  },
+  "feature/library/src/main/kotlin/com/elsfm/mobile/feature/library/di/LibraryModule.kt": {
+    "mtime": 1783348841.9874594,
+    "ast_hash": "5df625a66065503f3386777fa2abf264",
+    "semantic_hash": "5df625a66065503f3386777fa2abf264"
+  },
+  "feature/library/src/test/kotlin/com/elsfm/mobile/feature/library/AlbumViewModelTest.kt": {
+    "mtime": 1783801952.190774,
+    "ast_hash": "0b534ded736cc007b3254002cd42b32b",
+    "semantic_hash": "0b534ded736cc007b3254002cd42b32b"
+  },
+  "feature/library/src/test/kotlin/com/elsfm/mobile/feature/library/FakeDownloadRepository.kt": {
+    "mtime": 1783801935.6306062,
+    "ast_hash": "481e442cbd4227bb43a41d861a71b17a",
+    "semantic_hash": "481e442cbd4227bb43a41d861a71b17a"
+  },
+  "feature/library/src/test/kotlin/com/elsfm/mobile/feature/library/FakeLibraryApiRepository.kt": {
+    "mtime": 1783956094.0825996,
+    "ast_hash": "78d07bc0bdf8bb0a360cdee58942056b",
+    "semantic_hash": "78d07bc0bdf8bb0a360cdee58942056b"
+  },
+  "feature/library/src/test/kotlin/com/elsfm/mobile/feature/library/LibraryViewModelTest.kt": {
+    "mtime": 1784368824.8520806,
+    "ast_hash": "6734f73aaf8f514eebd14c8205e461c1",
+    "semantic_hash": "6734f73aaf8f514eebd14c8205e461c1"
+  },
+  "feature/library/src/test/kotlin/com/elsfm/mobile/feature/library/LikedSongsViewModelTest.kt": {
+    "mtime": 1783723938.2222075,
+    "ast_hash": "1c1aea95c72c81f6b8b1966afc70a20c",
+    "semantic_hash": "1c1aea95c72c81f6b8b1966afc70a20c"
+  },
+  "feature/library/src/test/kotlin/com/elsfm/mobile/feature/library/ListeningHistoryViewModelTest.kt": {
+    "mtime": 1783773631.874831,
+    "ast_hash": "72d6dd5c44018940d3025ca0a87a38f5",
+    "semantic_hash": "72d6dd5c44018940d3025ca0a87a38f5"
+  },
+  "feature/library/src/test/kotlin/com/elsfm/mobile/feature/library/PlaylistViewModelTest.kt": {
+    "mtime": 1784282725.075733,
+    "ast_hash": "28f7773c6839c52a9d4336976c61936a",
+    "semantic_hash": "28f7773c6839c52a9d4336976c61936a"
+  },
+  "feature/library/src/test/kotlin/com/elsfm/mobile/feature/library/composables/ComposablesTest.kt": {
+    "mtime": 1783330116.0411088,
+    "ast_hash": "1c8bfd8a841852a3eabf1549199550d6",
+    "semantic_hash": "1c8bfd8a841852a3eabf1549199550d6"
+  },
+  "feature/library/src/test/kotlin/com/elsfm/mobile/feature/library/data/LibraryApiRepositoryImplTest.kt": {
+    "mtime": 1783956155.4161317,
+    "ast_hash": "4c90124b3c289d978c3cdaebf24a72c4",
+    "semantic_hash": "4c90124b3c289d978c3cdaebf24a72c4"
+  },
+  "feature/library/src/test/kotlin/com/elsfm/mobile/feature/library/data/TrackLikeControllerTest.kt": {
+    "mtime": 1783377711.0248408,
+    "ast_hash": "95aece395357f5751b853529465dfd20",
+    "semantic_hash": "95aece395357f5751b853529465dfd20"
+  },
+  "feature/notifications/build.gradle.kts": {
+    "mtime": 1783724671.9630973,
+    "ast_hash": "611850c1ac954ce332fd69e11eec25be",
+    "semantic_hash": "611850c1ac954ce332fd69e11eec25be"
+  },
+  "feature/notifications/src/main/kotlin/com/elsfm/mobile/feature/notifications/NotificationsScreen.kt": {
+    "mtime": 1783724771.824107,
+    "ast_hash": "b8b2203fe18484bac21b97e8d1f188ff",
+    "semantic_hash": "b8b2203fe18484bac21b97e8d1f188ff"
+  },
+  "feature/notifications/src/main/kotlin/com/elsfm/mobile/feature/notifications/NotificationsState.kt": {
+    "mtime": 1783724700.241287,
+    "ast_hash": "17711cb174f2fa90d519c3d368367516",
+    "semantic_hash": "17711cb174f2fa90d519c3d368367516"
+  },
+  "feature/notifications/src/main/kotlin/com/elsfm/mobile/feature/notifications/NotificationsViewModel.kt": {
+    "mtime": 1783724711.3732967,
+    "ast_hash": "c9fca5492fdfdb48093e7ea2d54ecc75",
+    "semantic_hash": "c9fca5492fdfdb48093e7ea2d54ecc75"
+  },
+  "feature/notifications/src/main/kotlin/com/elsfm/mobile/feature/notifications/RelativeTimeFormatter.kt": {
+    "mtime": 1783724696.1489189,
+    "ast_hash": "4b03c312452f449dc4d1c279946a24cc",
+    "semantic_hash": "4b03c312452f449dc4d1c279946a24cc"
+  },
+  "feature/notifications/src/test/kotlin/com/elsfm/mobile/feature/notifications/NotificationsViewModelTest.kt": {
+    "mtime": 1783724814.832526,
+    "ast_hash": "c068d9cc61bdeb86168cb054ac048e32",
+    "semantic_hash": "c068d9cc61bdeb86168cb054ac048e32"
+  },
+  "feature/notifications/src/test/kotlin/com/elsfm/mobile/feature/notifications/RelativeTimeFormatterTest.kt": {
+    "mtime": 1783724787.2991288,
+    "ast_hash": "e91f4572ede96bbf25836f24b2b019d6",
+    "semantic_hash": "e91f4572ede96bbf25836f24b2b019d6"
+  },
+  "feature/player/build.gradle.kts": {
+    "mtime": 1783787541.277835,
+    "ast_hash": "ab8fe3e51362e22b0260bfb2a76b2889",
+    "semantic_hash": "ab8fe3e51362e22b0260bfb2a76b2889"
+  },
+  "feature/player/src/androidTest/kotlin/com/elsfm/mobile/feature/player/MiniPlayerTest.kt": {
+    "mtime": 1784408518.4678977,
+    "ast_hash": "e234a90ec2334758c81fe0045425a70a",
+    "semantic_hash": "e234a90ec2334758c81fe0045425a70a"
+  },
+  "feature/player/src/main/kotlin/com/elsfm/mobile/feature/player/Media3PlayerController.kt": {
+    "mtime": 1784432524.10147,
+    "ast_hash": "267e12a83f906404d1b13857ea05e8c0",
+    "semantic_hash": "267e12a83f906404d1b13857ea05e8c0"
+  },
+  "feature/player/src/main/kotlin/com/elsfm/mobile/feature/player/MiniPlayer.kt": {
+    "mtime": 1784408126.2077727,
+    "ast_hash": "599fb7c51c11bfafb62d5837e9d03e93",
+    "semantic_hash": "599fb7c51c11bfafb62d5837e9d03e93"
+  },
+  "feature/player/src/main/kotlin/com/elsfm/mobile/feature/player/PlayerController.kt": {
+    "mtime": 1784406232.8924627,
+    "ast_hash": "f53a66a879aae87993eefb163ae6db76",
+    "semantic_hash": "f53a66a879aae87993eefb163ae6db76"
+  },
+  "feature/player/src/main/kotlin/com/elsfm/mobile/feature/player/PlayerMenuState.kt": {
+    "mtime": 1784432498.604928,
+    "ast_hash": "a09c528a60643d0c10284295cc3e422a",
+    "semantic_hash": "a09c528a60643d0c10284295cc3e422a"
+  },
+  "feature/player/src/main/kotlin/com/elsfm/mobile/feature/player/PlayerMenuViewModel.kt": {
+    "mtime": 1784407099.1976912,
+    "ast_hash": "4acc1dc64490f5fb537aa95f1b3a7953",
+    "semantic_hash": "4acc1dc64490f5fb537aa95f1b3a7953"
+  },
+  "feature/player/src/main/kotlin/com/elsfm/mobile/feature/player/PlayerScreen.kt": {
+    "mtime": 1784432120.330625,
+    "ast_hash": "ac1c7b41c28e63ce1118011204584876",
+    "semantic_hash": "ac1c7b41c28e63ce1118011204584876"
+  },
+  "feature/player/src/main/kotlin/com/elsfm/mobile/feature/player/PlayerState.kt": {
+    "mtime": 1784281027.1206372,
+    "ast_hash": "da81e0857a69d27e2c08dbb77c179844",
+    "semantic_hash": "da81e0857a69d27e2c08dbb77c179844"
+  },
+  "feature/player/src/main/kotlin/com/elsfm/mobile/feature/player/PlayerViewModel.kt": {
+    "mtime": 1784457815.385881,
+    "ast_hash": "71e1a4799e1519f42164435b13eed50a",
+    "semantic_hash": "71e1a4799e1519f42164435b13eed50a"
+  },
+  "feature/player/src/main/kotlin/com/elsfm/mobile/feature/player/SleepTimer.kt": {
+    "mtime": 1784216923.358457,
+    "ast_hash": "93e103ee6f78f2015278ee565b60381b",
+    "semantic_hash": "93e103ee6f78f2015278ee565b60381b"
+  },
+  "feature/player/src/main/kotlin/com/elsfm/mobile/feature/player/data/PlayerMenuRepository.kt": {
+    "mtime": 1783787493.9675927,
+    "ast_hash": "6c71709e7c3859389297799f249a7577",
+    "semantic_hash": "6c71709e7c3859389297799f249a7577"
+  },
+  "feature/player/src/main/kotlin/com/elsfm/mobile/feature/player/di/PlayerModule.kt": {
+    "mtime": 1783208807.9105191,
+    "ast_hash": "88371435b2a1891b46ddcbdbeab28e10",
+    "semantic_hash": "88371435b2a1891b46ddcbdbeab28e10"
+  },
+  "feature/player/src/main/kotlin/com/elsfm/mobile/feature/player/lyrics/LyricsScreen.kt": {
+    "mtime": 1784280608.0730321,
+    "ast_hash": "730e5e4afe22144742297db44817e551",
+    "semantic_hash": "730e5e4afe22144742297db44817e551"
+  },
+  "feature/player/src/main/kotlin/com/elsfm/mobile/feature/player/lyrics/LyricsState.kt": {
+    "mtime": 1784280570.3224373,
+    "ast_hash": "446ab5211bcd6cb64bac7a772e8d6901",
+    "semantic_hash": "446ab5211bcd6cb64bac7a772e8d6901"
+  },
+  "feature/player/src/main/kotlin/com/elsfm/mobile/feature/player/lyrics/LyricsViewModel.kt": {
+    "mtime": 1784280584.4118738,
+    "ast_hash": "cb785efbdd95a196678b49480ca5e806",
+    "semantic_hash": "cb785efbdd95a196678b49480ca5e806"
+  },
+  "feature/player/src/test/kotlin/com/elsfm/mobile/feature/player/PlayerViewModelTest.kt": {
+    "mtime": 1784281133.3851159,
+    "ast_hash": "d37d42f8d3730be7080be919d693d1da",
+    "semantic_hash": "d37d42f8d3730be7080be919d693d1da"
+  },
+  "feature/player/src/test/kotlin/com/elsfm/mobile/feature/player/SleepTimerTest.kt": {
+    "mtime": 1784217001.3867462,
+    "ast_hash": "7044a8b465145d53b3115503cc8c487a",
+    "semantic_hash": "7044a8b465145d53b3115503cc8c487a"
+  },
+  "feature/player/src/test/kotlin/com/elsfm/mobile/feature/player/data/PlayerMenuRepositoryTest.kt": {
+    "mtime": 1783785487.6103346,
+    "ast_hash": "af310c988e909a28ac044ec15e32682d",
+    "semantic_hash": "af310c988e909a28ac044ec15e32682d"
+  },
+  "feature/player/src/test/kotlin/com/elsfm/mobile/feature/player/lyrics/LyricsViewModelTest.kt": {
+    "mtime": 1784281206.511967,
+    "ast_hash": "6348f4a088b151f8c0be301c7ab0683f",
+    "semantic_hash": "6348f4a088b151f8c0be301c7ab0683f"
+  },
+  "feature/profile/build.gradle.kts": {
+    "mtime": 1784407105.0260394,
+    "ast_hash": "cf73b20aa474901067ff8a7ed3db67ea",
+    "semantic_hash": "cf73b20aa474901067ff8a7ed3db67ea"
+  },
+  "feature/profile/src/main/kotlin/com/elsfm/mobile/feature/profile/AccountDetailsPanel.kt": {
+    "mtime": 1783785800.6679113,
+    "ast_hash": "be7b4bc63c8fd66af339b63b3793e3a0",
+    "semantic_hash": "be7b4bc63c8fd66af339b63b3793e3a0"
+  },
+  "feature/profile/src/main/kotlin/com/elsfm/mobile/feature/profile/AccountSection.kt": {
+    "mtime": 1784300120.5043633,
+    "ast_hash": "7dd7bc7a2d2396feb1dd2d67d3d21966",
+    "semantic_hash": "7dd7bc7a2d2396feb1dd2d67d3d21966"
+  },
+  "feature/profile/src/main/kotlin/com/elsfm/mobile/feature/profile/AccountState.kt": {
+    "mtime": 1783724190.3767278,
+    "ast_hash": "aabbc768dab7535056419979ffb6fbfa",
+    "semantic_hash": "aabbc768dab7535056419979ffb6fbfa"
+  },
+  "feature/profile/src/main/kotlin/com/elsfm/mobile/feature/profile/AccountViewModel.kt": {
+    "mtime": 1783724291.4928043,
+    "ast_hash": "400c50753760ebd37af8538845eaf4d0",
+    "semantic_hash": "400c50753760ebd37af8538845eaf4d0"
+  },
+  "feature/profile/src/main/kotlin/com/elsfm/mobile/feature/profile/ChangePasswordScreen.kt": {
+    "mtime": 1784368674.1219008,
+    "ast_hash": "f9729f6fa5b2bd3a7031c42e2cfb576e",
+    "semantic_hash": "f9729f6fa5b2bd3a7031c42e2cfb576e"
+  },
+  "feature/profile/src/main/kotlin/com/elsfm/mobile/feature/profile/ChangePasswordViewModel.kt": {
+    "mtime": 1784368966.049426,
+    "ast_hash": "f3c7f21e14bcaa496bac4889259bb4bb",
+    "semantic_hash": "f3c7f21e14bcaa496bac4889259bb4bb"
+  },
+  "feature/profile/src/main/kotlin/com/elsfm/mobile/feature/profile/ProfileHeader.kt": {
+    "mtime": 1783785787.4546416,
+    "ast_hash": "dc142dd2ddc04e0e99725c67d2368aa7",
+    "semantic_hash": "dc142dd2ddc04e0e99725c67d2368aa7"
+  },
+  "feature/profile/src/main/kotlin/com/elsfm/mobile/feature/profile/ProfileScreen.kt": {
+    "mtime": 1784300132.2658272,
+    "ast_hash": "64445170f3fed331c53b30f619869228",
+    "semantic_hash": "64445170f3fed331c53b30f619869228"
+  },
+  "feature/profile/src/main/kotlin/com/elsfm/mobile/feature/profile/ProfileState.kt": {
+    "mtime": 1783260379.5291831,
+    "ast_hash": "22b63669cd883904d158594ea6dc2d8c",
+    "semantic_hash": "22b63669cd883904d158594ea6dc2d8c"
+  },
+  "feature/profile/src/main/kotlin/com/elsfm/mobile/feature/profile/ProfileViewModel.kt": {
+    "mtime": 1784368674.2241359,
+    "ast_hash": "dc133de399c6b25404bfbb3a67e1e54f",
+    "semantic_hash": "dc133de399c6b25404bfbb3a67e1e54f"
+  },
+  "feature/profile/src/main/kotlin/com/elsfm/mobile/feature/profile/RecentlyPlayedSection.kt": {
+    "mtime": 1783261507.8531752,
+    "ast_hash": "2b10d9613ab9507070a5461fb64d11eb",
+    "semantic_hash": "2b10d9613ab9507070a5461fb64d11eb"
+  },
+  "feature/profile/src/main/kotlin/com/elsfm/mobile/feature/profile/SessionsPanel.kt": {
+    "mtime": 1783724352.9271204,
+    "ast_hash": "882910d8445bccf3554fae0565fc5825",
+    "semantic_hash": "882910d8445bccf3554fae0565fc5825"
+  },
+  "feature/profile/src/main/kotlin/com/elsfm/mobile/feature/profile/SettingsScreen.kt": {
+    "mtime": 1784451749.5955997,
+    "ast_hash": "0703c3b543151574be46de040f522021",
+    "semantic_hash": "0703c3b543151574be46de040f522021"
+  },
+  "feature/profile/src/main/kotlin/com/elsfm/mobile/feature/profile/SettingsViewModel.kt": {
+    "mtime": 1784450242.0709095,
+    "ast_hash": "fdfcaa0b2bad5b456c6e03d45a5b0c60",
+    "semantic_hash": "fdfcaa0b2bad5b456c6e03d45a5b0c60"
+  },
+  "feature/profile/src/main/kotlin/com/elsfm/mobile/feature/profile/ThemePreferences.kt": {
+    "mtime": 1784451749.5960035,
+    "ast_hash": "203c380ea9b43a347ef81d8d84d09c1a",
+    "semantic_hash": "203c380ea9b43a347ef81d8d84d09c1a"
+  },
+  "feature/profile/src/main/kotlin/com/elsfm/mobile/feature/profile/ThemeStore.kt": {
+    "mtime": 1784451749.5964868,
+    "ast_hash": "12cdbc1dea89ad83f2d4e798307648e8",
+    "semantic_hash": "12cdbc1dea89ad83f2d4e798307648e8"
+  },
+  "feature/profile/src/main/kotlin/com/elsfm/mobile/feature/profile/ThemeViewModel.kt": {
+    "mtime": 1784451749.5972986,
+    "ast_hash": "af23a3b00fc0e1e3191c699b06d18b3b",
+    "semantic_hash": "af23a3b00fc0e1e3191c699b06d18b3b"
+  },
+  "feature/profile/src/main/kotlin/com/elsfm/mobile/feature/profile/di/ProfileModule.kt": {
+    "mtime": 1783377578.1768823,
+    "ast_hash": "0437f04a9143845b1c28aef220130faf",
+    "semantic_hash": "0437f04a9143845b1c28aef220130faf"
+  },
+  "feature/profile/src/main/kotlin/com/elsfm/mobile/feature/profile/storage/StorageSection.kt": {
+    "mtime": 1784409413.5534072,
+    "ast_hash": "aecb10bb09796a266352161a5a92cb3e",
+    "semantic_hash": "aecb10bb09796a266352161a5a92cb3e"
+  },
+  "feature/profile/src/main/kotlin/com/elsfm/mobile/feature/profile/storage/StorageState.kt": {
+    "mtime": 1784408664.7571666,
+    "ast_hash": "b2ad5a53c3e3ad8b7847ce5051aca5e9",
+    "semantic_hash": "b2ad5a53c3e3ad8b7847ce5051aca5e9"
+  },
+  "feature/profile/src/main/kotlin/com/elsfm/mobile/feature/profile/storage/StorageViewModel.kt": {
+    "mtime": 1784408672.6812055,
+    "ast_hash": "e8ac154585b70a2f0f842df00a930c87",
+    "semantic_hash": "e8ac154585b70a2f0f842df00a930c87"
+  },
+  "feature/profile/src/test/kotlin/com/elsfm/mobile/feature/profile/AccountViewModelTest.kt": {
+    "mtime": 1783724639.1680136,
+    "ast_hash": "756c6025b84328ce73850358c754cdbc",
+    "semantic_hash": "756c6025b84328ce73850358c754cdbc"
+  },
+  "feature/profile/src/test/kotlin/com/elsfm/mobile/feature/profile/ProfileViewModelTest.kt": {
+    "mtime": 1784368674.2245574,
+    "ast_hash": "b2c32378514bc9d8f4dc299f6a588aea",
+    "semantic_hash": "b2c32378514bc9d8f4dc299f6a588aea"
+  },
+  "feature/profile/src/test/kotlin/com/elsfm/mobile/feature/profile/ThemeViewModelTest.kt": {
+    "mtime": 1783377585.4930844,
+    "ast_hash": "31885798e9bc49b9cc05da29d57d1997",
+    "semantic_hash": "31885798e9bc49b9cc05da29d57d1997"
+  },
+  "feature/profile/src/test/kotlin/com/elsfm/mobile/feature/profile/storage/StorageViewModelTest.kt": {
+    "mtime": 1784408704.6352117,
+    "ast_hash": "95469659ddcce0310d3f59f20044bd1e",
+    "semantic_hash": "95469659ddcce0310d3f59f20044bd1e"
+  },
+  "feature/search/build.gradle.kts": {
+    "mtime": 1783333433.975673,
+    "ast_hash": "414a36ad64291fdfb1974cd433a6d0c2",
+    "semantic_hash": "414a36ad64291fdfb1974cd433a6d0c2"
+  },
+  "feature/search/src/androidTest/kotlin/com/elsfm/mobile/feature/search/SearchScreenTest.kt": {
+    "mtime": 1783333393.6312878,
+    "ast_hash": "bdbb9b24689895178074e2944887692c",
+    "semantic_hash": "bdbb9b24689895178074e2944887692c"
+  },
+  "feature/search/src/main/kotlin/com/elsfm/mobile/feature/search/SearchScreen.kt": {
+    "mtime": 1783768848.2562277,
+    "ast_hash": "fd2f995b38274da524fb524c5994eb1e",
+    "semantic_hash": "fd2f995b38274da524fb524c5994eb1e"
+  },
+  "feature/search/src/main/kotlin/com/elsfm/mobile/feature/search/SearchViewModel.kt": {
+    "mtime": 1783377520.4490445,
+    "ast_hash": "14123a4552826e214f643c254b156a54",
+    "semantic_hash": "14123a4552826e214f643c254b156a54"
+  },
+  "feature/search/src/main/kotlin/com/elsfm/mobile/feature/search/tabs/AlbumsTabContent.kt": {
+    "mtime": 1783333236.997389,
+    "ast_hash": "aeb8b74d053b63d57e7bbf390e72ab13",
+    "semantic_hash": "aeb8b74d053b63d57e7bbf390e72ab13"
+  },
+  "feature/search/src/main/kotlin/com/elsfm/mobile/feature/search/tabs/ArtistsTabContent.kt": {
+    "mtime": 1783333241.7348874,
+    "ast_hash": "263420eedcb4071bf2feba3d45481064",
+    "semantic_hash": "263420eedcb4071bf2feba3d45481064"
+  },
+  "feature/search/src/main/kotlin/com/elsfm/mobile/feature/search/tabs/PlaylistsTabContent.kt": {
+    "mtime": 1783333246.520532,
+    "ast_hash": "45c25142cf060825772f3daba1b7270f",
+    "semantic_hash": "45c25142cf060825772f3daba1b7270f"
+  },
+  "feature/search/src/main/kotlin/com/elsfm/mobile/feature/search/tabs/TracksTabContent.kt": {
+    "mtime": 1783768869.6763647,
+    "ast_hash": "1169e9d0ab83d641f4f2cd67b6b50f8a",
+    "semantic_hash": "1169e9d0ab83d641f4f2cd67b6b50f8a"
+  },
+  "feature/search/src/test/kotlin/com/elsfm/mobile/feature/search/SearchViewModelTest.kt": {
+    "mtime": 1784282937.0173821,
+    "ast_hash": "39f5435e809c9e4d9db72af5a78ae017",
+    "semantic_hash": "39f5435e809c9e4d9db72af5a78ae017"
+  },
+  "feature/subscriptions/build.gradle.kts": {
+    "mtime": 1784280318.7445426,
+    "ast_hash": "65161cc85555a9b8c00ee2871125808c",
+    "semantic_hash": "65161cc85555a9b8c00ee2871125808c"
+  },
+  "feature/subscriptions/src/main/kotlin/com/elsfm/mobile/feature/subscriptions/SubscriptionScreen.kt": {
+    "mtime": 1784280369.0564744,
+    "ast_hash": "9f79e0aa5894af46bf796271540c9ba2",
+    "semantic_hash": "9f79e0aa5894af46bf796271540c9ba2"
+  },
+  "feature/subscriptions/src/main/kotlin/com/elsfm/mobile/feature/subscriptions/SubscriptionState.kt": {
+    "mtime": 1784280323.59058,
+    "ast_hash": "7187dc5f05a17054630967b46e1f5692",
+    "semantic_hash": "7187dc5f05a17054630967b46e1f5692"
+  },
+  "feature/subscriptions/src/main/kotlin/com/elsfm/mobile/feature/subscriptions/SubscriptionViewModel.kt": {
+    "mtime": 1784280341.4459572,
+    "ast_hash": "4b5fae8e903318b5c380f48ec646a630",
+    "semantic_hash": "4b5fae8e903318b5c380f48ec646a630"
+  },
+  "feature/subscriptions/src/test/kotlin/com/elsfm/mobile/feature/subscriptions/SubscriptionViewModelTest.kt": {
+    "mtime": 1784280392.4037485,
+    "ast_hash": "a097b8095c7e55f9d4766345f3eabb5e",
+    "semantic_hash": "a097b8095c7e55f9d4766345f3eabb5e"
+  },
+  "feature/userprofile/build.gradle.kts": {
+    "mtime": 1784279337.9977794,
+    "ast_hash": "80c4a34800c331fe5b3c85d4a3855a40",
+    "semantic_hash": "80c4a34800c331fe5b3c85d4a3855a40"
+  },
+  "feature/userprofile/src/main/kotlin/com/elsfm/mobile/feature/userprofile/UserProfileScreen.kt": {
+    "mtime": 1784279927.9143245,
+    "ast_hash": "fe2d93391346fff8c252dab17d7c576a",
+    "semantic_hash": "fe2d93391346fff8c252dab17d7c576a"
+  },
+  "feature/userprofile/src/main/kotlin/com/elsfm/mobile/feature/userprofile/UserProfileState.kt": {
+    "mtime": 1784279357.1729279,
+    "ast_hash": "828a132cbfc596217d508eb7ac4c4bf8",
+    "semantic_hash": "828a132cbfc596217d508eb7ac4c4bf8"
+  },
+  "feature/userprofile/src/main/kotlin/com/elsfm/mobile/feature/userprofile/UserProfileViewModel.kt": {
+    "mtime": 1784279374.9081538,
+    "ast_hash": "1fb2ae2c2881671acb012acc115a28cf",
+    "semantic_hash": "1fb2ae2c2881671acb012acc115a28cf"
+  },
+  "feature/userprofile/src/test/kotlin/com/elsfm/mobile/feature/userprofile/UserProfileViewModelTest.kt": {
+    "mtime": 1784280036.6054966,
+    "ast_hash": "2c3d5492feb474c48dcd30028e017b23",
+    "semantic_hash": "2c3d5492feb474c48dcd30028e017b23"
+  },
+  "gradlew": {
+    "mtime": 1783172241.907871,
+    "ast_hash": "1bbcb5e88d23ca6ced5bee4e15314f74",
+    "semantic_hash": "1bbcb5e88d23ca6ced5bee4e15314f74"
+  },
+  "settings.gradle.kts": {
+    "mtime": 1784280397.010256,
+    "ast_hash": "6a0cc3c70939a3c90b264a315040d9f5",
+    "semantic_hash": "6a0cc3c70939a3c90b264a315040d9f5"
+  },
+  ".claude/skills/elsfm-android-build/SKILL.md": {
+    "mtime": 1784327582.3707654,
+    "ast_hash": "87f5ba445d084b7151ec0ec51bef4891",
+    "semantic_hash": ""
+  },
+  ".claude/skills/elsfm-api-endpoints/SKILL.md": {
+    "mtime": 1782742413.2293792,
+    "ast_hash": "7f81d908087e024c8104a966cd412f18",
+    "semantic_hash": ""
+  },
+  ".claude/skills/elsfm-build/SKILL.md": {
+    "mtime": 1782482196.007803,
+    "ast_hash": "ec8f9ef36e7690388d3eca4cb5a03c57",
+    "semantic_hash": ""
+  },
+  ".claude/skills/elsfm-features/SKILL.md": {
+    "mtime": 1784327636.977452,
+    "ast_hash": "bcb09c02e39ffe7b7d3ce2bd7ab10d2b",
+    "semantic_hash": ""
+  },
+  ".claude/skills/elsfm-laravel-backend/SKILL.md": {
+    "mtime": 1782743018.3198223,
+    "ast_hash": "e6280ffb792f05dc94869eb51962d9a7",
+    "semantic_hash": ""
+  },
+  ".claude/skills/elsfm-laravel-backend/references/SKILL.md": {
+    "mtime": 1782482248.916937,
+    "ast_hash": "29c056ef9810fd34393ac263e2130f32",
+    "semantic_hash": ""
+  },
+  ".claude/skills/elsfm-laravel-backend/references/authorization.md": {
+    "mtime": 1782742871.1974096,
+    "ast_hash": "b6de26c6bb879db53e67d01aa0e118ec",
+    "semantic_hash": ""
+  },
+  ".claude/skills/elsfm-laravel-backend/references/controllers-pattern.md": {
+    "mtime": 1782742794.826254,
+    "ast_hash": "be681391b070bc384b47b51ff2d10e2e",
+    "semantic_hash": ""
+  },
+  ".claude/skills/elsfm-laravel-backend/references/datasource-pagination.md": {
+    "mtime": 1782744062.9205458,
+    "ast_hash": "83f2cfc89c914d210f9efed98c9ad7c5",
+    "semantic_hash": ""
+  },
+  ".claude/skills/elsfm-laravel-backend/references/events-listeners.md": {
+    "mtime": 1782742950.6747487,
+    "ast_hash": "d48e7898478374772c6c9d6d2bf02a30",
+    "semantic_hash": ""
+  },
+  ".claude/skills/elsfm-laravel-backend/references/models-relationships.md": {
+    "mtime": 1782744046.2668726,
+    "ast_hash": "7d261fbf1e162c3da26d2a145d44fcc3",
+    "semantic_hash": ""
+  },
+  ".claude/skills/elsfm-laravel-backend/references/services-pattern.md": {
+    "mtime": 1782744078.3069642,
+    "ast_hash": "f496ea0ea6a02c47882c096eb1a30e34",
+    "semantic_hash": ""
+  },
+  ".claude/skills/elsfm-laravel-integration/SKILL.md": {
+    "mtime": 1782743026.7888591,
+    "ast_hash": "a297a31a69accde526947784e8f7bb5e",
+    "semantic_hash": ""
+  },
+  ".claude/skills/elsfm-laravel-integration/references/common-foundation.md": {
+    "mtime": 1782744099.8772724,
+    "ast_hash": "435cd31d6d8e65bc9475e6f284dd8bfe",
+    "semantic_hash": ""
+  },
+  ".claude/skills/elsfm-laravel-integration/references/error-handling.md": {
+    "mtime": 1782742973.2805989,
+    "ast_hash": "1d47ae8764dc2d95ebe8461ac502ebae",
+    "semantic_hash": ""
+  },
+  ".claude/skills/elsfm-laravel-integration/references/flutter-client-example.md": {
+    "mtime": 1782742881.1261876,
+    "ast_hash": "fcb1305efd498a713acec2bf335473a3",
+    "semantic_hash": ""
+  },
+  ".claude/skills/elsfm-laravel-integration/references/response-mapping.md": {
+    "mtime": 1782742997.557527,
+    "ast_hash": "a7e9f1578e23e3ce81553d1c76f9f490",
+    "semantic_hash": ""
+  },
+  ".claude/skills/elsfm-qa/SKILL.md": {
+    "mtime": 1782482163.7768261,
+    "ast_hash": "c60a6e07fe21721498396d3d27b6f36a",
+    "semantic_hash": ""
+  },
+  ".claude/skills/elsfm-ship/SKILL.md": {
+    "mtime": 1784327682.602874,
+    "ast_hash": "f8358e50b76dda22db7a60423e357fc8",
+    "semantic_hash": ""
+  },
+  ".github/workflows/build.yml": {
+    "mtime": 1784337629.038142,
+    "ast_hash": "c9992930ca75f04149b65171f5c2e22a",
+    "semantic_hash": ""
+  },
+  ".github/workflows/release.yml": {
+    "mtime": 1784368674.1025512,
+    "ast_hash": "db4b3e44fb258d88a1fe77e9a78e28a5",
+    "semantic_hash": ""
+  },
+  "CLAUDE.md": {
+    "mtime": 1783173331.7403588,
+    "ast_hash": "e2bc4aa3d584ea3c6121404607b2fac1",
+    "semantic_hash": ""
+  },
+  "docs/FEATURES.md": {
+    "mtime": 1784277117.532549,
+    "ast_hash": "3901ff5fe778e8f155a4acfa40bdda9a",
+    "semantic_hash": ""
+  },
+  "docs/superpowers/plans/2026-07-04-phase1-foundation-plan.md": {
+    "mtime": 1783175799.4963367,
+    "ast_hash": "2a3199a7e3f8a9b5e0404a0790eb2902",
+    "semantic_hash": ""
+  },
+  "docs/superpowers/plans/2026-07-05-phase2-player-plan.md": {
+    "mtime": 1783205612.0138614,
+    "ast_hash": "53bc8edc59418848aa2659530389932d",
+    "semantic_hash": ""
+  },
+  "docs/superpowers/plans/2026-07-05-phase3-library-plan.md": {
+    "mtime": 1783250736.5738885,
+    "ast_hash": "651a4fecb4231b99e848ce0fda06fd2b",
+    "semantic_hash": ""
+  },
+  "docs/superpowers/plans/2026-07-05-phase4-advanced-features-plan.md": {
+    "mtime": 1783258102.5121531,
+    "ast_hash": "d75842b26bbaaa062a79318873285f3c",
+    "semantic_hash": ""
+  },
+  "docs/superpowers/plans/2026-07-06-phase5-navigation-ui-redesign.md": {
+    "mtime": 1783329394.4714038,
+    "ast_hash": "3bce572ff506cf61d7c6c371865530b7",
+    "semantic_hash": ""
+  },
+  "docs/superpowers/specs/2026-07-04-phase1-foundation-design.md": {
+    "mtime": 1783171302.6379623,
+    "ast_hash": "a3bea2c4457007f4d300960688659a53",
+    "semantic_hash": ""
+  },
+  "docs/superpowers/specs/2026-07-05-phase2-player-design.md": {
+    "mtime": 1783205013.6927474,
+    "ast_hash": "f252bbd3be97538547129888e44ab80f",
+    "semantic_hash": ""
+  },
+  "docs/superpowers/specs/2026-07-05-phase3-library-design.md": {
+    "mtime": 1783250671.037657,
+    "ast_hash": "65551f256d6b4179d159937e7ec45050",
+    "semantic_hash": ""
+  },
+  "docs/superpowers/specs/2026-07-05-phase4-advanced-features-design.md": {
+    "mtime": 1783258021.118344,
+    "ast_hash": "65372b58cbcb397120da059bd08cd3cd",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable/auth_hero.jpg": {
+    "mtime": 1784323526.887277,
+    "ast_hash": "638e537ee2618c7399ed9c8318f5929e",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable/ic_launcher.jpg": {
+    "mtime": 1783805858.3564713,
+    "ast_hash": "638e537ee2618c7399ed9c8318f5929e",
+    "semantic_hash": ""
+  },
+  "feature/auth/src/main/res/drawable/auth_hero.jpg": {
+    "mtime": 1784325932.8830028,
+    "ast_hash": "638e537ee2618c7399ed9c8318f5929e",
+    "semantic_hash": ""
+  }
+}

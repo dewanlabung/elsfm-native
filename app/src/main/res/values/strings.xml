@@ -1,4 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">ELSFM</string>
+    <string name="shortcut_search_short">Search</string>
+    <string name="shortcut_search_long">Search Music</string>
+    <string name="shortcut_library_short">Library</string>
+    <string name="shortcut_library_long">My Library</string>
+    <string name="shortcut_player_short">Now Playing</string>
+    <string name="shortcut_player_long">Now Playing</string>
+    <string name="widget_artwork_description">ELSFM Artwork Player – 3×3</string>
+    <string name="widget_compact_description">ELSFM Compact Player – 4×2</string>
+    <string name="widget_wide_description">ELSFM Wide Player – 4×1</string>
 </resources>

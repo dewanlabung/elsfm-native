@@ -28,6 +28,7 @@ private const val USER_AGENT = "ElsfmMobile/1.0 (Android)"
 
 @AndroidEntryPoint
 class PlaybackService : MediaSessionService() {
+
     @Inject
     lateinit var sessionManager: SessionManager
 

@@ -6,18 +6,11 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
-enum class DownloadQuality(val kbps: Int) {
-    LOW(128),
-    MEDIUM(256),
-    HIGH(320),
-}
-
 private const val PREFS_NAME = "elsfm_session_prefs"
 private const val KEY_PRIVATE_SESSION = "private_session_enabled"
 private const val KEY_AUTOPLAY = "autoplay_enabled"
 private const val KEY_VOLUME_NORMALIZATION = "volume_normalization_enabled"
 private const val KEY_OFFLINE_MODE = "offline_mode_enabled"
-private const val KEY_DOWNLOAD_QUALITY = "download_quality"
 private const val KEY_WIFI_AUTO_CACHE = "wifi_auto_cache_enabled"
 private const val KEY_SKIP_SILENCE = "skip_silence_enabled"
 private const val KEY_PERSISTENT_QUEUE = "persistent_queue_enabled"
@@ -61,7 +54,7 @@ class SessionPreferences @Inject constructor(
         get() = prefs.getBoolean(KEY_WIFI_AUTO_CACHE, false)
         set(value) = prefs.edit().putBoolean(KEY_WIFI_AUTO_CACHE, value).apply()
 
-    /** When true, the player automatically skips silent segments in tracks. */
+    /** When true, the player skips silent segments in tracks. */
     var isSkipSilenceEnabled: Boolean
         get() = prefs.getBoolean(KEY_SKIP_SILENCE, false)
         set(value) = prefs.edit().putBoolean(KEY_SKIP_SILENCE, value).apply()
@@ -85,12 +78,4 @@ class SessionPreferences @Inject constructor(
     var isSearchHistoryPaused: Boolean
         get() = prefs.getBoolean(KEY_PAUSE_SEARCH_HISTORY, false)
         set(value) = prefs.edit().putBoolean(KEY_PAUSE_SEARCH_HISTORY, value).apply()
-
-    /** Default quality for new downloads. */
-    var downloadQuality: DownloadQuality
-        get() {
-            val kbps = prefs.getInt(KEY_DOWNLOAD_QUALITY, DownloadQuality.HIGH.kbps)
-            return DownloadQuality.entries.find { it.kbps == kbps } ?: DownloadQuality.HIGH
-        }
-        set(value) = prefs.edit().putInt(KEY_DOWNLOAD_QUALITY, value.kbps).apply()
 }

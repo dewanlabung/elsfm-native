@@ -1,5 +1,10 @@
 package com.elsfm.mobile.feature.profile
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -7,7 +12,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -25,20 +32,33 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.elsfm.mobile.core.media.DownloadQuality
 import com.elsfm.mobile.core.media.ShakeSensitivity
 import com.elsfm.mobile.feature.profile.storage.StorageSection
+
+private val accentColorPresets = listOf(
+    "#1B5E20" to "Forest",
+    "#0D47A1" to "Ocean",
+    "#4A148C" to "Plum",
+    "#B71C1C" to "Ruby",
+    "#E65100" to "Ember",
+    "#37474F" to "Slate",
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel(),
+    themeViewModel: ThemeViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
+    val accentColorHex by themeViewModel.accentColorHex.collectAsState()
 
     Scaffold(
         topBar = {
@@ -203,18 +223,32 @@ fun SettingsScreen(
                 },
             )
 
+            // ── Appearance ────────────────────────────────────────────────
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            SettingsSectionHeader("Appearance")
+
             ListItem(
-                headlineContent = { Text("Download quality") },
+                headlineContent = { Text("Header color") },
                 supportingContent = {
-                    Row(modifier = Modifier.padding(top = 4.dp)) {
-                        DownloadQuality.entries.forEach { quality ->
-                            FilterChip(
-                                selected = state.downloadQuality == quality,
-                                onClick = { viewModel.setDownloadQuality(quality) },
-                                label = {
-                                    Text("${quality.kbps} kbps")
-                                },
-                                modifier = Modifier.padding(end = 8.dp),
+                    Row(
+                        modifier = Modifier.padding(top = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        accentColorPresets.forEach { (hex, label) ->
+                            val isSelected = accentColorHex == hex
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(CircleShape)
+                                    .background(
+                                        try { Color(android.graphics.Color.parseColor(hex)) }
+                                        catch (_: Exception) { Color.Gray }
+                                    )
+                                    .then(
+                                        if (isSelected) Modifier.border(3.dp, Color.White, CircleShape)
+                                        else Modifier
+                                    )
+                                    .clickable { themeViewModel.setAccentColor(hex) },
                             )
                         }
                     }

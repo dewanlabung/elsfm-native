@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <shortcut
+        android:shortcutId="search"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_search"
+        android:shortcutShortLabel="@string/shortcut_search_short"
+        android:shortcutLongLabel="@string/shortcut_search_long">
+        <intent
+            android:action="android.intent.action.MAIN"
+            android:targetPackage="com.elsfm.mobile"
+            android:targetClass="com.elsfm.mobile.MainActivity">
+            <extra android:name="shortcut_destination" android:value="search" />
+        </intent>
+        <categories android:name="android.shortcut.conversation" />
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="library"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_library"
+        android:shortcutShortLabel="@string/shortcut_library_short"
+        android:shortcutLongLabel="@string/shortcut_library_long">
+        <intent
+            android:action="android.intent.action.MAIN"
+            android:targetPackage="com.elsfm.mobile"
+            android:targetClass="com.elsfm.mobile.MainActivity">
+            <extra android:name="shortcut_destination" android:value="library" />
+        </intent>
+        <categories android:name="android.shortcut.conversation" />
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="now_playing"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_player"
+        android:shortcutShortLabel="@string/shortcut_player_short"
+        android:shortcutLongLabel="@string/shortcut_player_long">
+        <intent
+            android:action="android.intent.action.MAIN"
+            android:targetPackage="com.elsfm.mobile"
+            android:targetClass="com.elsfm.mobile.MainActivity">
+            <extra android:name="shortcut_destination" android:value="player" />
+        </intent>
+        <categories android:name="android.shortcut.conversation" />
+    </shortcut>
+
+</shortcuts>

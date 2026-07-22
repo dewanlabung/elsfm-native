@@ -1,7 +1,6 @@
 package com.elsfm.mobile.feature.profile
 
 import androidx.lifecycle.ViewModel
-import com.elsfm.mobile.core.media.DownloadQuality
 import com.elsfm.mobile.core.media.SessionPreferences
 import com.elsfm.mobile.core.media.ShakePreferences
 import com.elsfm.mobile.core.media.ShakeSensitivity
@@ -22,7 +21,6 @@ data class SettingsState(
     val isPrivateSession: Boolean = false,
     val isOfflineModeEnabled: Boolean = false,
     val isWifiAutoCacheEnabled: Boolean = false,
-    val downloadQuality: DownloadQuality = DownloadQuality.HIGH,
     val isKeepScreenOnEnabled: Boolean = false,
     val isSearchHistoryPaused: Boolean = false,
 )
@@ -45,7 +43,6 @@ class SettingsViewModel @Inject constructor(
             isPrivateSession = sessionPreferences.isPrivateSession,
             isOfflineModeEnabled = sessionPreferences.isOfflineModeEnabled,
             isWifiAutoCacheEnabled = sessionPreferences.isWifiAutoCacheEnabled,
-            downloadQuality = sessionPreferences.downloadQuality,
             isKeepScreenOnEnabled = sessionPreferences.isKeepScreenOnEnabled,
             isSearchHistoryPaused = sessionPreferences.isSearchHistoryPaused,
         )
@@ -121,10 +118,5 @@ class SettingsViewModel @Inject constructor(
         val newValue = !_state.value.isWifiAutoCacheEnabled
         sessionPreferences.isWifiAutoCacheEnabled = newValue
         _state.value = _state.value.copy(isWifiAutoCacheEnabled = newValue)
-    }
-
-    fun setDownloadQuality(quality: DownloadQuality) {
-        sessionPreferences.downloadQuality = quality
-        _state.value = _state.value.copy(downloadQuality = quality)
     }
 }

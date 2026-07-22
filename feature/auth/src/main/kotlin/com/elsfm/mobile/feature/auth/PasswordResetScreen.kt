@@ -23,6 +23,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.foundation.Image
 
@@ -109,7 +110,7 @@ fun PasswordResetScreen(
                 label = { Text("Password") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                visualTransformation = androidx.compose.material.PasswordVisualTransformation()
+                visualTransformation = PasswordVisualTransformation()
             )
 
             OutlinedTextField(
@@ -120,7 +121,7 @@ fun PasswordResetScreen(
                     .fillMaxWidth()
                     .padding(top = 16.dp),
                 singleLine = true,
-                visualTransformation = androidx.compose.material.PasswordVisualTransformation()
+                visualTransformation = PasswordVisualTransformation()
             )
 
             if (state.error != null) {
